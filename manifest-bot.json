@@ -1,0 +1,24 @@
+{
+  "name": "LinkedIn Bot — Simon JUTGÉ",
+  "short_name": "LI Bot SJ",
+  "description": "Bot LinkedIn cybersécurité — Publication automatique 48h",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05080f",
+  "theme_color": "#0a66c2",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "bot-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "bot-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

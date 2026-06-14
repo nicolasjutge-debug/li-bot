@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="LI Bot SJ"/>
+<meta name="theme-color" content="#0a66c2"/>
+<meta name="description" content="LinkedIn Bot — Simon JUTGÉ — Cybersécurité — Publication automatique 48h"/>
+<link rel="apple-touch-icon" sizes="192x192" href="bot-icon-192.png"/>
+<link rel="apple-touch-icon" sizes="512x512" href="bot-icon-512.png"/>
+<link rel="manifest" href="manifest-bot.json"/>
+<title>LinkedIn Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#05080f;--card:#0c1220;--border:#1a2540;
+  --cyan:#00c8ff;--green:#00e676;--red:#ff1744;--orange:#ff6d00;
+  --text:#c8d8f0;--muted:#4a6080;--white:#e8f0ff;
+  --li:#0a66c2;--grad:linear-gradient(135deg,#0a66c2,#00c8ff);
+  --ins-grad:linear-gradient(135deg,#f97316,#ef4444);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden;}
+#bg-cv{position:fixed;inset:0;z-index:0;opacity:.1;pointer-events:none;}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 16px 40px;}
+
+/* SWITCH COMPTE */
+.account-switcher{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.acc-btn{flex:1;min-width:140px;padding:14px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;text-align:left;font-family:'Space Grotesk',sans-serif;}
+.acc-btn.active-simon{border-color:var(--cyan);background:rgba(0,200,255,.06);}
+.acc-btn.active-niko{border-color:var(--orange);background:rgba(255,109,0,.06);}
+.acc-btn:hover{transform:translateY(-1px);}
+.acc-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;}
+.acc-av.simon{background:var(--grad);}
+.acc-av.niko{background:var(--ins-grad);}
+.acc-name{font-size:13px;font-weight:700;color:var(--white);}
+.acc-role{font-size:10px;color:var(--muted);margin-top:2px;}
+.acc-badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:8px;margin-top:5px;font-weight:600;}
+.acc-badge.cyber{background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2);}
+.acc-badge.ins{background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);}
+.acc-active-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);margin-right:4px;animation:pulse 2s infinite;}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:12px;flex-wrap:wrap;}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;}
+.av.simon{background:var(--grad);}
+.av.niko{background:var(--ins-grad);}
+.hdr-info{flex:1;}
+.hdr-info h1{font-size:14px;font-weight:700;color:var(--white);}
+.hdr-info p{font-size:10px;color:var(--muted);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.dot-st{display:flex;align-items:center;gap:5px;font-size:11px;}
+.dot{width:7px;height:7px;border-radius:50%;animation:pulse 2s infinite;}
+.dot.g{background:var(--green);box-shadow:0 0 6px var(--green);}
+.svbdg{font-size:10px;padding:3px 8px;border-radius:8px;background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);color:var(--green);}
+.free-badge{font-size:10px;padding:3px 8px;border-radius:8px;background:rgba(0,230,118,.15);border:1px solid rgba(0,230,118,.3);color:var(--green);font-weight:600;}
+
+/* PROFIL ACTIF */
+.active-profile{padding:10px 16px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;gap:12px;font-size:12px;}
+.active-profile.simon{background:rgba(0,200,255,.05);border:1px solid rgba(0,200,255,.2);}
+.active-profile.niko{background:rgba(255,109,0,.05);border:1px solid rgba(255,109,0,.2);}
+.ap-info{flex:1;}
+.ap-name{font-weight:700;color:var(--white);font-size:13px;}
+.ap-desc{color:var(--muted);font-size:10px;margin-top:1px;}
+
+/* STATS */
+.stats{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.stat{flex:1;min-width:70px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;}
+.stat-v{font-family:'Fira Code',monospace;font-size:24px;font-weight:500;color:var(--cyan);}
+.stat-l{font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;}
+
+/* TIMER */
+.timer{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.t-disp{font-family:'Fira Code',monospace;font-size:26px;font-weight:500;color:var(--cyan);letter-spacing:2px;text-shadow:0 0 18px rgba(0,200,255,.4);}
+.t-lbl{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.t-next{font-size:11px;color:var(--muted);}
+.t-next b{color:var(--orange);}
+.t-btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+.tbtn{padding:8px 14px;border-radius:6px;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
+.tb-go{background:var(--green);color:#000;border:none;}
+.tb-pause{background:rgba(255,109,0,.15);color:var(--orange);border:1px solid rgba(255,109,0,.3);}
+.tb-reset{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.2);}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:700px){.grid{grid-template-columns:1fr;}}
+.full{grid-column:1/-1;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.card-h h2{font-size:13px;font-weight:600;color:var(--white);}
+.bdg{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.b-blue{background:rgba(10,102,194,.2);color:var(--cyan);border:1px solid rgba(0,200,255,.2);}
+.b-green{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+.b-orange{background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);}
+.card-b{padding:16px 18px;}
+
+.type-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:14px;}
+.tbtype{padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);text-align:center;transition:all .2s;line-height:1.4;}
+.tbtype:hover,.tbtype.act{background:rgba(0,200,255,.08);border-color:var(--cyan);color:var(--cyan);}
+.ttico{font-size:18px;display:block;margin-bottom:3px;}
+
+.topics{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.topic{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);transition:all .2s;}
+.topic:hover,.topic.sel{background:rgba(10,102,194,.15);border-color:var(--li);color:var(--cyan);}
+
+.fld{margin-bottom:11px;}
+.fld label{display:block;font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;}
+.fld textarea,.fld input,.fld select{width:100%;background:#060910;border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;resize:vertical;transition:border-color .2s;}
+.fld textarea{min-height:70px;}
+.fld textarea:focus,.fld input:focus,.fld select:focus{border-color:var(--cyan);}
+.fld select option{background:#080d18;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;}
+.btn-p{background:var(--grad);color:#fff;width:100%;}
+.btn-p:hover{box-shadow:0 4px 20px rgba(0,200,255,.3);transform:translateY(-1px);}
+.btn-c{background:rgba(0,200,255,.08);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;font-size:11px;padding:6px 13px;}
+.btn-c:hover{background:rgba(0,200,255,.16);}
+.btn-s{background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25)!important;font-size:11px;padding:6px 13px;}
+.btn-s:hover{background:rgba(255,109,0,.2);}
+.btn-li{background:var(--li);color:#fff;font-size:11px;padding:6px 13px;}
+.btn-li:hover{background:#0077b5;}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
+
+.post-wrap{display:none;margin-top:12px;}
+.post-out{background:#060a12;border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+.post-out .ht{color:var(--cyan);font-weight:600;cursor:pointer;}
+.post-out .ht:hover{text-decoration:underline;}
+.ht-bar{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding:9px 11px;background:#060a12;border:1px solid var(--border);border-radius:6px;align-items:center;}
+.ht-bar .htag{font-size:11px;padding:3px 9px;border-radius:12px;background:rgba(0,200,255,.08);color:var(--cyan);border:1px solid rgba(0,200,255,.2);cursor:pointer;font-family:'Fira Code',monospace;transition:all .15s;}
+.ht-bar .htag:hover{background:rgba(0,200,255,.18);}
+.post-meta{font-size:10px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between;}
+
+.q-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding-right:2px;}
+.q-list::-webkit-scrollbar{width:3px;}
+.q-list::-webkit-scrollbar-thumb{background:var(--border);}
+.q-item{background:#070b15;border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;gap:10px;align-items:flex-start;}
+.q-item.nxt{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,200,255,.1);}
+.q-num{width:22px;height:22px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+.q-item.nxt .q-num{animation:pulse 1.5s infinite;}
+.q-body{flex:1;min-width:0;}
+.q-type{font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px;}
+.q-prev{font-size:12px;color:var(--text);line-height:1.5;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.q-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
+.q-tags span{font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(0,200,255,.07);color:var(--cyan);border:1px solid rgba(0,200,255,.14);font-family:'Fira Code',monospace;}
+.q-time{font-size:10px;color:var(--cyan);font-family:'Fira Code',monospace;margin-top:4px;}
+.q-acts{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.q-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;border-radius:4px;line-height:1;}
+.q-btn:hover{background:rgba(255,255,255,.05);}
+.q-empty{text-align:center;color:var(--muted);font-size:12px;padding:24px;}
+
+.h-list{display:flex;flex-direction:column;gap:7px;max-height:300px;overflow-y:auto;}
+.h-list::-webkit-scrollbar{width:3px;}
+.h-list::-webkit-scrollbar-thumb{background:var(--border);}
+.h-item{background:#070b15;border:1px solid var(--border);border-radius:6px;padding:9px 13px;display:flex;flex-direction:column;gap:6px;cursor:pointer;}
+.h-item-row{display:flex;align-items:center;gap:8px;}
+.hbdg{font-size:9px;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0;}
+.htxt{font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.htime{font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.hcopy{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0;}
+.hcopy:hover{color:var(--cyan);}
+.h-expand{display:none;font-size:12px;color:var(--text);background:#060a12;border-radius:6px;padding:10px 12px;white-space:pre-wrap;word-break:break-word;line-height:1.7;border:1px solid var(--border);}
+.h-tags{font-size:10px;color:var(--cyan);font-family:'Fira Code',monospace;}
+
+.cf-list{display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;margin-bottom:12px;}
+.cf-item{background:#070b15;border:1px solid var(--border);border-radius:8px;padding:11px 13px;}
+.cf-name{font-size:13px;font-weight:600;color:var(--white);}
+.cf-occ{font-size:11px;color:var(--cyan);}
+.cf-note{font-size:11px;color:var(--muted);margin-top:2px;}
+.cf-acts{display:flex;gap:6px;margin-top:8px;}
+.cfb{font-size:10px;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .15s;}
+.cfb-g{background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;}
+.cfb-g:hover{background:rgba(0,200,255,.2);}
+.cfb-d{background:transparent;color:var(--muted);border:1px solid transparent!important;}
+.cfb-d:hover{color:var(--red);}
+.cf-form{background:#070b15;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:none;}
+.cf-form h4{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:9px;}
+.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px;}
+.sep{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:14px 0;}
+
+/* CONSOLE LI */
+.li-console{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;overflow:hidden;}
+.li-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.li-head h2{font-size:13px;font-weight:600;color:var(--white);flex:1;}
+.li-logo{width:20px;height:20px;background:var(--li);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.li-body{padding:18px 20px;display:none;}
+.li-body.open{display:block;}
+.li-tab-row{display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:10px;flex-wrap:wrap;}
+.li-tab{padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Space Grotesk',sans-serif;transition:all .15s;}
+.li-tab.act{background:rgba(10,102,194,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;}
+.feed-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:12px;}
+.feed-list::-webkit-scrollbar{width:3px;}
+.feed-list::-webkit-scrollbar-thumb{background:var(--border);}
+.feed-item{background:#070b15;border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;gap:10px;align-items:flex-start;}
+.fi-av{width:28px;height:28px;border-radius:50%;background:rgba(10,102,194,.3);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--cyan);font-weight:700;flex-shrink:0;}
+.fi-body{flex:1;min-width:0;}
+.fi-name{font-size:12px;font-weight:600;color:var(--white);}
+.fi-event{font-size:11px;color:var(--cyan);margin-bottom:3px;}
+.fi-text{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.fi-acts{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.fi-btn{font-size:10px;padding:4px 9px;border-radius:4px;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif;transition:all .15s;white-space:nowrap;}
+.fi-gen{background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;}
+.fi-gen:hover{background:rgba(0,200,255,.2);}
+.li-info{background:#060a12;border:1px solid rgba(0,200,255,.15);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:12px;}
+
+#toast-c{position:fixed;bottom:20px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+.ti{background:#0c1220;border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--white);box-shadow:0 6px 24px rgba(0,0,0,.5);animation:tIn .25s ease;display:flex;align-items:center;gap:8px;max-width:290px;pointer-events:auto;}
+.ti.ok{border-color:rgba(0,230,118,.3);color:var(--green);}
+.ti.er{border-color:rgba(255,23,68,.3);color:var(--red);}
+.ti.in{border-color:rgba(0,200,255,.3);color:var(--cyan);}
+@keyframes tIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+</style>
+</head>
+<body>
+<canvas id="bg-cv"></canvas>
+<div id="toast-c"></div>
+<div class="app">
+
+<!-- SWITCH COMPTES -->
+<div class="account-switcher">
+  <button class="acc-btn active-simon" id="btn-simon" onclick="switchAccount('simon')">
+    <div class="acc-av simon">SJ</div>
+    <div class="acc-name"><span class="acc-active-dot" id="dot-simon"></span>Simon JUTGÉ</div>
+    <div class="acc-role">Terminale STI2D · 17 ans · Rennes</div>
+    <span class="acc-badge cyber">🛡️ Cybersécurité</span>
+  </button>
+  <button class="acc-btn" id="btn-niko" onclick="switchAccount('niko')">
+    <div class="acc-av niko">NJ</div>
+    <div class="acc-name"><span class="acc-active-dot" id="dot-niko" style="display:none"></span>Nicolas JUTGÉ</div>
+    <div class="acc-role">Expert Assurance · 28 ans exp. · Rennes</div>
+    <span class="acc-badge ins">🏛️ Assurance</span>
+  </button>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="av simon" id="hdr-av">SJ</div>
+  <div class="hdr-info">
+    <h1 id="hdr-title">LinkedIn Bot — Simon JUTGÉ</h1>
+    <p id="hdr-sub">Cybersécurité · Auto-publication 48h · 100% gratuit</p>
+  </div>
+  <div class="hdr-right">
+    <span class="free-badge">✓ Gratuit</span>
+    <span class="svbdg" id="sv-bdg">💾 Sauvegardé</span>
+    <div class="dot-st"><div class="dot g"></div><span id="st-txt">Prêt</span></div>
+  </div>
+</div>
+
+<!-- PROFIL ACTIF -->
+<div class="active-profile simon" id="active-profile">
+  <div class="acc-av simon" style="width:40px;height:40px;flex-shrink:0">SJ</div>
+  <div class="ap-info">
+    <div class="ap-name" id="ap-name">Simon JUTGÉ — Compte actif</div>
+    <div class="ap-desc" id="ap-desc">Posts style étudiant STI2D débutant · Ton authentique 17 ans · Cybersécurité</div>
+  </div>
+  <a id="ap-li-link" href="https://www.linkedin.com/in/simon-jutg%C3%A9-4b60bb38a" target="_blank" class="btn btn-li" style="font-size:10px;padding:5px 12px;flex-shrink:0">💼 Profil</a>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-v" id="st-total">0</div><div class="stat-l">Générés</div></div>
+  <div class="stat"><div class="stat-v" id="st-queue">0</div><div class="stat-l">En file</div></div>
+  <div class="stat"><div class="stat-v" id="st-sent">0</div><div class="stat-l">Publiés</div></div>
+  <div class="stat"><div class="stat-v" id="st-nxt">—</div><div class="stat-l">Prochain</div></div>
+</div>
+
+<!-- TIMER -->
+<div class="timer">
+  <div>
+    <div class="t-lbl">⏱ Prochain post dans</div>
+    <div class="t-disp" id="t-disp">48:00:00</div>
+    <div class="t-next">Suivant : <b id="t-nxt-type">—</b></div>
+  </div>
+  <div class="t-btns">
+    <button class="tbtn tb-go" onclick="startTimer()">▶ Start</button>
+    <button class="tbtn tb-pause" onclick="pauseTimer()">⏸ Pause</button>
+    <button class="tbtn tb-reset" onclick="resetTimer()">↺ Reset</button>
+  </div>
+</div>
+
+<!-- CONSOLE LINKEDIN -->
+<div class="li-console">
+  <div class="li-head" onclick="toggleLi()">
+    <div class="li-logo">in</div>
+    <h2>Console LinkedIn — Actualités & Réseau</h2>
+    <span id="li-badge" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
+  </div>
+  <div class="li-body" id="li-body">
+    <div class="li-info" id="li-info-txt">📡 Actualités & suggestions pour Simon — clique pour pré-remplir le générateur.</div>
+    <div class="li-tab-row">
+      <button class="li-tab act" onclick="showTab('actu',this)">📰 Actualités</button>
+      <button class="li-tab" onclick="showTab('feli',this)">🎉 À féliciter</button>
+      <button class="li-tab" onclick="showTab('repost',this)">🔁 Posts pop.</button>
+    </div>
+    <div id="tab-actu"><div class="feed-list" id="actu-list"></div></div>
+    <div id="tab-feli" style="display:none"><div class="feed-list" id="feli-list"></div></div>
+    <div id="tab-repost" style="display:none"><div class="feed-list" id="repost-list"></div></div>
+  </div>
+</div>
+
+<div class="grid">
+
+<!-- GÉNÉRATEUR -->
+<div class="card">
+  <div class="card-h"><span>✍️</span><h2>Générer un post</h2><span class="bdg b-blue" id="gen-badge">Simon · Cyber</span></div>
+  <div class="card-b">
+    <div class="type-grid">
+      <button class="tbtype act" data-t="original" onclick="selType(this)"><span class="ttico">📝</span>Original</button>
+      <button class="tbtype" data-t="repost" onclick="selType(this)"><span class="ttico">🔁</span>Republier</button>
+      <button class="tbtype" data-t="congrats" onclick="selType(this)"><span class="ttico">🎉</span>Féliciter</button>
+    </div>
+
+    <!-- Topics cybersécurité (Simon) -->
+    <div id="s-orig-simon">
+      <div class="fld"><label>Thème</label></div>
+      <div class="topics" id="topics-simon">
+        <button class="topic sel" onclick="selTopic(this)">Pentest</button>
+        <button class="topic" onclick="selTopic(this)">SOC</button>
+        <button class="topic" onclick="selTopic(this)">OSINT</button>
+        <button class="topic" onclick="selTopic(this)">Ransomware</button>
+        <button class="topic" onclick="selTopic(this)">Zero Day</button>
+        <button class="topic" onclick="selTopic(this)">Phishing</button>
+        <button class="topic" onclick="selTopic(this)">CTF</button>
+        <button class="topic" onclick="selTopic(this)">SIEM</button>
+        <button class="topic" onclick="selTopic(this)">Cloud Security</button>
+        <button class="topic" onclick="selTopic(this)">Bug Bounty</button>
+        <button class="topic" onclick="selTopic(this)">Cryptographie</button>
+        <button class="topic" onclick="selTopic(this)">RGPD</button>
+      </div>
+    </div>
+
+    <!-- Topics assurance (Niko) -->
+    <div id="s-orig-niko" style="display:none">
+      <div class="fld"><label>Thème</label></div>
+      <div class="topics" id="topics-niko">
+        <button class="topic sel" onclick="selTopic(this)">Mutuelle santé</button>
+        <button class="topic" onclick="selTopic(this)">Assurance moto</button>
+        <button class="topic" onclick="selTopic(this)">Prévoyance</button>
+        <button class="topic" onclick="selTopic(this)">Épargne retraite</button>
+        <button class="topic" onclick="selTopic(this)">Assurance vie</button>
+        <button class="topic" onclick="selTopic(this)">RC Pro</button>
+        <button class="topic" onclick="selTopic(this)">Gestion sinistre</button>
+        <button class="topic" onclick="selTopic(this)">Fidélisation client</button>
+        <button class="topic" onclick="selTopic(this)">Prospection</button>
+        <button class="topic" onclick="selTopic(this)">Réforme retraite</button>
+        <button class="topic" onclick="selTopic(this)">Cyber risques pro</button>
+        <button class="topic" onclick="selTopic(this)">Conseils clients</button>
+      </div>
+    </div>
+
+    <div id="s-repost" style="display:none">
+      <div class="fld"><label>Post original à republier</label>
+        <textarea id="rp-txt" placeholder="Colle ici le post à republier…"></textarea>
+      </div>
+    </div>
+    <div id="s-congrats" style="display:none">
+      <div class="fld"><label>Qui féliciter ?</label>
+        <input id="cw-who" placeholder="Ex: Marie Dupont — nouveau poste…"/>
+      </div>
+      <div class="fld"><label>Occasion</label>
+        <select id="cw-occ">
+          <option value="promotion">Promotion / Nouveau poste</option>
+          <option value="certification">Certification obtenue</option>
+          <option value="diplome">Diplôme / Formation</option>
+          <option value="alternance">Contrat d'alternance</option>
+          <option value="projet">Lancement projet</option>
+          <option value="anniversaire">Anniversaire professionnel</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fld"><label>Ton</label>
+      <select id="tone-sel">
+        <option value="pj">Naturel (mon style)</option>
+        <option value="expert">Expert / Sénior</option>
+        <option value="story">Storytelling</option>
+        <option value="question">Question / Engagement</option>
+        <option value="liste">Liste de conseils</option>
+        <option value="alerte">Alerte / Actualité</option>
+      </select>
+    </div>
+    <div class="fld"><label>Angle / détails (optionnel)</label>
+      <textarea id="ctx-inp" style="min-height:52px" placeholder="Précise un angle, une anecdote, un contexte…"></textarea>
+    </div>
+
+    <button class="btn btn-p" id="gen-btn-wrap" onclick="generatePost_action()">⚡ Générer le post</button>
+
+    <div class="post-wrap" id="post-wrap">
+      <div class="post-out" id="post-out"></div>
+      <div class="ht-bar" id="ht-bar"></div>
+      <div class="post-meta">
+        <span id="pm-chars"></span>
+        <span style="color:var(--muted)">💡 Clic # pour copier</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-c" onclick="copyPost()">📋 Copier</button>
+        <button class="btn btn-s" onclick="schedulePost()">⏰ Programmer</button>
+        <a id="li-post-link" href="https://www.linkedin.com/in/simon-jutg%C3%A9-4b60bb38a" target="_blank" class="btn btn-li">💼 LinkedIn</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FILE D'ATTENTE -->
+<div class="card">
+  <div class="card-h"><span>📅</span><h2>File de publication</h2><span class="bdg b-orange" id="q-bdg">0 posts</span></div>
+  <div class="card-b">
+    <div class="q-list" id="q-list"><div class="q-empty">Aucun post programmé.</div></div>
+    <div class="sep"></div>
+    <button class="btn btn-p" style="font-size:12px;padding:9px" onclick="autoGenQueue()">
+      🤖 Planning automatique 7 posts
+    </button>
+  </div>
+</div>
+
+<!-- HISTORIQUE -->
+<div class="card full">
+  <div class="card-h">
+    <span>📜</span><h2>Historique</h2>
+    <span class="bdg b-green" id="h-bdg">0</span>
+    <button onclick="clearHistory()" style="margin-left:auto;background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Vider</button>
+  </div>
+  <div class="card-b">
+    <div class="h-list" id="h-list">
+      <div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FÉLICITATIONS -->
+<div class="card full">
+  <div class="card-h">
+    <span>🎉</span><h2>Réseau — Félicitations</h2>
+    <span class="bdg b-green" id="cf-bdg">0</span>
+    <button onclick="toggleCfForm()" style="margin-left:auto;background:rgba(0,200,255,.08);color:var(--cyan);border:1px solid rgba(0,200,255,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">+ Ajouter</button>
+  </div>
+  <div class="card-b">
+    <div class="cf-form" id="cf-form">
+      <h4>// Nouvelle personne</h4>
+      <div class="cf-row">
+        <div class="fld" style="margin:0"><label>Prénom Nom</label><input id="cf-name" placeholder="Marie Dupont"/></div>
+        <div class="fld" style="margin:0"><label>Occasion</label>
+          <select id="cf-occ-sel">
+            <option value="promotion">Promotion</option>
+            <option value="certification">Certification</option>
+            <option value="diplome">Diplôme</option>
+            <option value="alternance">Alternance</option>
+            <option value="projet">Projet</option>
+            <option value="anniversaire">Anniversaire pro</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld" style="margin-bottom:10px"><label>Détails</label><input id="cf-note-inp" placeholder="Ex: OSCP obtenu, RSSI chez Orange…"/></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-p" style="font-size:12px;padding:9px" onclick="addCf()">Ajouter</button>
+        <button onclick="toggleCfForm()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:9px 14px;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Annuler</button>
+      </div>
+    </div>
+    <div class="cf-list" id="cf-list">
+      <div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Ajoute des personnes à féliciter.</div>
+    </div>
+    <div class="sep"></div>
+    <button class="btn btn-p" style="font-size:12px;padding:9px" onclick="genAllCf()">🎉 Générer + programmer tous</button>
+  </div>
+</div>
+
+</div>
+<p style="text-align:center;font-size:11px;color:var(--muted);padding-bottom:8px">
+  GitHub Pages : <code style="color:var(--cyan)">nicolasjutge.github.io/li-bot</code>
+</p>
+</div>
+
+<script>
+/* ══ PROFILS ══ */
+const PROFILES = {
+  simon: {
+    id:'simon', nom:'Simon JUTGÉ', age:17,
+    role:'Terminale STI2D · SIN · Rennes',
+    desc:'Posts style étudiant STI2D débutant · Ton authentique 17 ans · Cybersécurité',
+    linkedin:'https://www.linkedin.com/in/simon-jutg%C3%A9-4b60bb38a',
+    domaine:'cyber', initiales:'SJ', avClass:'simon',
+    ctx: () => `Tu es Simon JUTGÉ, 17 ans, lycéen en Terminale STI2D option SIN à Rennes. Tu es passionné de cybersécurité, tu t'auto-formes sur TryHackMe et dans ton lab perso. Tu cherches une alternance en cybersécurité pour 2027 (BTS SIO SISR → Bachelor → Master). Tu écris comme un jeune de 17 ans passionné : enthousiaste, un peu maladroit parfois, authentique, jamais prétentieux.`
+  },
+  niko: {
+    id:'niko', nom:'Nicolas JUTGÉ', age:52,
+    role:'Expert Assurance · 28 ans d\'expérience · Rennes',
+    desc:'Posts style expert senior assurance · Ton professionnel et bienveillant · Conseil client',
+    linkedin:'https://www.linkedin.com/in/nicolas-jutge',
+    domaine:'assurance', initiales:'NJ', avClass:'niko',
+    ctx: () => `Tu es Nicolas JUTGÉ, 52 ans, expert en assurance avec 28 ans d'expérience dans le secteur à Rennes. Tu conseilles des particuliers et des professionnels sur leurs contrats. Tu écris comme un professionnel senior bienveillant : posé, expert, pédagogue, avec des exemples concrets tirés de ta longue expérience terrain.`
+  }
+};
+
+let currentAccount = 'simon';
+const TYPE_L = { original:'📝 Original', repost:'🔁 Repost', congrats:'🎉 Félicitations' };
+const OCC_L  = { promotion:'promotion / nouveau poste', certification:'certification obtenue', diplome:'diplôme', alternance:'alternance signée', projet:'lancement projet', anniversaire:'anniversaire professionnel' };
+
+/* ══ STORAGE ══ */
+const lsS = (k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} };
+const lsL = (k,d)=>{ try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;} };
+const qKey  = acc => 'sj4_q_'+acc;
+const hKey  = acc => 'sj4_h_'+acc;
+const cfKey = acc => 'sj4_cf_'+acc;
+const SK = { st:'sj4_st', timer:'sj4_timer_on', acc:'sj4_acc' };
+
+/* ══ STATE ══ */
+let S = {
+  type:'original', topic:'Pentest',
+  queue:   [], history:[], cf:[],
+  stats:   lsL(SK.st,{simon:{total:0,sent:0},niko:{total:0,sent:0}}),
+  lastPost:null, timerRunning:false, timerInterval:null
+};
+
+function loadAccount(acc){
+  S.queue   = lsL(qKey(acc),[]).filter(q=>q.text&&!q.text.startsWith('[Err'));
+  S.history = lsL(hKey(acc),[]);
+  S.cf      = lsL(cfKey(acc),[]);
+}
+function saveAll(){
+  const acc=currentAccount;
+  lsS(qKey(acc),S.queue); lsS(hKey(acc),S.history); lsS(cfKey(acc),S.cf);
+  lsS(SK.st,S.stats); lsS(SK.acc,acc);
+  const b=document.getElementById('sv-bdg');
+  b.textContent='💾 Sauvegardé'; b.style.color='var(--green)';
+  setTimeout(()=>b.style.color='',1500);
+}
+
+/* ══ SWITCH COMPTE ══ */
+function switchAccount(acc){
+  if(acc===currentAccount) return;
+  // Sauvegarder l'état actuel avant de changer
+  saveAll();
+  currentAccount = acc;
+  loadAccount(acc);
+  const p = PROFILES[acc];
+
+  // UI switch boutons
+  document.getElementById('btn-simon').className='acc-btn'+(acc==='simon'?' active-simon':'');
+  document.getElementById('btn-niko').className='acc-btn'+(acc==='niko'?' active-niko':'');
+  document.getElementById('dot-simon').style.display=acc==='simon'?'inline-block':'none';
+  document.getElementById('dot-niko').style.display=acc==='niko'?'inline-block':'none';
+
+  // Header
+  document.getElementById('hdr-av').className='av '+p.avClass;
+  document.getElementById('hdr-av').textContent=p.initiales;
+  document.getElementById('hdr-title').textContent='LinkedIn Bot — '+p.nom;
+  document.getElementById('hdr-sub').textContent=p.role+' · Auto-publication 48h · 100% gratuit';
+
+  // Profil actif
+  const apDiv=document.getElementById('active-profile');
+  apDiv.className='active-profile '+p.avClass;
+  apDiv.querySelector('.acc-av').className='acc-av '+p.avClass;
+  apDiv.querySelector('.acc-av').textContent=p.initiales;
+  document.getElementById('ap-name').textContent=p.nom+' — Compte actif';
+  document.getElementById('ap-desc').textContent=p.desc;
+  document.getElementById('ap-li-link').href=p.linkedin;
+
+  // Badge générateur
+  document.getElementById('gen-badge').textContent=acc==='simon'?'Simon · Cyber':'Nicolas · Assurance';
+
+  // Topics
+  document.getElementById('s-orig-simon').style.display=acc==='simon'?'block':'none';
+  document.getElementById('s-orig-niko').style.display=acc==='niko'?'block':'none';
+
+  // Lien LinkedIn post
+  document.getElementById('li-post-link').href=p.linkedin;
+
+  // Console LI info
+  document.getElementById('li-info-txt').textContent=acc==='simon'
+    ?'📡 Actualités cybersécurité & suggestions pour Simon — clique pour pré-remplir.'
+    :'📡 Actualités assurance & réseau professionnel pour Nicolas — clique pour pré-remplir.';
+
+  // Reset topic par défaut
+  S.topic = acc==='simon'?'Pentest':'Mutuelle santé';
+  const topics = document.querySelectorAll(acc==='simon'?'#topics-simon .topic':'#topics-niko .topic');
+  topics.forEach((b,i)=>{b.classList.toggle('sel',i===0);});
+
+  // Rafraîchir UI
+  updateStats(); renderQueue(); renderHistory(); renderCf();
+  refreshTimerDisplay();
+  // Arrêter timer si actif (chaque compte a sa propre file)
+  if(S.timerRunning){ pauseTimer(); }
+  toast('Compte '+p.nom+' actif','in');
+}
+
+/* ══ CANVAS ══ */
+(function(){
+  const cv=document.getElementById('bg-cv'),cx=cv.getContext('2d');
+  let W,H,ns=[];
+  function rsz(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+  class N{constructor(){this.reset();}reset(){this.x=Math.random()*W;this.y=Math.random()*H;this.vx=(Math.random()-.5)*.25;this.vy=(Math.random()-.5)*.25;this.r=1+Math.random()*1.5;}upd(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>W)this.vx*=-1;if(this.y<0||this.y>H)this.vy*=-1;}}
+  function init(){rsz();ns=[];for(let i=0;i<45;i++)ns.push(new N());}
+  function draw(){cx.clearRect(0,0,W,H);ns.forEach(n=>n.upd());for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){const dx=ns[i].x-ns[j].x,dy=ns[i].y-ns[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<110){cx.globalAlpha=(1-d/110)*.22;cx.strokeStyle='#0a66c2';cx.lineWidth=.5;cx.beginPath();cx.moveTo(ns[i].x,ns[i].y);cx.lineTo(ns[j].x,ns[j].y);cx.stroke();}}ns.forEach(n=>{cx.globalAlpha=.3;cx.beginPath();cx.arc(n.x,n.y,n.r,0,Math.PI*2);cx.fillStyle='#00c8ff';cx.fill();});cx.globalAlpha=1;requestAnimationFrame(draw);}
+  window.addEventListener('resize',init);init();draw();
+})();
+
+/* ══ UI HELPERS ══ */
+function selType(btn){document.querySelectorAll('.tbtype').forEach(b=>b.classList.remove('act'));btn.classList.add('act');S.type=btn.dataset.t;document.getElementById('s-orig-simon').style.display=S.type==='original'&&currentAccount==='simon'?'block':'none';document.getElementById('s-orig-niko').style.display=S.type==='original'&&currentAccount==='niko'?'block':'none';document.getElementById('s-repost').style.display=S.type==='repost'?'block':'none';document.getElementById('s-congrats').style.display=S.type==='congrats'?'block':'none';}
+function selTopic(btn){document.querySelectorAll('.topic').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');S.topic=btn.textContent;}
+function toast(msg,t='in'){const c=document.getElementById('toast-c'),el=document.createElement('div');el.className='ti '+(t==='ok'?'ok':t==='er'?'er':'in');el.textContent=(t==='ok'?'✓ ':t==='er'?'✕ ':'ℹ ')+msg;c.appendChild(el);setTimeout(()=>el.remove(),3500);}
+function fmtDiff(ms){if(ms<=0)return'maintenant';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return h>0?h+'h '+m+'m':m+'m';}
+function pad(n){return String(n).padStart(2,'0');}
+function updateStats(){
+  const st=S.stats[currentAccount]||{total:0,sent:0};
+  document.getElementById('st-total').textContent=st.total;
+  document.getElementById('st-queue').textContent=S.queue.length;
+  document.getElementById('st-sent').textContent=st.sent;
+}
+
+/* ══ CONTENUS — SIMON (étudiant 17 ans STI2D) ══ */
+const THEMES_SIMON = {
+  'Pentest':{
+    accroches:[
+      "J'ai passé mon week-end à essayer de compromettre ma propre VM. Voilà ce que j'ai appris.",
+      "Le pentest c'est pas ce qu'on voit dans les films. C'est beaucoup plus méthodique — et plus intéressant.",
+      "En terminale STI2D, personne ne t'apprend à pirater. Alors je me forme tout seul. Voici comment."
+    ],
+    corps:[
+      `J'ai découvert le pentest il y a quelques mois sur TryHackMe et franchement, ça a tout changé dans ma façon de voir la cybersécurité.
+
+Avant je pensais que "hacker" c'était appuyer sur des touches en noir sur fond vert comme dans les films 😅 En vrai c'est beaucoup plus méthodique : reconnaisance, scan, exploitation, rapport. Chaque étape compte.
+
+Ce que j'ai compris (et c'est bête mais c'était pas évident au début) : pour défendre un système, il faut comprendre comment on l'attaque. C'est pas une option, c'est la base.
+
+En ce moment je travaille sur des machines CTF niveau débutant/intermédiaire. Je galère sur certaines, je cherche, je lis des write-ups après avoir renoncé, et je recommence. C'est comme ça qu'on apprend je crois.
+
+Mon objectif : être capable de contribuer à une vraie équipe de sécurité en alternance en 2027. Y'a du chemin mais je commence par les bases.
+
+#Pentest #CyberSécurité #CyberSecurity #TryHackMe #EthicalHacking #Alternance #STI2D #Cybersec`,
+      `Petit retour sur ce que j'apprends en ce moment en cybersécurité offensive.
+
+Je suis en terminale STI2D option SIN et en dehors des cours, je passe pas mal de temps sur TryHackMe à me former. Les cours m'ont donné les bases réseau et système, mais le côté sécurité j'ai dû le chercher par moi-même.
+
+Ce qui me fascine dans le pentest c'est que chaque machine est un puzzle différent. Des fois tu passes 2h sur quelque chose et la solution était évidente avec du recul. Mais c'est ça qui fait progresser.
+
+Les techniques que j'explore : reconnaissance passive avec des outils OSINT, scan réseau Nmap, exploitation de failles web basiques. Je suis vraiment débutant encore, mais je progresse.
+
+Si des pros de la sécurité lisent ça : vous avez des conseils pour un étudiant qui veut se lancer ? Je prends tout 🙏
+
+#Pentest #CyberSécurité #TryHackMe #CTF #Débutant #Alternance2027 #Cybersec #STI2D`
+    ]
+  },
+  'SOC':{
+    accroches:[
+      "Analyste SOC c'est le métier que je veux faire. Voilà pourquoi.",
+      "J'ai passé la soirée à analyser des logs sur un lab TryHackMe. C'est addictif.",
+      "Blue team ou red team ? Mon choix pour l'instant."
+    ],
+    corps:[
+      `Depuis quelque temps je me demande vraiment quelle direction prendre en cybersécurité. Et plus j'explore, plus le métier d'analyste SOC me parle.
+
+Pas parce que c'est glamour (ça l'est pas forcément 😄) mais parce que c'est concret. Analyser des logs, détecter des anomalies, investiguer une alerte... c'est du puzzle en temps réel.
+
+Sur TryHackMe j'ai fait quelques salles orientées SOC : analyse de logs Windows, détection d'intrusion basique, forensics. C'est pas simple mais j'adore l'aspect enquête.
+
+Ce que j'ai compris : dans un SOC le truc le plus dur c'est pas la technique, c'est de faire la différence entre une vraie alerte et un faux positif. Ça s'apprend avec l'expérience, et justement c'est pour ça que je veux une alternance — pour acquérir cette expérience terrain.
+
+#SOC #BlueTeam #CyberSécurité #CyberSecurity #TryHackMe #Alternance #Cybersec`,
+      `Blue team. C'est ma réponse quand on me demande de choisir.
+
+Pas que la red team m'intéresse pas, mais ce qui me motive c'est de protéger, détecter, répondre. Comprendre comment les attaquants pensent pour mieux les arrêter.
+
+En terminale STI2D on aborde les réseaux et les systèmes. Mais le côté défense active, SOC, SIEM, je l'apprends en autonomie. TryHackMe, des tutos YouTube, des writeups de CTF...
+
+Je sais que je pars de loin. Mais chaque semaine j'apprends un truc nouveau et c'est ça qui me motive à continuer. Si quelqu'un a des ressources pour débuter en analyse SOC, je suis preneur !
+
+#SOC #CyberSécurité #BlueTeam #Débutant #TryHackMe #Alternance2027 #Cybersec`
+    ]
+  },
+  'CTF':{
+    accroches:[
+      "Mon premier flag CTF. La satisfaction que j'ai ressentie... c'est indescriptible.",
+      "Les CTF m'apprennent plus en une heure que certains cours en une semaine.",
+      "Pourquoi je recommande les CTF à tous les étudiants en informatique."
+    ],
+    corps:[
+      `Je me souviens encore de mon premier flag CTF capturé. Ça m'avait pris genre 3h pour une machine "très facile" 😅 Mais quand j'ai vu le flag s'afficher... j'ai compris pourquoi les gens font ça.
+
+Le truc avec les CTF c'est que tu apprends vraiment. Pas de la théorie abstraite — t'as un système vulnérable en face de toi et tu dois trouver comment entrer. C'est concret, immédiat, et chaque erreur t'apprend quelque chose.
+
+Ce que j'explore en ce moment : les challenges web (XSS, injections basiques), les machines Linux avec escalade de privilèges, et un peu de stéganographie parce que c'est marrant.
+
+Pour les autres lycéens ou étudiants débutants en cyber : commencez par TryHackMe parcours débutant. C'est gratuit, bien expliqué, et ya une vraie communauté pour aider quand tu bloques.
+
+#CTF #CyberSécurité #TryHackMe #EthicalHacking #Débutant #Alternance2027 #Cybersec`,
+      `Les CTF c'est mon terrain d'entraînement. Et j'en suis fan.
+
+En terminale STI2D on a pas de cours de cybersécurité offensive. Alors je me forme comme je peux : TryHackMe le soir et le week-end, YouTube, write-ups d'autres personnes...
+
+Ce que les CTF m'ont appris que les cours donnent pas :
+→ La patience (vraiment, t'apprends à pas capituler)
+→ La débrouillardise (chercher une info que t'as jamais vue)
+→ La méthode (arrêter de tâtonner au hasard et structurer l'approche)
+
+Niveau actuel : débutant fier 😄 Objectif : intermédiaire avant de commencer mon alternance en 2027.
+
+Si vous faites des CTF aussi, dites-moi sur quelles plateformes vous êtes ! J'essaie de découvrir des nouvelles ressources.
+
+#CTF #CyberSécurité #CyberSecurity #TryHackMe #HackTheBox #Alternance #Cybersec`
+    ]
+  },
+  'Phishing':{
+    accroches:[
+      "J'ai failli cliquer sur un mail de phishing. Voici comment je m'en suis rendu compte.",
+      "Le phishing c'est pas qu'un problème technique. C'est un problème humain.",
+      "En 2025 les mails de phishing sont terrifiants de réalisme."
+    ],
+    corps:[
+      `Récemment j'ai reçu un mail qui ressemblait exactement à une notification LinkedIn. Lien cliquable, logo parfait, formulation pro. J'ai failli cliquer.
+
+Ce qui m'a sauvé : l'habitude de vérifier l'adresse d'expédition. Et là... domaine bizarre, rien à voir avec LinkedIn.
+
+Ce que ça m'a appris en tant qu'étudiant en cybersécurité : même quand tu te formes à ça, tu peux te faire avoir. Les techniques de phishing sont de plus en plus sophistiquées, surtout avec l'IA générative qui permet de rédiger des mails parfaits.
+
+Les signaux d'alerte que je vérifie maintenant systématiquement :
+→ L'adresse email complète de l'expéditeur
+→ L'URL du lien avant de cliquer (survoler ou copier)
+→ La demande d'action urgente (red flag immédiat)
+
+La sensibilisation c'est la première ligne de défense. Et c'est pour ça que parler de ça compte.
+
+#Phishing #CyberSécurité #CyberSecurity #Sensibilisation #Cybersec #STI2D`,
+      `On nous parle souvent des attaques techniques en cybersécurité. Mais le phishing reste l'attaque la plus efficace parce qu'elle cible l'humain, pas la machine.
+
+En étudiant ça dans mon parcours de formation, ce qui me frappe c'est la psychologie derrière : urgence artificielle, autorité usurpée, peur des conséquences. Des mécanismes qui marchent sur tout le monde, même les gens informés.
+
+La bonne nouvelle : quelques réflexes simples changent tout. Vérifier l'expéditeur, ne pas cliquer sous pression, passer par le site officiel directement. Des gestes qui s'apprennent.
+
+#Phishing #SocialEngineering #CyberSécurité #Sensibilisation #Cybersec #Alternance2027`
+    ]
+  },
+  'OSINT':{
+    accroches:[
+      "En 30 minutes de recherches sur des sources publiques, j'ai trouvé des infos dingues. L'OSINT c'est bluffant.",
+      "L'OSINT : la discipline cyber que personne n'enseigne à l'école.",
+      "Ce qu'on peut trouver sur quelqu'un en restant complètement légal. Ça fait réfléchir."
+    ],
+    corps:[
+      `J'ai découvert l'OSINT il y a quelques mois sur TryHackMe et honnêtement ça m'a ouvert les yeux.
+
+L'OSINT c'est la collecte d'informations via des sources publiques et légales : réseaux sociaux, registres publics, métadonnées de fichiers, Google dorks... En combinant tout ça, on peut construire un profil très détaillé d'une personne ou d'une organisation.
+
+Ce qui m'a le plus frappé : on n'a pas besoin de "hacker" quoi que ce soit. L'information est déjà là, publique. Il faut juste savoir chercher.
+
+Pour un futur professionnel de la sécurité, l'OSINT c'est essentiel : reconnaissance avant pentest, investigation d'incidents, veille sur les fuites de données...
+
+Vous savez ce qu'on peut trouver sur vous en cherchant un peu ? Ça vaut le coup de vérifier.
+
+#OSINT #CyberSécurité #CyberSecurity #TryHackMe #Cybersec #Alternance2027`,
+    ]
+  },
+  'Ransomware':{
+    accroches:[
+      "J'ai étudié une attaque ransomware réelle pour comprendre comment ça marche. C'est flippant.",
+      "Les ransomwares touchent maintenant des lycées et des hôpitaux. On est tous concernés.",
+      "Comment fonctionne un ransomware ? J'ai essayé de comprendre."
+    ],
+    corps:[
+      `Dans ma formation en cybersécurité, j'ai passé du temps à analyser des cas réels d'attaques ransomware. Et franchement c'est à la fois fascinant et inquiétant.
+
+Ce qui m'a surpris : la plupart des attaques commencent par des choses très basiques. Un mail de phishing, un VPN pas mis à jour, un mot de passe faible. Pas de code ultra-sophistiqué au départ.
+
+Ce que j'ai appris sur la défense :
+→ Les sauvegardes testées régulièrement (pas juste effectuées)
+→ La segmentation réseau pour limiter la propagation
+→ La détection précoce avant le chiffrement
+
+L'ANSSI publie des rapports sur les incidents en France. Lecture obligatoire pour qui veut comprendre le paysage réel des menaces.
+
+#Ransomware #CyberSécurité #CyberSecurity #ANSSI #Cybersec #Alternance2027`,
+    ]
+  },
+  'Zero Day':{
+    accroches:["Un zero day c'est quoi exactement ? J'ai essayé de comprendre pour de vrai.","Les zero days : la vulnérabilité que personne ne connaît encore. Sauf l'attaquant."],
+    corps:[`Un zero day c'est une faille dans un logiciel que le fabricant ne connaît pas encore — donc aucun patch, aucune défense directe.
+
+En étudiant ça dans mon parcours cyber, ce que j'ai compris c'est que face à un zero day, c'est la défense en profondeur qui fait la différence. Segmentation réseau, moindre privilège, détection comportementale. On peut pas patcher ce qu'on sait pas, mais on peut limiter les dégâts.
+
+C'est pour ça qu'une bonne architecture de sécurité suppose qu'une attaque va réussir. La question c'est "quand ça arrive, on peut détecter et répondre vite ?"
+
+Encore des choses que j'apprends et qui me font voir la sécurité autrement.
+
+#ZeroDay #CyberSécurité #CyberSecurity #Cybersec #Alternance2027 #STI2D`]
+  },
+  'SIEM':{
+    accroches:["J'ai essayé de comprendre comment fonctionne un SIEM. Voici ce que j'ai appris.","Analyser des logs c'est pas sexy dit comme ça. Mais en vrai c'est de l'enquête."],
+    corps:[`Dans mes explorations cybersécurité, je me suis intéressé aux SIEM — ces systèmes qui agrègent et corrèlent tous les logs d'un SI pour détecter des menaces.
+
+Ce qui m'a frappé : la donnée brute ne dit rien. C'est la corrélation qui révèle tout. Une connexion à 3h du mat c'est pas forcément suspect. Combinée à une tentative d'élévation de privilège et un transfert de données inhabituels... là ça devient intéressant.
+
+C'est exactement le genre de travail que j'espère faire en alternance : analyser, corréler, investiguer. Pas juste regarder des alertes défiler.
+
+#SIEM #SOC #CyberSécurité #BlueTeam #Alternance2027 #Cybersec`]
+  },
+  'Cloud Security':{
+    accroches:["La sécurité cloud c'est pas la même chose que la sécurité réseau classique. Et c'est là que beaucoup se trompent."],
+    corps:[`En me formant en cybersécurité, j'ai réalisé que le cloud a complètement changé la surface d'attaque.
+
+Plus de périmètre fixe. Des ressources qui apparaissent et disparaissent. Des accès gérés via des identités plutôt que des IPs. C'est un paradigme différent.
+
+Ce que j'apprends : les misconfiguration cloud (buckets S3 ouverts, IAM trop permissifs), la sécurité des pipelines CI/CD, le modèle de responsabilité partagée.
+
+Encore beaucoup à apprendre mais c'est clairement une compétence critique pour mon parcours vers l'alternance.
+
+#CloudSecurity #CyberSécurité #AWS #Azure #Alternance2027 #Cybersec`]
+  },
+  'Bug Bounty':{
+    accroches:["Trouver des failles et être récompensé pour ça. Le bug bounty c'est un modèle qui me fascine.","J'explore le bug bounty en parallèle de mes études. Voici pourquoi."],
+    corps:[`Le bug bounty m'intéresse vraiment : des entreprises qui ouvrent leur périmètre à des chercheurs indépendants et qui récompensent les failles trouvées. C'est gagnant-gagnant.
+
+Pour un débutant comme moi c'est aussi un excellent terrain d'apprentissage. Des programmes avec scope ouvert permettent de s'exercer sur de vraies applis.
+
+Ce que j'apprends pour m'y préparer : vulnérabilités web basiques (XSS, SQLi, IDOR), méthodologie de test structurée, et surtout rédaction de rapports clairs. Parce qu'un bug mal documenté ne vaut rien.
+
+#BugBounty #CyberSécurité #EthicalHacking #HackerOne #Alternance2027 #Cybersec`]
+  },
+  'Cryptographie':{
+    accroches:["La cryptographie c'est le fondement de toute sécurité numérique. Et c'est beau.","HTTPS, SSH, VPN... tout repose sur la crypto. J'ai essayé de comprendre les bases."],
+    corps:[`La cryptographie c'est la matière qui m'a le plus surpris dans mon parcours de formation cyber.
+
+Je pensais que c'était que des maths abstraites. En fait c'est concret : comprendre pourquoi MD5 est cassé, pourquoi TLS 1.3 c'est mieux que TLS 1.0, comment fonctionne une PKI... ça change directement la façon dont tu sécurises des systèmes.
+
+Ce qui m'a le plus frappé : c'est souvent l'implémentation qui crée des vulnérabilités, pas l'algorithme. Un algo solide mal implémenté est aussi dangereux qu'un algo faible.
+
+#Cryptographie #CyberSécurité #PKI #TLS #Cybersec #Alternance2027`]
+  },
+  'RGPD':{
+    accroches:["RGPD et cybersécurité c'est plus lié qu'on le croit. Et en tant que futur pro cyber, je dois comprendre les deux."],
+    corps:[`Dans mon parcours vers la cybersécurité, j'ai réalisé qu'ignorer le cadre juridique serait une erreur. Le RGPD n'est pas qu'un truc pour les juristes.
+
+Concrètement il impose des mesures techniques : chiffrement des données perso, notification sous 72h en cas de violation, privacy by design. Des exigences qui se traduisent directement en choix techniques.
+
+La CNIL publie des recommandations très utiles sur son site. Ressource à bookmarker pour tout pro de la sécurité.
+
+#RGPD #GDPR #CyberSécurité #DataProtection #Conformité #Alternance2027 #Cybersec`]
+  }
+};
+
+/* ══ CONTENUS — NIKO (expert assurance 28 ans exp.) ══ */
+const THEMES_NIKO = {
+  'Mutuelle santé':{
+    accroches:[
+      "Après 28 ans dans l'assurance, voici ce que la plupart des gens ne savent pas sur leur mutuelle santé.",
+      "La mutuelle santé c'est souvent le contrat qu'on signe sans vraiment lire. Grave erreur.",
+      "Ce que je répète à tous mes clients depuis des années sur la mutuelle santé."
+    ],
+    corps:[
+      `28 ans que je travaille dans l'assurance, et la mutuelle santé reste le contrat le plus mal compris par mes clients.
+
+La plupart choisissent leur mutuelle sur un seul critère : le prix. C'est une erreur que je vois répétée trop souvent.
+
+Ce qu'il faut vraiment regarder avant de signer :
+→ Le taux de remboursement dentaire et optique (là où la Sécu rembourse peu)
+→ Les délais de carence pour les maternités et hospitalisations
+→ La prise en charge des médecines douces si c'est important pour vous
+→ La facilité de remboursement au quotidien
+
+Une mutuelle à 30€/mois qui ne rembourse pas vos lunettes à 400€ vous coûtera plus cher qu'une à 60€ qui les couvre bien. Le calcul est simple mais on ne le fait pas assez.
+
+N'hésitez pas à me contacter si vous voulez un audit de votre couverture actuelle.
+
+#MutuelleSanté #Assurance #Prévoyance #ConseilAssurance #Rennes #Bretagne`,
+      `Ce matin encore, un client m'a appelé après une hospitalisation pour comprendre pourquoi sa mutuelle n'avait pas remboursé ce qu'il espérait.
+
+Cas classique malheureusement : contrat souscrit il y a 8 ans, jamais revu, garanties qui correspondent plus à sa situation actuelle.
+
+Mon conseil après 28 ans de métier : faites auditer votre contrat mutuelle tous les 2-3 ans. Votre situation change, les tarifs évoluent, les remboursements Sécu aussi. Ce qui était adapté en 2016 l'est peut-être plus du tout.
+
+C'est une vérification gratuite qui peut vous faire économiser des centaines d'euros.
+
+#MutuelleSanté #Assurance #ConseilClient #Audit #Rennes`
+    ]
+  },
+  'Assurance moto':{
+    accroches:[
+      "Assurance moto : ce que tout motard devrait vérifier avant chaque saison.",
+      "28 ans d'expérience en assurance et l'assurance moto reste celle où je vois le plus d'erreurs.",
+      "Ce que votre assureur ne vous dira pas toujours sur votre contrat moto."
+    ],
+    corps:[
+      `Passionné de moto depuis toujours, et dans l'assurance depuis 28 ans — je vois souvent les deux se croiser de façon douloureuse.
+
+Les erreurs les plus fréquentes sur les contrats moto :
+→ Sous-évaluer la valeur du véhicule (en cas de vol ou destruction totale vous êtes perdants)
+→ Oublier de déclarer les modifications (carénage, pot d'échappement, etc.)
+→ Ne pas prendre la garantie conducteur — la plus importante pourtant
+→ Confondre assistance 0km et assistance à partir de 50km
+
+La garantie conducteur c'est celle qui vous protège VOUS en cas d'accident responsable. Sans elle, si vous êtes gravement blessé lors d'un accident de votre faute, vous n'avez aucune indemnisation pour vos préjudices corporels.
+
+Prenez le temps de relire vos conditions. Ou appelez votre conseiller.
+
+#AssuranceMoto #Moto #Motard #Assurance #ConseilAssurance #Rennes`,
+    ]
+  },
+  'Prévoyance':{
+    accroches:[
+      "La prévoyance c'est le contrat qu'on souscrit en espérant ne jamais avoir à s'en servir. Et pourtant.",
+      "Après 28 ans dans l'assurance, ce qui me préoccupe le plus pour mes clients c'est la prévoyance.",
+      "Arrêt de travail, invalidité, décès... La prévoyance protège ce que vous avez construit."
+    ],
+    corps:[
+      `Je le dis depuis des années à mes clients : la prévoyance c'est le parent pauvre de l'assurance en France. On y pense pas, jusqu'au jour où on en a besoin.
+
+La réalité que j'ai vue trop de fois : un indépendant qui tombe malade 3 mois. Les indemnités Sécu couvrent à peine 50% du revenu habituel. Sans prévoyance complémentaire, c'est souvent la catastrophe financière.
+
+Ce que couvre une bonne prévoyance :
+→ Maintien de revenu en cas d'arrêt de travail
+→ Rente en cas d'invalidité permanente
+→ Capital décès pour protéger votre famille
+
+Pour les salariés : vérifiez la prévoyance collective de votre employeur. Elle est souvent sous-estimée ou mal connue. Pour les TNS : c'est encore plus critique.
+
+#Prévoyance #Assurance #ProtectionSociale #ConseilAssurance #Rennes`
+    ]
+  },
+  'Épargne retraite':{
+    accroches:[
+      "Il n'est jamais trop tôt pour préparer sa retraite. Il peut être trop tard.",
+      "Ce que je dis à tous mes clients de moins de 50 ans sur la retraite.",
+      "PER, assurance vie, immobilier... Comment je conseille mes clients pour la retraite."
+    ],
+    corps:[
+      `Dans mon métier j'ai accompagné des centaines de clients vers la retraite. Et le constat est toujours le même : ceux qui ont commencé à épargner tôt sont sereins. Les autres ont des regrets.
+
+La réforme des retraites a encore renforcé l'importance de l'épargne individuelle. La retraite par répartition reste le socle, mais elle ne suffira plus seule pour maintenir votre niveau de vie.
+
+Les solutions que j'accompagne le plus :
+→ Le PER (Plan Épargne Retraite) : avantage fiscal immédiat + capital disponible à la retraite
+→ L'assurance vie : flexibilité, transmission, fiscalité avantageuse
+→ L'immobilier locatif : revenus complémentaires à la retraite
+
+La meilleure solution dépend de votre situation, vos objectifs, votre horizon. Il n'y a pas de recette universelle — c'est pour ça que le conseil personnalisé existe.
+
+#ÉpargneRetraite #PER #AssuranceVie #Retraite #Assurance #ConseilPatrimoine #Rennes`
+    ]
+  },
+  'Assurance vie':{
+    accroches:[
+      "L'assurance vie c'est le produit d'épargne préféré des Français. Et souvent le moins bien compris.",
+      "Ce que j'explique à chaque client qui ouvre une assurance vie pour la première fois.",
+      "Assurance vie : 3 choses que votre banquier ne vous dit peut-être pas."
+    ],
+    corps:[
+      `L'assurance vie c'est le couteau suisse de l'épargne française. Mais comme tout outil complexe, il faut savoir s'en servir.
+
+Ce que j'explique à mes clients depuis 28 ans :
+
+1/ C'est pas que pour la mort. C'est un outil d'épargne à long terme avec une fiscalité très avantageuse après 8 ans.
+
+2/ Le fonds euros c'est la sécurité, les unités de compte c'est le rendement. Selon votre profil et votre horizon, le dosage est différent.
+
+3/ La clause bénéficiaire c'est CRITIQUE. Trop de contrats ont "mes héritiers légaux" par défaut. Ça peut créer des situations très défavorables fiscalement. Vérifiez et adaptez.
+
+Un bilan de votre contrat tous les 2-3 ans avec votre conseiller, c'est pas un luxe. C'est de la bonne gestion.
+
+#AssuranceVie #Épargne #Patrimoine #Assurance #ConseilFinancier #Rennes`
+    ]
+  },
+  'RC Pro':{
+    accroches:[
+      "RC Pro : obligatoire pour certains, recommandée pour tous. Ce qu'il faut savoir.",
+      "Un client m'a appelé en panique après un sinistre non couvert. Sa RC Pro avait des exclusions qu'il ignorait.",
+      "Pour les indépendants et professions libérales : votre RC Pro est-elle vraiment adaptée ?"
+    ],
+    corps:[
+      `La Responsabilité Civile Professionnelle c'est le contrat que tous les indépendants doivent avoir — et que beaucoup sous-estiment.
+
+Un exemple concret que j'ai vécu : un consultant informatique qui donne un mauvais conseil à son client. Ce dernier subit un préjudice de 80 000€ et attaque. Sans RC Pro adaptée, le consultant règle ça avec son patrimoine personnel.
+
+Ce que doit couvrir une bonne RC Pro :
+→ Les dommages causés à des tiers dans le cadre de votre activité
+→ Les erreurs, omissions et négligences professionnelles
+→ La protection juridique en cas de litige
+
+Les exclusions à surveiller : certaines activités spécifiques, certains types de clients, certains plafonds de garantie. Lisez les conditions particulières.
+
+#RCPro #AssurancePro #Indépendants #TNS #Assurance #ConseilAssurance #Rennes`
+    ]
+  },
+  'Gestion sinistre':{
+    accroches:[
+      "28 ans d'expérience et la gestion de sinistre reste le moment de vérité de tout contrat d'assurance.",
+      "Ce que je conseille à mes clients dès qu'un sinistre survient. Les premières heures comptent.",
+      "Sinistre auto, habitation, pro... les erreurs à éviter dans les premières 48h."
+    ],
+    corps:[
+      `Un sinistre c'est toujours stressant. Mais ce qu'on fait dans les premières heures peut changer radicalement l'issue du dossier.
+
+Ce que je dis systématiquement à mes clients :
+
+→ Déclarez DANS LES DÉLAIS. Chaque contrat a ses délais de déclaration (2 jours pour un vol, 5 jours pour un dégât des eaux...). Les dépasser peut entraîner une déchéance de garantie.
+
+→ Documentez TOUT. Photos, vidéos, témoignages. Avant de nettoyer quoi que ce soit. La preuve c'est ce qui fait la différence.
+
+→ Ne réparez pas avant expertise. Pour les dommages importants, attendez le passage de l'expert.
+
+→ Gardez les factures de tout. Équipements endommagés, frais engagés, hébergement si nécessaire.
+
+Mon rôle c'est d'être là à ce moment. C'est pour ça qu'on a un conseiller.
+
+#GestionSinistre #Assurance #ConseilAssurance #Rennes #Bretagne`
+    ]
+  },
+  'Fidélisation client':{
+    accroches:[
+      "Garder un client c'est 5x moins cher que d'en acquérir un nouveau. On l'oublie trop souvent en assurance.",
+      "Ce que j'ai appris sur la fidélisation client en 28 ans dans l'assurance.",
+      "Mon secret pour des clients qui restent depuis 15 ans. C'est pas ce que vous croyez."
+    ],
+    corps:[
+      `28 ans dans l'assurance et j'ai des clients qui me suivent depuis le début. Ce n'est pas dû au hasard.
+
+Ce que j'ai appris sur la fidélisation dans notre métier :
+
+La fidélité se construit dans les moments difficiles. Un client satisfait d'un règlement rapide et équitable d'un sinistre vous recommandera à 5 personnes. Un client déçu vous quittera et le dira à 10.
+
+Ce qui fait revenir les clients :
+→ La disponibilité vraie (pas juste un numéro vert)
+→ Le conseil proactif (appeler avant les échéances importantes)
+→ La transparence sur les garanties ET les exclusions
+→ La réactivité en cas de problème
+
+Dans notre secteur, on vend des promesses. La fidélisation c'est la preuve qu'on les tient.
+
+#Assurance #FidélisationClient #RelationClient #ConseilAssurance #Rennes`
+    ]
+  },
+  'Prospection':{
+    accroches:[
+      "La prospection en assurance a complètement changé en 28 ans. Ce qui marche aujourd'hui.",
+      "Ce que j'ai appris sur la prospection après 28 ans dans l'assurance à Rennes.",
+      "LinkedIn, recommandations, événements... comment je développe mon portefeuille aujourd'hui."
+    ],
+    corps:[
+      `La prospection en assurance en 2025, c'est plus du tout ce que c'était en 1997 quand j'ai commencé.
+
+À l'époque : porte-à-porte, phoning intensif, publicité locale. Aujourd'hui : recommandations, LinkedIn, contenu utile, réseau.
+
+Ce qui fonctionne vraiment dans mon activité :
+→ Les recommandations clients (80% de mes nouveaux clients viennent de là)
+→ La présence LinkedIn avec du contenu qui apporte de la valeur
+→ Les partenariats avec des professionnels complémentaires (notaires, comptables, agents immobiliers)
+→ Les événements réseau locaux à Rennes et en Bretagne
+
+Ce qui ne fonctionne plus vraiment : le phoning à froid, les mailings non ciblés.
+
+La clé aujourd'hui c'est la confiance avant la vente. Et ça se construit dans la durée.
+
+#Assurance #Prospection #DéveloppementCommercial #LinkedIn #Rennes #Bretagne`
+    ]
+  },
+  'Réforme retraite':{
+    accroches:[
+      "Réforme des retraites : ce que ça change concrètement pour vos contrats. Mon analyse après 28 ans.",
+      "Ce que j'explique à mes clients depuis la réforme des retraites.",
+      "Retraite à 64 ans : les ajusteme
