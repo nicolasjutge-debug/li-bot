@@ -1,8 +1,8 @@
 {
-  "name": "LinkedIn Bot — Simon JUTGÉ",
-  "short_name": "LI Bot SJ",
-  "description": "Bot LinkedIn cybersécurité — Publication automatique 48h",
-  "start_url": "/",
+  "name": "LinkedIn Bot — Simon & Nicolas JUTGÉ",
+  "short_name": "LI Bot",
+  "description": "Bot LinkedIn cybersécurité & assurance — Publication automatique 48h",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#05080f",
   "theme_color": "#0a66c2",
