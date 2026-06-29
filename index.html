@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="LI Bot"/>
+<meta name="theme-color" content="#0a66c2"/>
+<link rel="apple-touch-icon" sizes="192x192" href="bot-icon-192.png"/>
+<link rel="manifest" href="manifest-bot.json"/>
+<title>LinkedIn Bot — Simon & Nicolas JUTGÉ</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#05080f;--card:#0c1220;--border:#1a2540;
+  --cyan:#00c8ff;--green:#00e676;--red:#ff1744;--orange:#ff6d00;
+  --text:#c8d8f0;--muted:#4a6080;--white:#e8f0ff;--li:#0a66c2;
+  --grad:linear-gradient(135deg,#0a66c2,#00c8ff);
+  --ins-grad:linear-gradient(135deg,#f97316,#ef4444);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden;}
+#bg-cv{position:fixed;inset:0;z-index:0;opacity:.1;pointer-events:none;}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 16px 40px;}
+
+/* SWITCH */
+.acc-sw{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.acc-btn{flex:1;min-width:140px;padding:14px 16px;border-radius:12px;border:2px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;text-align:left;font-family:'Space Grotesk',sans-serif;}
+.acc-btn.act-s{border-color:var(--cyan);background:rgba(0,200,255,.06);}
+.acc-btn.act-n{border-color:var(--orange);background:rgba(255,109,0,.06);}
+.acc-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;}
+.av-s{background:var(--grad);} .av-n{background:var(--ins-grad);}
+.acc-name{font-size:13px;font-weight:700;color:var(--white);}
+.acc-role{font-size:10px;color:var(--muted);margin-top:2px;}
+.acc-tag{display:inline-block;font-size:9px;padding:2px 7px;border-radius:8px;margin-top:5px;font-weight:600;}
+.tag-s{background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2);}
+.tag-n{background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);}
+.adot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);margin-right:4px;animation:pulse 2s infinite;}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:12px;flex-wrap:wrap;}
+.hdr-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;}
+.hdr-info h1{font-size:14px;font-weight:700;color:var(--white);}
+.hdr-info p{font-size:10px;color:var(--muted);}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.svbdg{font-size:10px;padding:3px 8px;border-radius:8px;background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);color:var(--green);}
+.dot-st{display:flex;align-items:center;gap:5px;font-size:11px;}
+.dot{width:7px;height:7px;border-radius:50%;animation:pulse 2s infinite;}
+.dot.g{background:var(--green);box-shadow:0 0 6px var(--green);}
+
+/* PROFIL ACTIF */
+.ap{padding:10px 16px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.ap.s{background:rgba(0,200,255,.05);border:1px solid rgba(0,200,255,.2);}
+.ap.n{background:rgba(255,109,0,.05);border:1px solid rgba(255,109,0,.2);}
+.ap-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;}
+.ap-name{font-weight:700;color:var(--white);font-size:13px;}
+.ap-desc{color:var(--muted);font-size:10px;margin-top:1px;}
+
+/* STATS */
+.stats{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.stat{flex:1;min-width:70px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;}
+.stat-v{font-family:'Fira Code',monospace;font-size:24px;font-weight:500;color:var(--cyan);}
+.stat-l{font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;}
+
+/* TIMER */
+.timer{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.t-disp{font-family:'Fira Code',monospace;font-size:26px;font-weight:500;color:var(--cyan);letter-spacing:2px;}
+.t-lbl{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.t-next{font-size:11px;color:var(--muted);} .t-next b{color:var(--orange);}
+.t-btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+.tbtn{padding:8px 14px;border-radius:6px;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
+.tb-go{background:var(--green);color:#000;border:none;}
+.tb-pa{background:rgba(255,109,0,.15);color:var(--orange);border:1px solid rgba(255,109,0,.3);}
+.tb-rs{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.2);}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:700px){.grid{grid-template-columns:1fr;}}
+.full{grid-column:1/-1;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.card-h h2{font-size:13px;font-weight:600;color:var(--white);}
+.bdg{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.b-bl{background:rgba(10,102,194,.2);color:var(--cyan);border:1px solid rgba(0,200,255,.2);}
+.b-gr{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+.b-or{background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);}
+.card-b{padding:16px 18px;}
+
+.tg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:14px;}
+.tbt{padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);text-align:center;transition:all .2s;line-height:1.4;}
+.tbt:hover,.tbt.act{background:rgba(0,200,255,.08);border-color:var(--cyan);color:var(--cyan);}
+.tico{font-size:18px;display:block;margin-bottom:3px;}
+
+.tps{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.tp{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);transition:all .2s;}
+.tp:hover,.tp.sel{background:rgba(10,102,194,.15);border-color:var(--li);color:var(--cyan);}
+
+.fld{margin-bottom:11px;}
+.fld label{display:block;font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;}
+.fld textarea,.fld input,.fld select{width:100%;background:#060910;border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;resize:vertical;transition:border-color .2s;}
+.fld textarea{min-height:70px;}
+.fld textarea:focus,.fld input:focus,.fld select:focus{border-color:var(--cyan);}
+.fld select option{background:#080d18;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;}
+.btn-p{background:var(--grad);color:#fff;width:100%;}
+.btn-p:hover{box-shadow:0 4px 20px rgba(0,200,255,.3);}
+.btn-c{background:rgba(0,200,255,.08);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;font-size:11px;padding:6px 13px;}
+.btn-s{background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25)!important;font-size:11px;padding:6px 13px;}
+.btn-li{background:var(--li);color:#fff;font-size:11px;padding:6px 13px;}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
+
+.pw{display:none;margin-top:12px;}
+.po{background:#060a12;border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+.po .ht{color:var(--cyan);font-weight:600;cursor:pointer;}
+.po .ht:hover{text-decoration:underline;}
+.htb{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding:9px 11px;background:#060a12;border:1px solid var(--border);border-radius:6px;align-items:center;}
+.htb .htag{font-size:11px;padding:3px 9px;border-radius:12px;background:rgba(0,200,255,.08);color:var(--cyan);border:1px solid rgba(0,200,255,.2);cursor:pointer;font-family:'Fira Code',monospace;}
+.htb .htag:hover{background:rgba(0,200,255,.18);}
+.pm{font-size:10px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between;}
+
+.ql{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;}
+.ql::-webkit-scrollbar{width:3px;}
+.ql::-webkit-scrollbar-thumb{background:var(--border);}
+.qi{background:#070b15;border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;gap:10px;align-items:flex-start;}
+.qi.nxt{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,200,255,.1);}
+.qn{width:22px;height:22px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+.qi.nxt .qn{animation:pulse 1.5s infinite;}
+.qb{flex:1;min-width:0;}
+.qt{font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px;}
+.qp{font-size:12px;color:var(--text);line-height:1.5;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.qts{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
+.qts span{font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(0,200,255,.07);color:var(--cyan);border:1px solid rgba(0,200,255,.14);font-family:'Fira Code',monospace;}
+.qtm{font-size:10px;color:var(--cyan);font-family:'Fira Code',monospace;margin-top:4px;}
+.qa{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.qbtn{background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;border-radius:4px;line-height:1;}
+.qbtn:hover{background:rgba(255,255,255,.05);}
+.qe{text-align:center;color:var(--muted);font-size:12px;padding:24px;}
+
+.hl{display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto;}
+.hl::-webkit-scrollbar{width:3px;}
+.hl::-webkit-scrollbar-thumb{background:var(--border);}
+.hi{background:#070b15;border:1px solid var(--border);border-radius:6px;padding:9px 13px;display:flex;flex-direction:column;gap:5px;cursor:pointer;}
+.hir{display:flex;align-items:center;gap:7px;}
+.htxt{font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.htm{font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.hcp{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;flex-shrink:0;}
+.hcp:hover{color:var(--cyan);}
+.hex{display:none;font-size:12px;color:var(--text);background:#060a12;border-radius:6px;padding:10px 12px;white-space:pre-wrap;word-break:break-word;line-height:1.7;border:1px solid var(--border);}
+.htgs{font-size:10px;color:var(--cyan);font-family:'Fira Code',monospace;}
+
+.cfl{display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;margin-bottom:12px;}
+.cfi{background:#070b15;border:1px solid var(--border);border-radius:8px;padding:11px 13px;}
+.cfn{font-size:13px;font-weight:600;color:var(--white);}
+.cfo{font-size:11px;color:var(--cyan);}
+.cfnt{font-size:11px;color:var(--muted);margin-top:2px;}
+.cfac{display:flex;gap:6px;margin-top:8px;}
+.cfb{font-size:10px;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .15s;}
+.cfbg{background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;}
+.cfbg:hover{background:rgba(0,200,255,.2);}
+.cfbd{background:transparent;color:var(--muted);border:1px solid transparent!important;}
+.cfbd:hover{color:var(--red);}
+.cff{background:#070b15;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:none;}
+.cff h4{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:9px;}
+.cfr{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px;}
+.sep{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:14px 0;}
+
+.lic{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;overflow:hidden;}
+.lih{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.lih h2{font-size:13px;font-weight:600;color:var(--white);flex:1;}
+.lilo{width:20px;height:20px;background:var(--li);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.lib{padding:18px 20px;display:none;}
+.lib.open{display:block;}
+.litr{display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:10px;flex-wrap:wrap;}
+.litp{padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Space Grotesk',sans-serif;transition:all .15s;}
+.litp.act{background:rgba(10,102,194,.15);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;}
+.fl{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:12px;}
+.fl::-webkit-scrollbar{width:3px;} .fl::-webkit-scrollbar-thumb{background:var(--border);}
+.fi{background:#070b15;border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;gap:10px;align-items:flex-start;}
+.fia{width:28px;height:28px;border-radius:50%;background:rgba(10,102,194,.3);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--cyan);font-weight:700;flex-shrink:0;}
+.fib{flex:1;min-width:0;}
+.fin{font-size:12px;font-weight:600;color:var(--white);}
+.fie{font-size:11px;color:var(--cyan);margin-bottom:3px;}
+.fit{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.fiac{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.fibt{font-size:10px;padding:4px 9px;border-radius:4px;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif;transition:all .15s;white-space:nowrap;}
+.fibtg{background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;}
+.fibtg:hover{background:rgba(0,200,255,.2);}
+.liinf{background:#060a12;border:1px solid rgba(0,200,255,.15);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:12px;}
+
+#tc{position:fixed;bottom:20px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+.ti{background:#0c1220;border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--white);box-shadow:0 6px 24px rgba(0,0,0,.5);animation:tIn .25s ease;display:flex;align-items:center;gap:8px;max-width:290px;pointer-events:auto;}
+.ti.ok{border-color:rgba(0,230,118,.3);color:var(--green);}
+.ti.er{border-color:rgba(255,23,68,.3);color:var(--red);}
+.ti.in{border-color:rgba(0,200,255,.3);color:var(--cyan);}
+@keyframes tIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+</style>
+</head>
+<body>
+<canvas id="bg-cv"></canvas>
+<div id="tc"></div>
+<div class="app">
+
+<div class="acc-sw">
+  <button class="acc-btn act-s" id="btn-s" onclick="switchAcc('simon')">
+    <div class="acc-av av-s">SJ</div>
+    <div class="acc-name"><span class="adot" id="dot-s"></span>Simon JUTGÉ</div>
+    <div class="acc-role">Terminale STI2D · 17 ans · Rennes</div>
+    <span class="acc-tag tag-s">🛡️ Cybersécurité</span>
+  </button>
+  <button class="acc-btn" id="btn-n" onclick="switchAcc('niko')">
+    <div class="acc-av av-n">NJ</div>
+    <div class="acc-name"><span class="adot" id="dot-n" style="display:none"></span>Nicolas JUTGÉ</div>
+    <div class="acc-role">Expert Assurance · 28 ans exp.</div>
+    <span class="acc-tag tag-n">🏛️ Assurance</span>
+  </button>
+</div>
+
+<div class="hdr">
+  <div class="hdr-av av-s" id="hdr-av">SJ</div>
+  <div class="hdr-info">
+    <h1 id="hdr-t">LinkedIn Bot — Simon JUTGÉ</h1>
+    <p id="hdr-s">Cybersécurité · Auto-publication 48h · 100% gratuit</p>
+  </div>
+  <div class="hdr-right">
+    <span class="svbdg" id="sv-bdg">💾 Sauvegardé</span>
+    <div class="dot-st"><div class="dot g"></div><span id="st-txt">Prêt</span></div>
+  </div>
+</div>
+
+<div class="ap s" id="ap-div">
+  <div class="ap-av av-s" id="ap-av">SJ</div>
+  <div style="flex:1">
+    <div class="ap-name" id="ap-name">Simon JUTGÉ — Compte actif</div>
+    <div class="ap-desc" id="ap-desc">Posts style étudiant STI2D · Ton authentique 17 ans · Cybersécurité</div>
+  </div>
+  <a id="ap-li" href="https://www.linkedin.com/in/simon-jutg%C3%A9-4b60bb38a" target="_blank" class="btn btn-li" style="font-size:10px;padding:5px 12px;flex-shrink:0">💼 Profil</a>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-v" id="st-tot">0</div><div class="stat-l">Générés</div></div>
+  <div class="stat"><div class="stat-v" id="st-q">0</div><div class="stat-l">En file</div></div>
+  <div class="stat"><div class="stat-v" id="st-sent">0</div><div class="stat-l">Publiés</div></div>
+  <div class="stat"><div class="stat-v" id="st-nxt">—</div><div class="stat-l">Prochain</div></div>
+</div>
+
+<div class="timer">
+  <div>
+    <div class="t-lbl">⏱ Prochain post dans</div>
+    <div class="t-disp" id="t-disp">48:00:00</div>
+    <div class="t-next">Suivant : <b id="t-nt">—</b></div>
+  </div>
+  <div class="t-btns">
+    <button class="tbtn tb-go" onclick="startTimer()">▶ Start</button>
+    <button class="tbtn tb-pa" onclick="pauseTimer()">⏸ Pause</button>
+    <button class="tbtn tb-rs" onclick="resetTimer()">↺ Reset</button>
+  </div>
+</div>
+
+<div class="lic">
+  <div class="lih" onclick="toggleLi()">
+    <div class="lilo">in</div>
+    <h2>Console LinkedIn — Actualités & Réseau</h2>
+    <span id="li-bdg" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
+  </div>
+  <div class="lib" id="li-body">
+    <div class="liinf" id="li-inf">📡 Actualités cybersécurité · Clique pour pré-remplir le générateur.</div>
+    <div class="litr">
+      <button class="litp act" onclick="showTab('actu',this)">📰 Actualités</button>
+      <button class="litp" onclick="showTab('feli',this)">🎉 À féliciter</button>
+      <button class="litp" onclick="showTab('repost',this)">🔁 Posts pop.</button>
+    </div>
+    <div id="tab-actu"><div class="fl" id="actu-list"></div></div>
+    <div id="tab-feli" style="display:none"><div class="fl" id="feli-list"></div></div>
+    <div id="tab-repost" style="display:none"><div class="fl" id="rp-list"></div></div>
+  </div>
+</div>
+
+<div class="lic">
+  <div class="lih" onclick="toggleSync()">
+    <div class="lilo" style="background:var(--cyan)">☁️</div>
+    <h2>Synchro Cloud — iPhone ↔ PC</h2>
+    <span id="sy-bdg" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
+  </div>
+  <div class="lib" id="sy-body">
+    <div class="liinf">🔐 Colle un <b>token GitHub</b> (scope Gists uniquement) sur <b>chaque appareil</b>, et le <b>même ID de Gist</b> partout pour relier iPhone et PC. Le 1ᵉʳ appareil crée le Gist via le bouton ci-dessous ; les autres collent juste son ID puis cliquent "Sauver".</div>
+    <div class="fld"><label>Token GitHub (scope Gists)</label><input id="sy-tok" type="password" placeholder="github_pat_…"/></div>
+    <div class="fld"><label>ID du Gist de sync</label><input id="sy-gid" placeholder="Laisse vide pour en créer un nouveau"/></div>
+    <div class="btn-row">
+      <button class="btn btn-c" onclick="ghSaveCreds()">💾 Sauver</button>
+      <button class="btn btn-s" onclick="ghCreateGist()">🆕 Créer un Gist</button>
+      <button class="btn btn-c" onclick="pullSync()">⬇️ Récupérer</button>
+      <button class="btn btn-c" onclick="pushSync()">⬆️ Envoyer</button>
+    </div>
+    <div id="sy-st" style="margin-top:10px;font-size:11px;color:var(--muted)">Pas encore synchronisé</div>
+    <div class="sep"></div>
+    <div class="liinf">💾 Sauvegarde locale indépendante du cloud — utile en secours, ou pour transférer manuellement entre deux appareils sans passer par GitHub.</div>
+    <div class="btn-row">
+      <button class="btn btn-p" onclick="downloadBackup()">📥 Télécharger une sauvegarde</button>
+      <label class="btn btn-c" style="cursor:pointer">📤 Importer une sauvegarde<input type="file" accept="application/json,.json" style="display:none" onchange="importBackupFile(this)"></label>
+    </div>
+  </div>
+</div>
+
+<div class="lic">
+  <div class="lih" onclick="toggleRJ()">
+    <div class="lilo" style="background:var(--orange)">🗑️</div>
+    <h2>Posts mis de côté <span id="rj-count" style="font-size:11px;color:var(--muted)">(0)</span></h2>
+    <span id="rj-bdg" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
+  </div>
+  <div class="lib" id="rj-body">
+    <div class="liinf">📦 Les posts supprimés via la croix arrivent ici (trop techniques pour l'instant, déjà publiés ailleurs, etc.). Ils ne sont <b>jamais regénérés automatiquement</b>. Tu peux les marquer "publié" plus tard si Simon a progressé et que tu postes ce contenu toi-même sur LinkedIn, ou les supprimer définitivement.</div>
+    <div class="fl" id="rj-list"></div>
+  </div>
+</div>
+
+<div class="grid">
+
+
+<div class="card">
+  <div class="card-h"><span>✍️</span><h2>Générer un post</h2><span class="bdg b-bl" id="gen-bdg">Simon · Cyber</span></div>
+  <div class="card-b">
+    <div class="tg">
+      <button class="tbt act" data-t="original" onclick="selType(this)"><span class="tico">📝</span>Original</button>
+      <button class="tbt" data-t="repost" onclick="selType(this)"><span class="tico">🔁</span>Republier</button>
+      <button class="tbt" data-t="congrats" onclick="selType(this)"><span class="tico">🎉</span>Féliciter</button>
+    </div>
+    <div id="sec-s">
+      <div class="fld"><label>Thème</label></div>
+      <div class="tps" id="tp-s">
+        <button class="tp sel" onclick="selTp(this)">Pentest</button>
+        <button class="tp" onclick="selTp(this)">SOC</button>
+        <button class="tp" onclick="selTp(this)">OSINT</button>
+        <button class="tp" onclick="selTp(this)">Ransomware</button>
+        <button class="tp" onclick="selTp(this)">Zero Day</button>
+        <button class="tp" onclick="selTp(this)">Phishing</button>
+        <button class="tp" onclick="selTp(this)">CTF</button>
+        <button class="tp" onclick="selTp(this)">SIEM</button>
+        <button class="tp" onclick="selTp(this)">Cloud Security</button>
+        <button class="tp" onclick="selTp(this)">Bug Bounty</button>
+        <button class="tp" onclick="selTp(this)">Cryptographie</button>
+        <button class="tp" onclick="selTp(this)">RGPD</button>
+        <button class="tp" onclick="selTp(this)">Mots de passe</button>
+        <button class="tp" onclick="selTp(this)">Authentification 2FA</button>
+        <button class="tp" onclick="selTp(this)">Ingénierie sociale</button>
+        <button class="tp" onclick="selTp(this)">VPN</button>
+        <button class="tp" onclick="selTp(this)">Sécurité IoT</button>
+        <button class="tp" onclick="selTp(this)">Sécurité mobile</button>
+      </div>
+    </div>
+    <div id="sec-n" style="display:none">
+      <div class="fld"><label>Thème</label></div>
+      <div class="tps" id="tp-n">
+        <button class="tp sel" onclick="selTp(this)">Mutuelle santé</button>
+        <button class="tp" onclick="selTp(this)">Assurance moto</button>
+        <button class="tp" onclick="selTp(this)">Prévoyance</button>
+        <button class="tp" onclick="selTp(this)">Épargne retraite</button>
+        <button class="tp" onclick="selTp(this)">Assurance vie</button>
+        <button class="tp" onclick="selTp(this)">RC Pro</button>
+        <button class="tp" onclick="selTp(this)">Gestion sinistre</button>
+        <button class="tp" onclick="selTp(this)">Fidélisation client</button>
+        <button class="tp" onclick="selTp(this)">Prospection</button>
+        <button class="tp" onclick="selTp(this)">Cyber risques pro</button>
+        <button class="tp" onclick="selTp(this)">Conseils clients</button>
+      </div>
+    </div>
+    <div id="sec-rp" style="display:none">
+      <div class="fld"><label>Post à republier</label><textarea id="rp-txt" placeholder="Colle ici le post LinkedIn à republier…"></textarea></div>
+    </div>
+    <div id="sec-cg" style="display:none">
+      <div class="fld"><label>Qui féliciter ?</label><input id="cw-who" placeholder="Ex: Marie Dupont — nouveau poste RSSI…"/></div>
+      <div class="fld"><label>Occasion</label>
+        <select id="cw-occ">
+          <option value="promotion">Promotion / Nouveau poste</option>
+          <option value="certification">Certification obtenue</option>
+          <option value="diplome">Diplôme / Formation</option>
+          <option value="alternance">Contrat d'alternance</option>
+          <option value="projet">Lancement projet</option>
+          <option value="anniversaire">Anniversaire professionnel</option>
+        </select>
+      </div>
+    </div>
+    <div class="fld"><label>Ton</label>
+      <select id="tone-sel">
+        <option value="pj">Naturel (mon style)</option>
+        <option value="expert">Expert / Sénior</option>
+        <option value="story">Storytelling</option>
+        <option value="question">Question / Engagement</option>
+        <option value="liste">Liste de conseils</option>
+        <option value="alerte">Alerte / Actualité</option>
+      </select>
+    </div>
+    <div class="fld"><label>Contexte / angle (optionnel)</label>
+      <textarea id="ctx-inp" style="min-height:52px" placeholder="Précise un angle, une anecdote…"></textarea>
+    </div>
+    <button class="btn btn-p" onclick="genPost()">⚡ Générer le post</button>
+    <div class="pw" id="pw">
+      <div class="po" id="po"></div>
+      <div class="htb" id="htb"></div>
+      <div class="pm"><span id="pm"></span><span style="color:var(--muted)">💡 Clic # pour copier</span></div>
+      <div class="btn-row">
+        <button class="btn btn-c" onclick="copyPost()">📋 Copier</button>
+        <button class="btn btn-s" onclick="schedPost()">⏰ Programmer</button>
+        <button class="btn btn-li" id="li-lnk" onclick="publishLinkedIn()">📤 Partager sur LinkedIn</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h"><span>📅</span><h2>File de publication</h2><span class="bdg b-or" id="q-bdg">0 posts</span>
+    <button onclick="resetGenerated()" style="margin-left:auto;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🔄 RAZ génération</button>
+  </div>
+  <div class="card-b">
+    <div class="ql" id="q-list"><div class="qe">Aucun post programmé.</div></div>
+    <div class="sep"></div>
+    <button class="btn btn-p" style="font-size:12px;padding:9px" onclick="autoGen()">🤖 Planning automatique 7 posts</button>
+  </div>
+</div>
+
+<div class="card full">
+  <div class="card-h"><span>📜</span><h2>Historique</h2><span class="bdg b-gr" id="h-bdg">0</span>
+    <button onclick="toggleAddH()" style="margin-left:auto;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">➕ Ajouter</button>
+    <button onclick="clearHist()" style="margin-left:6px;background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Vider</button>
+  </div>
+  <div class="card-b">
+    <div id="addh-form" style="display:none;margin-bottom:14px;padding:12px;background:#060910;border:1px solid var(--border);border-radius:8px">
+      <div class="liinf">Pour un post publié directement sur LinkedIn sans passer par l'app (donc absent de l'historique). Une fois ajouté, ce thème compte dans l'anti-doublon et dans la pondération par popularité.</div>
+      <div class="fld"><label>Texte exact du post déjà publié</label><textarea id="addh-txt" placeholder="Colle ici le texte exact publié sur LinkedIn..."></textarea></div>
+      <div class="fld"><label>Thème</label><select id="addh-topic"></select></div>
+      <div class="fld"><label>Vues/impressions (optionnel)</label><input type="number" id="addh-views" min="0" inputmode="numeric" placeholder="0"></div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="addManualH()">💾 Enregistrer dans l'historique</button>
+        <button class="btn btn-c" onclick="toggleAddH()">Annuler</button>
+      </div>
+    </div>
+    <div class="hl" id="h-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div></div>
+  </div>
+</div>
+
+<div class="card full">
+  <div class="card-h"><span>🎉</span><h2>Félicitations réseau</h2><span class="bdg b-gr" id="cf-bdg">0</span>
+    <button onclick="toggleCff()" style="margin-left:auto;background:rgba(0,200,255,.08);color:var(--cyan);border:1px solid rgba(0,200,255,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">+ Ajouter</button>
+  </div>
+  <div class="card-b">
+    <div class="cff" id="cff">
+      <h4>// Nouvelle personne</h4>
+      <div class="cfr">
+        <div class="fld" style="margin:0"><label>Prénom Nom</label><input id="cf-name" placeholder="Marie Dupont"/></div>
+        <div class="fld" style="margin:0"><label>Occasion</label>
+          <select id="cf-occ">
+            <option value="promotion">Promotion</option><option value="certification">Certification</option>
+            <option value="diplome">Diplôme</option><option value="alternance">Alternance</option>
+            <option value="projet">Projet</option><option value="anniversaire">Anniversaire pro</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld" style="margin-bottom:10px"><label>Détails</label><input id="cf-note" placeholder="Ex: OSCP obtenu, RSSI chez Orange…"/></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-p" style="font-size:12px;padding:9px" onclick="addCf()">Ajouter</button>
+        <button onclick="toggleCff()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:9px 14px;font-size:12px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">Annuler</button>
+      </div>
+    </div>
+    <div class="cfl" id="cf-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Ajoute des personnes à féliciter.</div></div>
+    <div class="sep"></div>
+    <button class="btn btn-p" style="font-size:12px;padding:9px" onclick="genAllCf()">🎉 Générer + programmer tous</button>
+  </div>
+</div>
+
+</div>
+<p style="text-align:center;font-size:11px;color:var(--muted);padding-bottom:8px">GitHub Pages : <code style="color:var(--cyan)">nicolasjutge-debug.github.io/li-bot</code></p>
+</div>
+
+<script>
+/* ════ PROFILS ════ */
+const PR = {
+  simon:{id:'simon',nom:'Simon JUTGÉ',role:'Terminale STI2D · SIN · Rennes',
+    desc:'Posts style étudiant STI2D · Ton authentique 17 ans · Cybersécurité',
+    li:'https://www.linkedin.com/in/simon-jutg%C3%A9-4b60bb38a',init:'SJ',avc:'av-s',apc:'s'},
+  niko:{id:'niko',nom:'Nicolas JUTGÉ',role:'Expert Assurance · 28 ans exp. · Rennes',
+    desc:'Posts style expert senior assurance · Conseil client · Ton bienveillant',
+    li:'https://www.linkedin.com/in/nicolas-jutge',init:'NJ',avc:'av-n',apc:'n'}
+};
+const TL = {original:'📝 Original',repost:'🔁 Repost',congrats:'🎉 Félicitations'};
+const OL = {promotion:'promotion',certification:'certification obtenue',diplome:'diplôme',alternance:'alternance signée',projet:'lancement projet',anniversaire:'anniversaire pro'};
+
+/* ════ STORAGE ════ */
+const lsS=(k,v)=>{
+  try{
+    localStorage.setItem(k,JSON.stringify(v));
+    return true;
+  }catch(e){
+    console.error('Erreur sauvegarde localStorage:', k, e);
+    toast('⚠️ Sauvegarde impossible — mode privé Safari ?','er');
+    return false;
+  }
+};
+const lsL=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){console.error('Erreur lecture localStorage:',k,e);return d;}};
+const SK={acc:'sj5_acc',timer:'sj5_tmr',stats:'sj5_st'};
+
+// Vérifier disponibilité localStorage au démarrage
+let LS_AVAILABLE = true;
+try{
+  localStorage.setItem('__test__','1');
+  localStorage.removeItem('__test__');
+}catch(e){
+  LS_AVAILABLE = false;
+}
+const qk=a=>'sj5_q_'+a, hk=a=>'sj5_h_'+a, cfk=a=>'sj5_cf_'+a, rjk=a=>'sj5_rj_'+a;
+const GK={tok:'sj5_gh_tok',gid:'sj5_gh_gid',ts:'sj5_sync_ts'};
+
+/* ════ STATE ════ */
+let acc='simon', typ='original', topic='Pentest';
+let Q=[], H=[], CF=[], RJ=[];
+let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
+let lastPost=null, tmrRun=false, tmrIv=null;
+
+function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
+function saveAll(){
+  lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);lsS(SK.stats,stats);lsS(SK.acc,acc);
+  const b=document.getElementById('sv-bdg');b.textContent='💾 Sauvegardé';b.style.color='var(--green)';setTimeout(()=>b.style.color='',1500);
+  queueSync();
+}
+function pad(n){return String(n).padStart(2,'0');}
+function fmtD(ms){if(ms<=0)return'maintenant';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return h>0?h+'h '+m+'m':m+'m';}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function toast(m,t='in'){const c=document.getElementById('tc'),el=document.createElement('div');el.className='ti '+(t==='ok'?'ok':t==='er'?'er':'in');el.textContent=(t==='ok'?'✓ ':t==='er'?'✕ ':'ℹ ')+m;c.appendChild(el);setTimeout(()=>el.remove(),3500);}
+
+/* ════ CANVAS ════ */
+(function(){
+  const cv=document.getElementById('bg-cv'),cx=cv.getContext('2d');let W,H2,ns=[];
+  function rsz(){W=cv.width=innerWidth;H2=cv.height=innerHeight;}
+  class N{constructor(){this.reset();}reset(){this.x=Math.random()*W;this.y=Math.random()*H2;this.vx=(Math.random()-.5)*.25;this.vy=(Math.random()-.5)*.25;this.r=1+Math.random()*1.5;}upd(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>W)this.vx*=-1;if(this.y<0||this.y>H2)this.vy*=-1;}}
+  function init(){rsz();ns=[];for(let i=0;i<45;i++)ns.push(new N());}
+  function draw(){cx.clearRect(0,0,W,H2);ns.forEach(n=>n.upd());for(let i=0;i<ns.length;i++)for(let j=i+1;j<ns.length;j++){const dx=ns[i].x-ns[j].x,dy=ns[i].y-ns[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<110){cx.globalAlpha=(1-d/110)*.22;cx.strokeStyle='#0a66c2';cx.lineWidth=.5;cx.beginPath();cx.moveTo(ns[i].x,ns[i].y);cx.lineTo(ns[j].x,ns[j].y);cx.stroke();}}ns.forEach(n=>{cx.globalAlpha=.3;cx.beginPath();cx.arc(n.x,n.y,n.r,0,Math.PI*2);cx.fillStyle='#00c8ff';cx.fill();});cx.globalAlpha=1;requestAnimationFrame(draw);}
+  window.addEventListener('resize',init);init();draw();
+})();
+
+/* ════ SWITCH COMPTE ════ */
+function switchAcc(a){
+  if(a===acc)return;
+  // Sauvegarder l'ancien compte avant de switcher
+  lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);
+  queueSync();
+  acc=a;
+  lsS(SK.acc,a); // Sauvegarder le nouveau compte actif
+  loadAcc(a);
+  const p=PR[a];
+  document.getElementById('btn-s').className='acc-btn'+(a==='simon'?' act-s':'');
+  document.getElementById('btn-n').className='acc-btn'+(a==='niko'?' act-n':'');
+  document.getElementById('dot-s').style.display=a==='simon'?'inline-block':'none';
+  document.getElementById('dot-n').style.display=a==='niko'?'inline-block':'none';
+  const hav=document.getElementById('hdr-av');
+  hav.className='hdr-av '+p.avc;hav.textContent=p.init;
+  document.getElementById('hdr-t').textContent='LinkedIn Bot — '+p.nom;
+  document.getElementById('hdr-s').textContent=p.role+' · Auto-publication 48h';
+  const ap=document.getElementById('ap-div');ap.className='ap '+p.apc;
+  const apav=document.getElementById('ap-av');apav.className='ap-av '+p.avc;apav.textContent=p.init;
+  document.getElementById('ap-name').textContent=p.nom+' — Compte actif';
+  document.getElementById('ap-desc').textContent=p.desc;
+  document.getElementById('ap-li').href=p.li;
+  document.getElementById('li-lnk').href=p.li;
+  document.getElementById('gen-bdg').textContent=a==='simon'?'Simon · Cyber':'Nicolas · Assurance';
+  document.getElementById('sec-s').style.display=typ==='original'&&a==='simon'?'block':'none';
+  document.getElementById('sec-n').style.display=typ==='original'&&a==='niko'?'block':'none';
+  document.getElementById('li-inf').textContent=a==='simon'?'📡 Actualités cybersécurité · Clique pour pré-remplir.':'📡 Actualités assurance & réseau · Clique pour pré-remplir.';
+  topic=a==='simon'?'Pentest':'Mutuelle santé';
+  document.querySelectorAll(a==='simon'?'#tp-s .tp':'#tp-n .tp').forEach((b,i)=>b.classList.toggle('sel',i===0));
+  if(tmrRun)pauseTimer();
+  updateStats();renderQ();renderH();renderCF();renderRJ();rfTmr();
+  // Mettre à jour le titre console avec le compte actif
+  document.getElementById('li-inf').textContent = a==='simon'
+    ? '📡 Actualités cybersécurité · Simon · Clique pour pré-remplir.'
+    : '📡 Actualités assurance · Nicolas · Clique pour pré-remplir.';
+  // Re-rendre le feed avec le nouveau compte
+  renderFeed('actu');
+  if(document.getElementById('li-body').classList.contains('open')){
+    document.querySelectorAll('.litp').forEach(b=>b.classList.remove('act'));
+    document.querySelector('.litp').classList.add('act');
+    document.getElementById('tab-actu').style.display='block';
+    document.getElementById('tab-feli').style.display='none';
+    document.getElementById('tab-repost').style.display='none';
+  }
+  toast('Compte '+p.nom+' actif','in');
+}
+
+/* ════ UI HELPERS ════ */
+function selType(btn){
+  document.querySelectorAll('.tbt').forEach(b=>b.classList.remove('act'));btn.classList.add('act');typ=btn.dataset.t;
+  document.getElementById('sec-s').style.display=typ==='original'&&acc==='simon'?'block':'none';
+  document.getElementById('sec-n').style.display=typ==='original'&&acc==='niko'?'block':'none';
+  document.getElementById('sec-rp').style.display=typ==='repost'?'block':'none';
+  document.getElementById('sec-cg').style.display=typ==='congrats'?'block':'none';
+}
+function selTp(btn){document.querySelectorAll('.tp').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');topic=btn.textContent;}
+function updateStats(){
+  const st=stats[acc]||{total:0,sent:0};
+  document.getElementById('st-tot').textContent=st.total;
+  document.getElementById('st-q').textContent=Q.length;
+  document.getElementById('st-sent').textContent=st.sent;
+}
+
+/* ════ CONTENUS SIMON ════ */
+const TS = {
+  'Pentest':{a:["J'ai testé mon premier petit exercice de piratage \"éthique\" ce week-end et c'était trop cool.","Le pentest c'est pas du tout ce que je croyais avant de m'y intéresser.","Personne ne nous apprend ça en cours, alors j'apprends tout seul le soir."],
+  c:["Je découvre le pentest depuis quelques mois sur TryHackMe et je trouve ça vraiment passionnant.\n\nAu début je pensais que pirater c'était juste taper du code en noir et vert comme dans les films 😅 En fait pas du tout, c'est plus comme résoudre une enquête étape par étape.\n\nJe suis encore débutant, je galère beaucoup, je regarde des vidéos YouTube pour comprendre, je recommence quand je rate. Mais c'est ça qui me plaît dans la cybersécurité.\n\nMon rêve c'est de faire une alternance dans ce domaine en 2027. Y'a encore plein de choses à apprendre avant mais je suis motivé !\n\n#CyberSécurité #TryHackMe #Débutant #Alternance #STI2D","Petit retour sur mes débuts en cybersécurité.\n\nJe suis en terminale STI2D et le soir je m'entraîne un peu sur TryHackMe, une plateforme pour apprendre la sécurité informatique en s'amusant.\n\nFranchement c'est pas facile au début, je comprends pas toujours tout, mais petit à petit ça devient plus clair.\n\nSi des gens qui travaillent dans la cybersécurité passent par ici : vous avez des conseils pour un lycéen qui débute ? Je prends tout ce que vous pouvez me dire 🙏\n\n#CyberSécurité #TryHackMe #Débutant #Alternance2027 #STI2D"]},
+  'SOC':{a:["Je crois que le métier d'analyste cybersécurité c'est ce que je veux faire plus tard.","J'ai regardé des vidéos sur le métier d'analyste en sécurité informatique, ça m'intéresse beaucoup."],
+  c:["Je me pose beaucoup de questions sur mon orientation en cybersécurité. Et plus je regarde, plus le métier d'analyste sécurité (on dit SOC) me donne envie.\n\nEn gros ces personnes surveillent les ordinateurs d'une entreprise pour repérer si quelqu'un essaie de pirater le système. Ça a l'air un peu comme une enquête en temps réel, et j'aime bien cette idée.\n\nJ'ai commencé à regarder quelques tutos pour comprendre les bases, mais c'est encore flou pour moi. Je voudrais en savoir plus avant de choisir vraiment cette voie.\n\nSi quelqu'un travaille dans ce domaine et veut bien m'expliquer un peu son métier, je serais trop content !\n\n#CyberSécurité #Découverte #Alternance #STI2D","Je continue à me renseigner sur le métier d'analyste SOC, ça reste l'orientation qui m'attire le plus pour l'instant.\n\nCe qui me plaît c'est le côté \"enquête\" : repérer des signaux bizarres au milieu de plein d'informations normales, un peu comme chercher une aiguille dans une botte de foin.\n\nJe regarde des témoignages de gens qui font ce métier pour mieux comprendre le quotidien, parce que sur le papier ça paraît différent de la réalité.\n\n#CyberSécurité #SOC #Découverte #Alternance2027"]},
+  'CTF':{a:["J'ai réussi mon premier petit défi de cybersécurité hier soir, j'étais trop content !","Apprendre en s'amusant avec des défis en ligne, c'est ma méthode pour progresser en cyber."],
+  c:["Hier j'ai enfin réussi un exercice sur TryHackMe après avoir bloqué pendant un bon moment. La sensation quand ça marche enfin, c'est génial.\n\nCe que j'aime avec ces exercices (on les appelle des CTF), c'est qu'on apprend en pratiquant directement, pas juste en lisant de la théorie. On a un petit ordinateur \"piège\" et on doit trouver comment rentrer dedans.\n\nJe suis vraiment débutant encore, je rate souvent, je cherche des indices ou je regarde des explications après avoir essayé. Mais j'apprends à chaque fois un truc nouveau.\n\nPour les autres lycéens qui aimeraient essayer : TryHackMe a une partie gratuite pour débutants, c'est plutôt sympa pour commencer.\n\n#CyberSécurité #TryHackMe #Débutant #Alternance2027"]},
+  'OSINT':{a:["J'ai appris qu'on peut trouver beaucoup d'infos sur quelqu'un juste en cherchant sur Internet, légalement.","Ça s'appelle l'OSINT, et c'est un des trucs les plus intéressants que j'ai découvert en cybersécurité."],
+  c:["Je viens de découvrir un truc qui s'appelle l'OSINT et ça m'a un peu surpris.\n\nEn gros c'est chercher des informations sur quelqu'un ou une entreprise juste avec ce qui est déjà public sur Internet : réseaux sociaux, sites web, etc. Pas besoin de pirater quoi que ce soit, l'info est juste là si on sait chercher.\n\nÇa m'a fait réfléchir à ce que moi-même je laisse comme infos en ligne. Du coup j'ai vérifié mes propres réseaux sociaux pour voir ce qu'on pouvait trouver sur moi.\n\nC'est un des trucs les plus accessibles pour débuter en cybersécurité je trouve, pas besoin d'être super technique pour commencer.\n\n#CyberSécurité #OSINT #Débutant #Alternance2027","Je continue à m'entraîner un peu à l'OSINT, et plus je pratique, plus je me dis qu'il faut faire attention à ce qu'on partage en ligne.\n\nC'est fou ce qu'on peut retrouver juste en croisant des infos publiques : une photo, un nom de ville, un horaire de post... rien d'illégal, juste de la recherche bien faite.\n\nJe trouve ça hyper accessible comme entrée en cybersécurité, comparé à d'autres domaines plus techniques.\n\n#CyberSécurité #OSINT #Découverte #Alternance2027"]},
+  'Ransomware':{a:["J'ai regardé un reportage sur les ransomwares, ces virus qui bloquent les ordinateurs des entreprises. Flippant.","Les ransomwares, c'est clairement ce qui me fait le plus flipper en cybersécurité pour le moment."],
+  c:["J'ai regardé une vidéo qui expliquait comment marchent les ransomwares, ces virus qui bloquent tous les fichiers d'une entreprise jusqu'à ce qu'elle paie une rançon.\n\nCe qui m'a surpris c'est que souvent ça commence par un truc tout simple : quelqu'un clique sur un mail piégé, ou un mot de passe trop facile à deviner.\n\nC'est en regardant ce genre de cas que je comprends pourquoi la cybersécurité c'est important, même pour des petites entreprises qui pensent que ça n'arrive qu'aux grandes.\n\n#CyberSécurité #Découverte #Alternance2027","Je continue à m'intéresser aux ransomwares, ces attaques qui bloquent tous les fichiers d'une entreprise et demandent une rançon pour les débloquer.\n\nCe qui me marque, c'est que ça peut toucher n'importe qui : hôpitaux, écoles, petites entreprises... pas que les grosses boîtes comme je le pensais au début.\n\nJ'ai appris que la meilleure protection reste souvent la plus simple : faire des sauvegardes régulières et ne pas cliquer n'importe où. Pas besoin d'être expert pour comprendre ça.\n\n#CyberSécurité #Ransomware #Découverte #Alternance2027"]},
+  'Phishing':{a:["J'ai presque cliqué sur un faux mail aujourd'hui. Du coup je fais attention maintenant.","Je me suis remis à apprendre à repérer les tentatives de phishing, et y'en a vraiment partout."],
+  c:["Aujourd'hui j'ai reçu un mail qui ressemblait à une vraie notification LinkedIn. J'ai failli cliquer direct.\n\nHeureusement j'ai eu le réflexe de regarder l'adresse de l'expéditeur, et c'était bizarre, rien à voir avec LinkedIn. C'était un piège (on appelle ça du phishing).\n\nDepuis je fais plus attention : je regarde toujours qui envoie le mail avant de cliquer sur quoi que ce soit, et je me méfie quand un message me met la pression pour agir vite.\n\nC'est un petit réflexe simple mais je pense que ça peut éviter beaucoup de problèmes.\n\n#CyberSécurité #Phishing #STI2D","En regardant des exemples de mails de phishing pour m'entraîner à les reconnaître, je me suis rendu compte à quel point certains sont bien faits.\n\nLes signes que j'essaie de repérer maintenant : une adresse mail bizarre, des fautes d'orthographe, et surtout un message qui met la pression pour agir vite (\"votre compte sera bloqué dans 24h\" par exemple).\n\nC'est un des trucs les plus simples à comprendre en cybersécurité, mais aussi un des plus utiles au quotidien, même sans connaissances techniques.\n\n#CyberSécurité #Phishing #Débutant #Alternance2027"]},
+  'Zero Day':{a:["J'ai entendu parler des \"zero day\" en cybersécurité, j'ai voulu comprendre ce que c'est.","Plus j'avance dans la cybersécurité, plus je me rends compte qu'il existe des failles que personne ne connaît encore."],
+  c:["En lisant des articles sur la cybersécurité, je suis tombé sur le terme \"zero day\". En fait c'est une faille dans un logiciel que même les créateurs ne connaissent pas encore, donc personne ne peut la corriger tout de suite.\n\nÇa fait un peu peur dit comme ça, mais j'ai appris que les entreprises essaient quand même de se protéger en limitant les accès et en surveillant les comportements bizarres sur leurs systèmes.\n\nEncore un truc que je découvre petit à petit dans mon apprentissage de la cybersécurité.\n\n#CyberSécurité #Découverte #Alternance2027","Je reviens sur les \"zero day\" parce que c'est un concept qui m'a marqué dans mon apprentissage.\n\nEn fait, ça veut dire qu'une faille existe dans un logiciel, mais ni les pirates ni les créateurs ne le savent encore au moment où elle est découverte par quelqu'un de malveillant. Donc personne n'a eu le temps de la corriger.\n\nÇa montre bien pourquoi la cybersécurité doit toujours s'adapter, même quand on pense avoir tout sécurisé.\n\n#CyberSécurité #ZeroDay #Découverte #Alternance2027"]},
+  'SIEM':{a:["J'ai découvert qu'il existe des logiciels qui surveillent tout ce qui se passe sur le réseau d'une entreprise.","J'ai continué à creuser le métier d'analyste SOC, et les outils qu'ils utilisent m'intéressent de plus en plus."],
+  c:["En regardant des vidéos sur le métier d'analyste sécurité, j'ai découvert les SIEM. C'est un logiciel qui regroupe toutes les informations des ordinateurs d'une entreprise pour repérer si quelque chose de bizarre se passe.\n\nCe qui m'a marqué : une seule information bizarre ne veut pas forcément dire grand-chose, mais plusieurs informations bizarres en même temps, ça peut être le signe d'une attaque.\n\nC'est exactement le genre de travail que j'aimerais découvrir en vrai pendant une alternance.\n\n#CyberSécurité #Découverte #Alternance2027","Je m'intéresse de plus en plus aux outils utilisés par les analystes en cybersécurité, notamment les SIEM.\n\nCe que j'ai compris : c'est un peu comme un grand tableau de bord qui rassemble toutes les alertes d'une entreprise, pour repérer plus vite si quelque chose d'anormal se passe.\n\nJ'aimerais bien voir ça concrètement un jour, peut-être pendant une alternance. Pour l'instant je me contente de regarder des vidéos qui expliquent le principe.\n\n#CyberSécurité #SIEM #Découverte #Alternance2027"]},
+  'Cloud Security':{a:["Je commence à comprendre que protéger des données \"dans le cloud\" c'est différent de protéger un ordinateur normal.","Je continue à découvrir la sécurité du cloud, et plus j'apprends, plus je me dis que c'est un vrai métier d'avenir."],
+  c:["En m'intéressant à la cybersécurité, j'ai réalisé que de plus en plus d'entreprises stockent leurs données \"dans le cloud\" plutôt que sur leurs propres ordinateurs.\n\nÇa change la façon de se protéger : ce n'est plus juste protéger un bâtiment ou un ordinateur, c'est protéger des comptes et des accès un peu partout.\n\nJ'ai encore beaucoup à apprendre sur ce sujet, mais c'est un domaine qui a l'air d'avoir de l'avenir.\n\n#CyberSécurité #Découverte #Alternance2027","En creusant un peu plus le sujet de la sécurité dans le cloud, j'ai compris une chose simple mais importante : on ne protège plus juste \"un ordinateur\", mais des accès et des identités un peu partout.\n\nDu coup les mots de passe et l'authentification à deux facteurs deviennent encore plus importants que pour un ordinateur classique.\n\nC'est un domaine qui a l'air d'avoir beaucoup d'avenir, et j'aimerais comprendre encore mieux comment ça fonctionne concrètement.\n\n#CyberSécurité #Cloud #Découverte #Alternance2027"]},
+  'Bug Bounty':{a:["J'ai découvert qu'on peut être payé pour trouver des failles dans des sites, légalement. Ça s'appelle le bug bounty.","Je continue à m'intéresser au bug bounty, ça reste un des trucs qui me motive le plus en cybersécurité."],
+  c:["Un truc que je trouve génial en cybersécurité : le bug bounty. Des entreprises payent des gens pour essayer de trouver des failles dans leurs sites ou applis, et les leur signaler au lieu de les exploiter méchamment.\n\nPour un débutant comme moi c'est encore un peu loin, mais c'est motivant de voir que même sans diplôme, si on est doué et qu'on s'entraîne, on peut commencer à essayer ce genre de choses.\n\nJ'aimerais bien tester un jour quand je serai un peu plus à l'aise avec les bases.\n\n#CyberSécurité #BugBounty #Alternance2027","Je suis retourné voir comment fonctionne le bug bounty, parce que c'est vraiment un concept qui me plaît.\n\nEn gros, des entreprises proposent une récompense à qui trouve une faille de sécurité dans leur site ou leur appli, à condition de la signaler proprement au lieu de l'exploiter.\n\nJe regarde quelques rapports de débutants pour comprendre comment ils s'y prennent. C'est encore loin pour moi, mais ça me donne un objectif clair pour progresser.\n\n#CyberSécurité #BugBounty #Débutant #Alternance2027"]},
+  'Cryptographie':{a:["La cryptographie c'est le truc qui protège nos mots de passe et nos messages. J'essaie de comprendre les bases.","Je reviens un peu sur la cryptographie, c'est un sujet que je trouve difficile mais que j'aime bien creuser."],
+  c:["En cours et de mon côté, j'essaie de comprendre la cryptographie, c'est-à-dire comment on protège des informations pour que personne d'autre ne puisse les lire.\n\nJe pensais que c'était que des maths super compliquées, et c'est un peu vrai, mais j'ai compris l'idée générale : on transforme un message en code, et seule la bonne clé permet de le lire.\n\nC'est un sujet qui me semble difficile mais important, je vais continuer à creuser petit à petit.\n\n#CyberSécurité #Découverte #STI2D #Alternance2027","J'ai repris quelques bases de cryptographie ce week-end, et j'ai mieux compris la différence entre chiffrement symétrique et asymétrique (même si j'ai encore du mal avec les détails mathématiques).\n\nEn gros, l'idée c'est juste de transformer un message pour que seule la bonne clé permette de le relire.\n\nC'est un sujet où je sens que j'ai encore beaucoup de chemin à faire, mais je trouve ça passionnant de comprendre ce qui se passe derrière nos mots de passe et nos messages sécurisés.\n\n#CyberSécurité #Cryptographie #Découverte #STI2D"]},
+  'RGPD':{a:["J'ai appris que le RGPD c'est pas qu'un truc pour les avocats, ça concerne aussi la cybersécurité.","Je continue à m'intéresser au RGPD, et je trouve que c'est plus lié à la cybersécurité que je ne le pensais."],
+  c:["Je pensais que le RGPD (les règles sur la protection des données personnelles) c'était juste un truc juridique. En fait ça a aussi un vrai lien avec la cybersécurité.\n\nPar exemple les entreprises doivent protéger nos données avec des moyens techniques, et prévenir rapidement si jamais elles sont piratées.\n\nC'est un sujet que je découvre, mais je trouve ça important de comprendre les deux côtés (technique et règles) pour bien faire ce métier plus tard.\n\n#CyberSécurité #RGPD #Découverte #Alternance2027","En reparlant du RGPD avec un prof, j'ai compris un autre aspect : les entreprises doivent non seulement protéger nos données, mais aussi être capables de prouver qu'elles le font correctement.\n\nÇa veut dire des mesures techniques (comme le chiffrement) mais aussi de l'organisation en interne.\n\nC'est un sujet que je vois trop souvent comme \"juste du juridique\", alors qu'il y a un vrai lien avec la technique. Je continue à apprendre les deux côtés.\n\n#CyberSécurité #RGPD #Découverte #Alternance2027"]},
+  'Mots de passe':{a:["Je me suis mis à utiliser un gestionnaire de mots de passe, et je me demande pourquoi j'ai attendu aussi longtemps.","On parle souvent de hacking impressionnant, mais la base de la cybersécurité c'est juste d'avoir de bons mots de passe."],
+  c:["J'ai commencé à utiliser un gestionnaire de mots de passe parce que je me rendais compte que j'utilisais souvent les mêmes mots de passe partout (pas une bonne idée, je sais).\n\nMaintenant chaque compte a un mot de passe différent et compliqué, généré automatiquement, et je n'ai qu'un seul mot de passe à retenir pour tout déverrouiller.\n\nC'est un des trucs les plus simples à mettre en place pour se protéger, et pourtant je ne le faisais pas avant de m'intéresser à la cybersécurité.\n\n#CyberSécurité #MotsDePasse #Débutant #Alternance2027","Je continue à appliquer des bases simples de cybersécurité dans ma vie de tous les jours, comme avoir un mot de passe différent pour chaque compte important.\n\nAvant je pensais qu'un mot de passe \"compliqué\" suffisait, mais j'ai appris que le vrai problème c'est de réutiliser le même partout : si un site est piraté, tous les autres comptes deviennent vulnérables.\n\nPetit changement, mais ça fait une vraie différence.\n\n#CyberSécurité #Sécurité #Découverte #STI2D"]},
+  'Authentification 2FA':{a:["J'ai activé la double authentification sur tous mes comptes importants ce week-end.","Un code reçu par appli en plus du mot de passe : voilà un truc simple qui protège vraiment beaucoup."],
+  c:["Ce week-end j'ai pris le temps d'activer la double authentification (2FA) sur mes comptes principaux : mail, réseaux sociaux, etc.\n\nEn gros, même si quelqu'un trouve mon mot de passe, il lui faudrait aussi un code généré sur mon téléphone pour se connecter. Ça complique beaucoup les choses pour un attaquant.\n\nC'est gratuit, ça prend 5 minutes par compte, et c'est clairement un des conseils de cybersécurité les plus simples à appliquer.\n\n#CyberSécurité #2FA #Débutant #Alternance2027","Je recommande à tout le monde autour de moi d'activer la double authentification, depuis que j'ai compris à quel point ça change la sécurité d'un compte.\n\nC'est juste une étape en plus à la connexion, mais ça empêche la grande majorité des piratages de comptes classiques.\n\nC'est le genre de conseil simple que j'aimerais avoir entendu plus tôt.\n\n#CyberSécurité #Sécurité #Découverte #STI2D"]},
+  'Ingénierie sociale':{a:["J'ai découvert que la plupart des piratages ne sont pas que technique, mais jouent surtout sur la confiance des gens.","Le hacking, c'est pas toujours de la technique pure : parfois c'est juste convaincre quelqu'un de faire une erreur."],
+  c:["En apprenant les bases de la cybersécurité, j'ai découvert un concept qui m'a marqué : l'ingénierie sociale.\n\nEn gros, plutôt que de pirater un système technique, l'attaquant manipule directement une personne pour qu'elle donne elle-même l'accès (un mot de passe, un clic sur un lien...).\n\nÇa montre bien que la cybersécurité, c'est pas que de la technique, c'est aussi beaucoup de bon sens et de méfiance saine.\n\n#CyberSécurité #IngénierieSociale #Découverte #Alternance2027","Je continue à m'intéresser à l'ingénierie sociale, parce que je trouve ça presque plus impressionnant que le piratage technique.\n\nUn attaquant peut se faire passer pour un collègue, un technicien, ou même quelqu'un de la famille, juste pour obtenir une info ou un accès.\n\nÇa me fait réfléchir à mes propres réflexes : est-ce que je vérifierais vraiment l'identité de quelqu'un avant de lui donner une information sensible ?\n\n#CyberSécurité #Découverte #STI2D"]},
+  'VPN':{a:["J'ai testé un VPN pour la première fois, et j'ai voulu comprendre comment ça marche vraiment.","Tout le monde parle de VPN mais j'ai mis du temps à comprendre concrètement ce que ça fait."],
+  c:["J'ai testé un VPN pour la première fois ce week-end, et j'ai voulu comprendre ce qu'il se passe vraiment derrière.\n\nEn gros, ça crée un genre de tunnel sécurisé entre mon appareil et Internet, donc personne sur le réseau (même un Wi-Fi public) ne peut facilement voir ce que je fais.\n\nC'est pas magique non plus : ça protège la connexion, mais pas le reste (comme mes mots de passe si je les donne moi-même).\n\n#CyberSécurité #VPN #Découverte #Alternance2027","Je continue à comprendre l'utilité d'un VPN, notamment pour les connexions sur des Wi-Fi publics (genre dans un café ou en gare).\n\nSur un réseau public, sans protection, certaines infos peuvent être plus facilement interceptées. Le VPN limite ce risque en chiffrant la connexion.\n\nUn petit réflexe en plus à prendre, surtout en déplacement.\n\n#CyberSécurité #VPN #Débutant #STI2D"]},
+  'Sécurité IoT':{a:["En STI2D on parle beaucoup d'objets connectés, et je me suis demandé : est-ce que tous ces objets sont vraiment sécurisés ?","Les objets connectés (caméras, ampoules, montres...) sont partout, mais j'ai appris qu'ils sont souvent mal protégés."],
+  c:["En cours de STI2D on étudie pas mal d'objets connectés, et ça m'a donné envie de creuser leur sécurité, vue sous l'angle cybersécurité cette fois.\n\nJ'ai appris que beaucoup d'objets connectés (caméras, montres, ampoules...) ont des mots de passe par défaut jamais changés, ou des mises à jour de sécurité très rares. Ça en fait des cibles assez faciles.\n\nC'est un domaine qui mélange exactement ce qui m'intéresse : l'électronique/l'industriel de mon bac, et la cybersécurité.\n\n#CyberSécurité #IoT #STI2D #Alternance2027","Je continue à relier mon bac STI2D et la cybersécurité à travers le sujet des objets connectés (IoT).\n\nCe qui m'inquiète un peu : ces objets sont de plus en plus présents (maison, usine, ville) mais pas toujours pensés avec la sécurité en priorité au départ.\n\nJe pense que c'est un domaine qui va devenir de plus en plus important, et ça me motive encore plus pour mon orientation.\n\n#CyberSécurité #IoT #Découverte #Alternance2027"]},
+  'Sécurité mobile':{a:["Je me suis penché sur la sécurité de mon propre smartphone, et j'ai trouvé plusieurs trucs à corriger.","On a tous un ordinateur puissant dans la poche (notre téléphone), mais on pense rarement à le sécuriser correctement."],
+  c:["Je me suis penché sur la sécurité de mon propre smartphone ce week-end, en appliquant ce que j'apprends en cybersécurité.\n\nJ'ai vérifié les autorisations données aux applications (certaines avaient accès au micro ou à la localisation sans vraie raison), mis à jour mon système, et activé le verrouillage automatique plus strict.\n\nC'est étrange de se dire qu'on protège plus facilement un ordinateur qu'un téléphone, alors qu'on y stocke autant d'infos sensibles.\n\n#CyberSécurité #SécuritéMobile #Débutant #Alternance2027","Je continue à appliquer les bases de cybersécurité à mon téléphone, qui contient autant d'infos sensibles qu'un ordinateur, si pas plus.\n\nUn réflexe simple que j'ai pris : vérifier régulièrement quelles applications ont accès à quoi (caméra, contacts, localisation), et désinstaller celles que je n'utilise plus.\n\nPetit à petit, j'essaie de transformer ce que j'apprends en cours en habitudes concrètes.\n\n#CyberSécurité #Découverte #STI2D"]}
+};
+
+/* ════ CONTENUS NIKO ════ */
+const TN = {
+  'Mutuelle santé':{a:["Après 28 ans dans l'assurance, voici ce que la plupart des gens ne savent pas sur leur mutuelle santé.","Ce que je répète à tous mes clients depuis des années sur la mutuelle santé."],
+  c:["28 ans que je travaille dans l'assurance, et la mutuelle santé reste le contrat le plus mal compris par mes clients.\n\nLa plupart choisissent leur mutuelle sur un seul critère : le prix. C'est une erreur que je vois répétée trop souvent.\n\nCe qu'il faut vraiment regarder :\n→ Le taux de remboursement dentaire et optique\n→ Les délais de carence pour les hospitalisations\n→ La facilité de remboursement au quotidien\n\nUne mutuelle à 30€/mois qui ne rembourse pas vos lunettes à 400€ vous coûtera plus cher qu'une à 60€ qui les couvre bien.\n\nN'hésitez pas à me contacter pour un audit de votre couverture.\n\n#MutuelleSanté #Assurance #Prévoyance #ConseilAssurance #Rennes"]},
+  'Assurance moto':{a:["Assurance moto : ce que tout motard devrait vérifier avant chaque saison.","Ce que votre assureur ne vous dira pas toujours sur votre contrat moto."],
+  c:["Passionné de moto et dans l'assurance depuis 28 ans — je vois souvent les deux se croiser douloureusement.\n\nLes erreurs les plus fréquentes sur les contrats moto :\n→ Sous-évaluer la valeur du véhicule\n→ Oublier de déclarer les modifications\n→ Ne pas prendre la garantie conducteur — la plus importante\n→ Confondre assistance 0km et assistance à partir de 50km\n\nLa garantie conducteur protège VOUS en cas d'accident responsable. Sans elle, vous n'avez aucune indemnisation pour vos préjudices corporels.\n\n#AssuranceMoto #Moto #Assurance #ConseilAssurance #Rennes"]},
+  'Prévoyance':{a:["La prévoyance c'est le contrat qu'on souscrit en espérant ne jamais avoir à s'en servir.","Ce qui me préoccupe le plus pour mes clients c'est la prévoyance."],
+  c:["Je le dis depuis des années à mes clients : la prévoyance c'est le parent pauvre de l'assurance en France.\n\nLa réalité que j'ai vue trop de fois : un indépendant qui tombe malade 3 mois. Les indemnités Sécu couvrent à peine 50% du revenu. Sans prévoyance complémentaire, c'est souvent la catastrophe financière.\n\nCe que couvre une bonne prévoyance :\n→ Maintien de revenu en cas d'arrêt de travail\n→ Rente en cas d'invalidité permanente\n→ Capital décès pour protéger votre famille\n\n#Prévoyance #Assurance #ProtectionSociale #ConseilAssurance #Rennes"]},
+  'Épargne retraite':{a:["Il n'est jamais trop tôt pour préparer sa retraite. Il peut être trop tard.","Ce que je dis à tous mes clients de moins de 50 ans sur la retraite."],
+  c:["Dans mon métier j'ai accompagné des centaines de clients vers la retraite. Le constat est toujours le même : ceux qui ont commencé à épargner tôt sont sereins.\n\nLa réforme des retraites a renforcé l'importance de l'épargne individuelle.\n\nLes solutions que j'accompagne le plus :\n→ Le PER : avantage fiscal immédiat + capital à la retraite\n→ L'assurance vie : flexibilité et transmission\n→ L'immobilier locatif : revenus complémentaires\n\nLa meilleure solution dépend de votre situation. C'est pour ça que le conseil personnalisé existe.\n\n#ÉpargneRetraite #PER #AssuranceVie #Retraite #Assurance #Rennes"]},
+  'Assurance vie':{a:["L'assurance vie c'est le produit d'épargne préféré des Français. Et souvent le moins bien compris.","3 choses que votre banquier ne vous dit peut-être pas sur votre assurance vie."],
+  c:["L'assurance vie c'est le couteau suisse de l'épargne française. Mais comme tout outil complexe, il faut savoir s'en servir.\n\n3 points que j'explique à mes clients :\n\n1/ C'est pas que pour la mort. C'est un outil d'épargne long terme avec une fiscalité avantageuse après 8 ans.\n\n2/ Fonds euros = sécurité. Unités de compte = rendement. Dosage selon votre profil.\n\n3/ La clause bénéficiaire c'est CRITIQUE. Trop de contrats ont 'mes héritiers légaux' par défaut. Vérifiez.\n\nUn bilan tous les 2-3 ans avec votre conseiller, c'est de la bonne gestion.\n\n#AssuranceVie #Épargne #Patrimoine #Assurance #Rennes"]},
+  'RC Pro':{a:["RC Pro : obligatoire pour certains, recommandée pour tous.","Un client m'a appelé en panique après un sinistre non couvert. Sa RC Pro avait des exclusions qu'il ignorait."],
+  c:["La Responsabilité Civile Professionnelle c'est le contrat que tous les indépendants doivent avoir.\n\nUn exemple concret : un consultant informatique qui donne un mauvais conseil. Le client subit un préjudice de 80 000€. Sans RC Pro adaptée, le consultant règle ça avec son patrimoine personnel.\n\nCe que doit couvrir une bonne RC Pro :\n→ Les dommages causés à des tiers\n→ Les erreurs et négligences professionnelles\n→ La protection juridique en cas de litige\n\n#RCPro #AssurancePro #Indépendants #Assurance #Rennes"]},
+  'Gestion sinistre':{a:["28 ans d'expérience et la gestion de sinistre reste le moment de vérité de tout contrat.","Ce que je conseille à mes clients dès qu'un sinistre survient."],
+  c:["Un sinistre c'est toujours stressant. Mais ce qu'on fait dans les premières heures peut changer radicalement l'issue.\n\nCe que je dis à mes clients :\n\n→ Déclarez DANS LES DÉLAIS. Chaque contrat a ses délais (2 jours pour un vol, 5 pour dégât des eaux...).\n→ Documentez TOUT. Photos, vidéos, témoignages. Avant de nettoyer.\n→ Ne réparez pas avant expertise pour les dommages importants.\n→ Gardez toutes les factures.\n\nMon rôle c'est d'être là à ce moment. C'est pour ça qu'on a un conseiller.\n\n#GestionSinistre #Assurance #ConseilAssurance #Rennes"]},
+  'Fidélisation client':{a:["Garder un client c'est 5x moins cher qu'en acquérir un nouveau.","Mon secret pour des clients qui restent depuis 15 ans."],
+  c:["28 ans dans l'assurance et j'ai des clients qui me suivent depuis le début. Ce n'est pas dû au hasard.\n\nCe que j'ai appris sur la fidélisation :\n\nLa fidélité se construit dans les moments difficiles. Un client satisfait d'un règlement rapide vous recommandera à 5 personnes. Un client déçu vous quittera et le dira à 10.\n\nCe qui fait revenir les clients :\n→ La disponibilité vraie\n→ Le conseil proactif\n→ La transparence sur les garanties ET les exclusions\n→ La réactivité en cas de problème\n\n#Assurance #FidélisationClient #RelationClient #Rennes"]},
+  'Prospection':{a:["La prospection en assurance a complètement changé en 28 ans."],
+  c:["La prospection en assurance en 2025, c'est plus du tout ce que c'était en 1997 quand j'ai commencé.\n\nÀ l'époque : porte-à-porte, phoning intensif. Aujourd'hui : recommandations, LinkedIn, contenu utile, réseau.\n\nCe qui fonctionne dans mon activité :\n→ Les recommandations clients (80% de mes nouveaux clients)\n→ La présence LinkedIn avec du contenu à valeur\n→ Les partenariats avec des professionnels complémentaires\n→ Les événements réseau à Rennes et en Bretagne\n\nLa clé c'est la confiance avant la vente.\n\n#Assurance #Prospection #DéveloppementCommercial #LinkedIn #Rennes"]},
+  'Cyber risques pro':{a:["Mon fils se forme en cybersécurité. Moi j'assure contre les cyber risques. Les deux sont liés."],
+  c:["Mon fils Simon se forme en cybersécurité. Et dans mon métier, je vois de plus en plus de sinistres cyber chez mes clients professionnels.\n\nLa réalité de 2025 : les PME et indépendants sont des cibles de choix — moins bien protégés que les grandes entreprises.\n\nCe que couvre une assurance cyber pro :\n→ Les pertes d'exploitation suite à une attaque\n→ Les frais de remise en état des systèmes\n→ La responsabilité en cas de fuite de données\n→ L'assistance juridique\n\nUn ransomware qui bloque votre activité 2 semaines, c'est souvent la fin pour un indépendant. On en parle ?\n\n#CyberRisques #AssuranceCyber #PME #Assurance #Rennes"]},
+  'Conseils clients':{a:["28 ans de conseils en assurance. Ce que j'aurais aimé savoir au début."],
+  c:["28 ans dans l'assurance à Rennes. Ce qui m'a le plus appris : les clients eux-mêmes.\n\nCe que j'aurais aimé comprendre plus tôt : un bon conseil commence par l'écoute, pas par les produits.\n\nLes questions que chaque client devrait poser :\n→ Qu'est-ce qui n'est PAS couvert dans ce contrat ?\n→ Que se passe-t-il en cas de sinistre important ?\n→ Ce contrat est-il toujours adapté à ma situation ?\n\nLe rôle d'un conseiller c'est d'anticiper, pas juste de vendre.\n\n#Assurance #ConseilClient #RelationClient #Rennes"]}
+};
+
+/* ════ REPOST + CONGRATS ════ */
+const RS=[(ctx)=>`Ce post m'a interpellé et j'avais envie d'y ajouter ma perspective d'étudiant.\n\n${ctx?'Sur "'+ctx+'" : ':''}Ce qui me frappe c'est à quel point les enjeux cyber touchent maintenant tout le monde. En tant que lycéen de 17 ans qui se forme, je vois bien que le gap entre ceux qui comprennent ces risques et les autres se creuse.\n\nVous pensez que l'éducation numérique est suffisante en France ?\n\n#CyberSécurité #Sensibilisation #Alternance2027 #STI2D`,(ctx)=>`Je partage ce post car il touche à quelque chose qui me préoccupe dans ma formation.\n\n${ctx?'"'+ctx+'" — ':''}La cybersécurité évolue si vite qu'on a du mal à former assez de professionnels. Et nous les étudiants on doit souvent se débrouiller seuls.\n\nDes conseils pour un étudiant de Terminale qui vise une alternance cyber en 2027 ?\n\n#CyberSécurité #Formation #Alternance2027 #TryHackMe`];
+const RN=[(ctx)=>`Ce partage m'interpelle dans mon quotidien de conseiller en assurance.\n\n${ctx?'"'+ctx+'" — ':''}Après 28 ans dans le secteur, je vois régulièrement le décalage entre ce que les gens pensent être couverts et ce que leur contrat prévoit.\n\nQuelle est votre plus grande incompréhension sur vos contrats d'assurance ?\n\n#Assurance #ConseilAssurance #Pédagogie #Rennes`,(ctx)=>`Un sujet qui résonne avec ce que j'observe chez mes clients.\n\n${ctx?'Sur "'+ctx+'" : ':''}La relation de confiance entre un client et son conseiller se construit dans la durée. 28 ans dans ce métier m'ont appris que la technique c'est 30% du travail. Le reste c'est l'humain.\n\n#Assurance #RelationClient #Confiance #Rennes`];
+const CG={
+  promotion:(w,n,a)=>a==='simon'?`@${w} — Félicitations pour ce nouveau poste${n?' ('+n+')':''} ! 🎉\n\nC'est vraiment inspirant de voir des profils progresser dans la cybersécurité. En tant qu'étudiant qui cherche à entrer dans ce domaine, ça me motive.\n\n#Cybersécurité #Félicitations #Réseau`:`@${w} — Toutes mes félicitations pour cette promotion${n?' : '+n:''} ! 🎉\n\nAprès 28 ans dans l'assurance, je sais combien ces reconnaissances sont méritées.\n\n#Assurance #Félicitations #Réseau #Rennes`,
+  certification:(w,n,a)=>a==='simon'?`@${w} — Bravo pour cette certification${n?' : '+n:''} ! 🏆\n\nObtenir une certif en cybersécurité ça demande vraiment du boulot. En tant qu'étudiant qui vise à se certifier, je mesure l'effort.\n\n#Cybersécurité #Certification #Félicitations`:`@${w} — Félicitations pour cette certification${n?' : '+n:''} ! 🏆\n\nDans notre secteur, la formation continue c'est pas une option. Bravo pour cet investissement.\n\n#Assurance #Formation #Certification #Félicitations`,
+  diplome:(w,n,a)=>a==='simon'?`@${w} — Félicitations pour ce diplôme${n?' ('+n+')':''} ! 🎓\n\nBelle étape. Bonne suite !\n\n#Cybersécurité #Diplôme #Félicitations`:`@${w} — Bravo pour ce diplôme${n?' ('+n+')':''} ! 🎓\n\nLa formation c'est un investissement qui paie toujours.\n\n#Assurance #Formation #Diplôme #Félicitations`,
+  alternance:(w,n,a)=>a==='simon'?`@${w} — Super pour ce contrat d'alternance${n?' chez '+n:''} ! 🚀\n\nC'est exactement le parcours que je vise pour 2027. Ça me motive à continuer !\n\n#Alternance #Cybersécurité #Félicitations #Alternance2027`:`@${w} — Félicitations pour ce contrat d'alternance${n?' chez '+n:''} ! 🚀\n\nL'alternance c'est le meilleur tremplin pour débuter sa carrière.\n\n#Alternance #Assurance #Félicitations`,
+  projet:(w,n,a)=>a==='simon'?`@${w} — Félicitations pour le lancement${n?' de '+n:''} ! 💡\n\nLes projets qui apportent de la valeur à la communauté cyber font avancer le secteur.\n\n#Cybersécurité #Innovation #Félicitations`:`@${w} — Bravo pour ce lancement${n?' : '+n:''} ! 💡\n\nL'innovation c'est ce qui nous permet de mieux servir nos clients.\n\n#Assurance #Innovation #Félicitations #Rennes`,
+  anniversaire:(w,n,a)=>a==='simon'?`@${w} — ${n?n+' déjà':'Bel anniversaire'} dans la cybersécurité ! 🔐\n\nL'expérience terrain c'est ce que je veux construire. Inspirant !\n\n#Cybersécurité #Anniversaire #Félicitations`:`@${w} — ${n?n:'Bel anniversaire professionnel'} dans l'assurance ! 🎯\n\nL'expérience fait vraiment la différence dans notre métier.\n\n#Assurance #Anniversaire #Félicitations #Rennes`
+};
+
+/* ════ FEED CONSOLE ════ */
+const AS=[{src:'CERT-FR',titre:'Campagne phishing active PME françaises',detail:'Spear-phishing avec deepfakes vocaux.'},{src:'ANSSI',titre:'Ransomwares +30% en France 2025',detail:'PME et collectivités restent les principales cibles.'},{src:'TryHackMe',titre:'Nouveaux parcours SOC analyst',detail:'Parcours certifiant avec entreprises françaises.'},{src:'Google',titre:'0-day Chrome corrigé en urgence',detail:'Faille V8 permettant échappée sandbox.'},{src:'HackTheBox',titre:'Top 10 techniques priv esc Linux 2025',detail:'Vecteurs les plus exploités en pentest et CTF.'},{src:'ZATAZ',titre:'2M comptes français exposés',detail:'Base de données mal configurée.'}];
+const AN=[{src:'FFSA',titre:'Réforme assurance emprunteur bilan 2025',detail:'1,2M de ménages ont changé d\'assurance.'},{src:'CNIL',titre:'Protection données clients assurance',detail:'Chiffrement obligatoire pour données de santé.'},{src:'L\'Argus',titre:'Mutuelles +6% en moyenne 2025',detail:'Inflation médicale et vieillissement.'},{src:'France Assureurs',titre:'Sinistres climatiques record 2024',detail:'4,3 milliards d\'euros de dommages assurés.'},{src:'MoneyVox',titre:'PER dépasse 100 milliards',detail:'Le PER s\'impose comme produit phare épargne long terme.'},{src:'Argus',titre:'Cyber assurance PME : marché x2',detail:'Nombre de contrats doublé en 2 ans.'}];
+const FD=[{name:'Sophie Martin',event:'Certification CEH obtenue',occ:'certification',detail:'6 mois de préparation.'},{name:'Lucas Bernard',event:'Analyste SOC — Orange Cyberdefense',occ:'promotion',detail:'Premier poste après BTS SIO.'},{name:'Emma Rousseau',event:'Bachelor Cybersécurité Rennes',occ:'diplome',detail:'Major de promotion.'},{name:'Théo Lefebvre',event:'Alternance Pentesteur — Capgemini',occ:'alternance',detail:'BTS SIO SISR.'}];
+const RD=[{name:'Florian Rault',titre:'Pourquoi chaque dev devrait apprendre le pentest',preview:'3 ans à coder sans comprendre comment mes apps pouvaient être attaquées...',likes:'847'},{name:'ANSSI France',titre:'Guide hygiène informatique 2025',preview:'Notre guide référence mis à jour avec 8 nouvelles recommandations...',likes:'3.4k'}];
+
+/* ════ GÉNÉRATION ════ */
+function genTxt(opts={}){
+  const a=acc,t=opts.type||typ,tp=opts.topic||topic;
+  const ctx=opts.ctx||document.getElementById('ctx-inp')?.value||'';
+  const who=opts.who||document.getElementById('cw-who')?.value||'un contact';
+  const occ=opts.occ||document.getElementById('cw-occ')?.value||'promotion';
+  const note=opts.note||'';
+  const rpTxt=opts.content||document.getElementById('rp-txt')?.value||'';
+  if(t==='original'){
+    const themes=a==='simon'?TS:TN;
+    const d=themes[tp]||Object.values(themes)[0];
+    return (pick(d.a)+'\n\n'+pick(d.c)+(ctx?'\n\n'+ctx:'')).trim();
+  }
+  if(t==='repost') return pick(a==='simon'?RS:RN)(ctx||rpTxt.substring(0,80));
+  if(t==='congrats'){const fn=CG[occ]||CG.promotion;return fn(who,note||ctx,a);}
+  return '';
+}
+
+function renderPost(text){
+  const pw=document.getElementById('pw'),po=document.getElementById('po'),htb=document.getElementById('htb'),pm=document.getElementById('pm');
+  pw.style.display='block';po.className='po';
+  const tags=[...new Set((text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]))];
+  const esc=text.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  po.innerHTML=esc.replace(/#([\wÀ-ÿéèêëàâîïôùûüç]+)/gi,'<span class="ht" onclick="cpHt(\'#$1\')">#$1</span>');
+  htb.innerHTML=tags.length?'<span style="color:var(--muted);font-size:10px;margin-right:4px">TAGS:</span>'+tags.map(h=>`<span class="htag" onclick="cpHt('${h}')">${h}</span>`).join(''):'<span style="color:var(--muted);font-size:11px">Aucun hashtag</span>';
+  const len=text.length;pm.textContent=`${len} car. · ${tags.length} hashtags`;pm.parentElement.className='pm'+(len>3000?' over':len>2500?' warn':'');
+}
+function cpHt(h){navigator.clipboard.writeText(h).then(()=>toast('Copié : '+h,'in'));}
+function publishLinkedIn(){
+  const text = document.getElementById('po').innerText || '';
+  if(!text){ toast('Génère d\'abord un post','er'); return; }
+  if(lastPost) archive(lastPost,'copie');
+  // iOS Share API — ouvre le menu partage natif
+  if(navigator.share){
+    navigator.share({
+      title: 'Post LinkedIn — '+PR[acc].nom,
+      text: text
+    }).then(()=>{
+      toast('Partagé avec succès ✓','ok');
+      clearGenerator();
+    }).catch(()=>{
+      // Annulé par l'utilisateur ou erreur — fallback clipboard
+      navigator.clipboard.writeText(text).catch(()=>{});
+      toast('Partage annulé — post copié','in');
+    });
+  } else {
+    // Fallback navigateur desktop — copie + ouvre LinkedIn
+    navigator.clipboard.writeText(text).then(()=>{
+      const encoded = encodeURIComponent(text.substring(0,700));
+      window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encoded,'_blank');
+      toast('Post copié + LinkedIn ouvert 💼','ok');
+      clearGenerator();
+    });
+  }
+}
+function clearGenerator(){
+  document.getElementById('pw').style.display='none';
+  document.getElementById('po').innerHTML='';
+  document.getElementById('htb').innerHTML='';
+  document.getElementById('pm').textContent='';
+  lastPost=null;
+}
+function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');if(lastPost)archive(lastPost,'copie');});}
+
+function genPost(){
+  const usedTexts=new Set([...Q.map(q=>q.text),...H.map(h=>h.text),...RJ.map(r=>r.text)]);
+  let text, isDup=false;
+  if(typ==='original'){
+    const themes=acc==='simon'?TS:TN;
+    const d=themes[topic]||Object.values(themes)[0];
+    const ctx=document.getElementById('ctx-inp')?.value||'';
+    const finalize=(intro,corps)=>(intro+'\n\n'+corps+(ctx?'\n\n'+ctx:'')).trim();
+    // Toutes les combinaisons possibles pour CE thème précis (choisi par l'utilisateur, pas changé)
+    const combos=[];
+    d.a.forEach(ai=>d.c.forEach(ci=>combos.push(finalize(ai,ci))));
+    const fresh=combos.filter(c=>!usedTexts.has(c));
+    if(fresh.length){text=pick(fresh);}
+    else{text=pick(combos);isDup=true;}
+  }else{
+    text=genTxt();
+    isDup=usedTexts.has(text);
+  }
+  renderPost(text);
+  lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc};
+  if(!stats[acc])stats[acc]={total:0,sent:0};
+  stats[acc].total++;saveAll();updateStats();
+  if(isDup) toast('⚠️ Toutes les variantes de ce thème sont déjà utilisées (texte en double avec un post existant)','er');
+  else toast('Post généré ✓','ok');
+}
+
+function archive(post,src='copie'){
+  if(H.find(x=>x.id===post.id))return;
+  H.unshift({...post,publishedAt:Date.now(),source:src});
+  if(!stats[acc])stats[acc]={total:0,sent:0};
+  stats[acc].sent++;saveAll();renderH();updateStats();
+}
+
+function schedPost(){
+  if(!lastPost){toast('Génère d\'abord un post','er');return;}
+  const base=Q.length?Math.max(...Q.map(q=>q.scheduledAt)):Date.now();
+  Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:acc});
+  saveAll();renderQ();updateStats();toast('Programmé ✓','in');
+}
+
+/* Génère un seul post selon un plan aléatoire (pour auto-refill) */
+function topicKeyOf(p){
+  if(p.type==='congrats') return 'congrats|'+(p.who||'')+'|'+(p.occ||'');
+  if(p.type==='repost') return 'repost|'+(p.content||'');
+  return 'original|'+(p.topic||'');
+}
+function genOnePost(){
+  const plansSimon=[{type:'original',topic:'Pentest'},{type:'congrats',who:'la communauté cyber',occ:'certification'},{type:'original',topic:'CTF'},{type:'repost',content:'actualité cyber 2025'},{type:'original',topic:'SOC'},{type:'congrats',who:'mon réseau',occ:'alternance'},{type:'original',topic:'Bug Bounty'},{type:'original',topic:'OSINT'},{type:'original',topic:'Phishing'},{type:'original',topic:'Zero Day'},{type:'original',topic:'SIEM'},{type:'original',topic:'Cloud Security'},{type:'original',topic:'Cryptographie'},{type:'original',topic:'RGPD'},{type:'original',topic:'Ransomware'},{type:'original',topic:'Mots de passe'},{type:'original',topic:'Authentification 2FA'},{type:'original',topic:'Ingénierie sociale'},{type:'original',topic:'VPN'},{type:'original',topic:'Sécurité IoT'},{type:'original',topic:'Sécurité mobile'}];
+  const plansNiko=[{type:'original',topic:'Mutuelle santé'},{type:'congrats',who:'un client fidèle',occ:'anniversaire'},{type:'original',topic:'Prévoyance'},{type:'repost',content:'réforme assurance 2025'},{type:'original',topic:'Assurance vie'},{type:'congrats',who:'mon réseau assurance',occ:'promotion'},{type:'original',topic:'Conseils clients'},{type:'original',topic:'Assurance moto'},{type:'original',topic:'Épargne retraite'},{type:'original',topic:'RC Pro'},{type:'original',topic:'Gestion sinistre'},{type:'original',topic:'Fidélisation client'},{type:'original',topic:'Prospection'},{type:'original',topic:'Cyber risques pro'}];
+  const plans = acc==='simon' ? plansSimon : plansNiko;
+  // La redondance de thème est acceptée (et même favorisée par la popularité ci-dessous) ;
+  // seul le texte exact déjà utilisé est strictement interdit.
+  const pool = plans;
+  // N'accepte jamais un texte déjà en file, déjà publié, OU déjà supprimé manuellement (rejeté)
+  const usedTexts = new Set([...Q.map(q=>q.text), ...H.map(h=>h.text), ...RJ.map(r=>r.text)]);
+  // Popularité par thème (somme des vues renseignées manuellement) — favorise les thèmes qui ont bien marché
+  function viewsForTopic(key){
+    return H.filter(h=>h.account===acc && topicKeyOf({type:h.type,topic:h.topic})===key)
+      .reduce((s,h)=>s+(h.views||0),0);
+  }
+  function weightedTake(arr){
+    // Pondération logarithmique : un thème très populaire reste favorisé mais n'écrase plus tout le reste
+    const weights=arr.map(p=>1+Math.min(8,Math.log10(1+viewsForTopic(topicKeyOf(p)))*2.2));
+    const total=weights.reduce((a,b)=>a+b,0);
+    let r=Math.random()*total;
+    for(let i=0;i<arr.length;i++){r-=weights[i];if(r<=0)return arr.splice(i,1)[0];}
+    return arr.splice(arr.length-1,1)[0];
+  }
+  let post=null, candidates=[...pool];
+  for(let tries=0; tries<15 && !post; tries++){
+    if(!candidates.length) candidates=[...pool];
+    const p=weightedTake(candidates);
+    const text=genTxt(p);
+    if(!usedTexts.has(text)){
+      const base = Q.length ? Math.max(...Q.map(q=>q.scheduledAt)) : Date.now();
+      post = {id:Date.now()+Math.floor(Math.random()*1000),text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
+    }
+  }
+  if(!post){
+    // Dernier recours après 15 essais : on accepte plutôt que de bloquer la file
+    const p=pick(pool),text=genTxt(p);
+    const base = Q.length ? Math.max(...Q.map(q=>q.scheduledAt)) : Date.now();
+    post = {id:Date.now()+Math.floor(Math.random()*1000),text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
+  }
+  Q.push(post);
+  if(!stats[acc])stats[acc]={total:0,sent:0};
+  stats[acc].total++;
+  return post;
+}
+
+const QUEUE_TARGET = 7;
+/* Maintient la file à QUEUE_TARGET posts en générant automatiquement le manquant */
+function autoRefill(silent=false){
+  let added = 0;
+  while(Q.length < QUEUE_TARGET){
+    genOnePost();
+    added++;
+  }
+  if(added>0){
+    saveAll();renderQ();updateStats();
+    if(!silent) toast(`🔄 ${added} post${added>1?'s':''} régénéré${added>1?'s':''} automatiquement pour maintenir la file à ${QUEUE_TARGET}`,'in');
+  }
+}
+
+function autoGen(){
+  const plans=acc==='simon'
+    ?[{type:'original',topic:'Pentest'},{type:'congrats',who:'la communauté cyber',occ:'certification'},{type:'original',topic:'CTF'},{type:'repost',content:'actualité cyber 2025'},{type:'original',topic:'SOC'},{type:'congrats',who:'mon réseau',occ:'alternance'},{type:'original',topic:'Bug Bounty'}]
+    :[{type:'original',topic:'Mutuelle santé'},{type:'congrats',who:'un client fidèle',occ:'anniversaire'},{type:'original',topic:'Prévoyance'},{type:'repost',content:'réforme assurance 2025'},{type:'original',topic:'Assurance vie'},{type:'congrats',who:'mon réseau assurance',occ:'promotion'},{type:'original',topic:'Conseils clients'}];
+  plans.forEach((p,i)=>{
+    const text=genTxt(p);
+    const base=Q.length?Math.max(...Q.map(q=>q.scheduledAt)):Date.now();
+    Q.push({id:Date.now()+i*10,text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc});
+    if(!stats[acc])stats[acc]={total:0,sent:0};stats[acc].total++;
+  });saveAll();renderQ();updateStats();toast('Planning 7 posts créé ✓','ok');
+}
+
+/* ════ QUEUE ════ */
+function renderQ(){
+  const list=document.getElementById('q-list'),badge=document.getElementById('q-bdg');
+  if(!Q.length){list.innerHTML='<div class="qe">Aucun post programmé.</div>';badge.textContent='0 posts';return;}
+  badge.textContent=Q.length+' post'+(Q.length>1?'s':'');
+  list.innerHTML=Q.map((q,i)=>{
+    const diff=q.scheduledAt-Date.now(),ts=diff>0?'Dans '+fmtD(diff):'⚡ À publier';
+    const tags=(q.text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,4);
+    const ab=q.account==='niko'?'<span style="color:var(--orange)">NJ</span>':'<span style="color:var(--cyan)">SJ</span>';
+    return `<div class="qi ${i===0?'nxt':''}" id="qi-${q.id}">
+      <div class="qn">${i+1}</div>
+      <div class="qb">
+        <div class="qt">${q.label} · ${ab}</div>
+        <div class="qp">${q.text.substring(0,120)}…</div>
+        ${tags.length?`<div class="qts">${tags.map(h=>`<span>${h}</span>`).join('')}</div>`:''}
+        <div class="qtm">${ts}</div>
+      </div>
+      <div class="qa">
+        <button class="qbtn" onclick="cpQ(${q.id})" style="color:var(--cyan)" title="Copier">📋</button>
+        <button class="qbtn" onclick="pubLiQ(${q.id})" style="color:#0a66c2" title="Publier sur LinkedIn">🚀</button>
+        <button class="qbtn" onclick="prvQ(${q.id})" style="color:var(--muted)" title="Aperçu">👁</button>
+        <button class="qbtn" onclick="delQ(${q.id})" style="color:var(--muted)" title="Supprimer">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function pubLiQ(id){
+  const q=Q.find(x=>x.id===id);
+  if(!q) return;
+  archive({...q},'copie-file');
+  if(navigator.share){
+    navigator.share({
+      title:'Post LinkedIn — '+PR[acc].nom,
+      text:q.text
+    }).then(()=>toast('Partagé ✓','ok'))
+    .catch(()=>{navigator.clipboard.writeText(q.text).catch(()=>{});toast('Annulé — post copié','in');});
+  } else {
+    navigator.clipboard.writeText(q.text).catch(()=>{});
+    const encoded=encodeURIComponent(q.text.substring(0,700));
+    window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encoded,'_blank');
+    toast('Post copié + LinkedIn ouvert','ok');
+  }
+}
+function cpQ(id){const q=Q.find(x=>x.id===id);if(q){navigator.clipboard.writeText(q.text).then(()=>toast('Copié ! 💼','ok'));archive({...q},'copie-file');}}
+function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;renderPost(q.text);lastPost=q;document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});toast('Aperçu chargé','in');}
+function delQ(id){
+  if(!confirm('Supprimer ce post de la file ?'))return;
+  const removed=Q.find(x=>x.id===id);
+  if(removed)RJ.unshift({id:removed.id,text:removed.text,type:removed.type,topic:removed.topic,label:removed.label||TL[removed.type],account:acc,rejectedAt:Date.now()});
+  Q=Q.filter(x=>x.id!==id);
+  if(Q.length){
+    const base=Date.now();
+    Q.forEach((q,i)=>{q.scheduledAt=base+(i+1)*48*3600*1000;});
+  }
+  saveAll();renderQ();updateStats();renderRJ();rfTmr();
+  autoRefill();
+  if(Q.length)toast('Échéances recalculées (48h en cascade)','in');
+}
+
+/* ════ TIMER ════ */
+function startTimer(){
+  if(tmrRun)return;if(!Q.length){toast('Ajoute des posts d\'abord !','er');return;}
+  tmrRun=true;lsS(SK.timer,true);document.getElementById('st-txt').textContent='En cours';
+  clearInterval(tmrIv);
+  tmrIv=setInterval(()=>{
+    if(!tmrRun){clearInterval(tmrIv);return;}
+    while(Q.length&&Q[0].scheduledAt<=Date.now())pubNext();
+    rfTmr();if(!Q.length)pauseTimer();
+  },1000);toast('Timer démarré ▶','ok');
+}
+function pauseTimer(){tmrRun=false;clearInterval(tmrIv);lsS(SK.timer,false);document.getElementById('st-txt').textContent='En pause';}
+function resetTimer(){
+  pauseTimer();
+  // Recalculer réellement les échéances de tous les posts en file en cascade de 48h
+  if(Q.length){
+    let base = Date.now();
+    Q.forEach((q,i)=>{
+      q.scheduledAt = base + (i+1)*48*3600*1000;
+    });
+    saveAll();
+    renderQ();
+  }
+  document.getElementById('t-disp').textContent='48:00:00';
+  document.getElementById('st-nxt').textContent=Q.length?'48h':'—';
+  document.getElementById('t-nt').textContent=Q[0]?.label||'—';
+  document.getElementById('st-txt').textContent='Prêt';
+  if(Q.length) toast('Échéances de tous les posts recalculées (48h en cascade)','ok');
+}
+function pubNext(){
+  const q=Q.shift();if(!q)return;
+  archive({...q},'publie');
+  renderQ();
+  document.getElementById('t-nt').textContent=Q[0]?.label||'—';
+  toast(`⚡ "${q.label}" publié automatiquement — voir l'historique`,'ok');
+  autoRefill(true);
+}
+function rfTmr(){
+  if(!Q.length){document.getElementById('t-disp').textContent='00:00:00';document.getElementById('st-nxt').textContent='—';document.getElementById('t-nt').textContent='—';return;}
+  const diff=Math.max(0,Q[0].scheduledAt-Date.now());
+  const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+  document.getElementById('t-disp').textContent=pad(h)+':'+pad(m)+':'+pad(s);
+  document.getElementById('st-nxt').textContent=h>0?h+'h':m>0?m+'m':s+'s';
+  document.getElementById('t-nt').textContent=Q[0]?.label||'—';
+}
+function refreshTmr(){rfTmr();}
+function chkMissed(){
+  if(!lsL(SK.timer,false))return;
+  const now=Date.now(),missed=Q.filter(q=>q.scheduledAt<=now);
+  if(!missed.length)return;
+  missed.forEach(q=>archive({...q},'publie'));Q=Q.filter(q=>q.scheduledAt>now);
+  saveAll();renderQ();renderH();updateStats();
+  toast(`⚡ ${missed.length} post${missed.length>1?'s':''} publié${missed.length>1?'s':''} pendant ton absence — voir l'historique`,'ok');
+  autoRefill(true);
+}
+
+/* ════ HISTORIQUE ════ */
+function renderH(){
+  const list=document.getElementById('h-list'),badge=document.getElementById('h-bdg');
+  badge.textContent=H.length;
+  if(!H.length){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div>';return;}
+  const cols={original:'b-bl',repost:'b-or',congrats:'b-gr'};
+  const srcL={'copie':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);margin-left:4px">📋</span>','copie-file':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2);margin-left:4px">📋 File</span>','publie':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);margin-left:4px">⚡</span>','manuel':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);margin-left:4px">✍️ Manuel</span>'};
+  list.innerHTML=H.slice(0,50).map(h=>{
+    const d=new Date(h.publishedAt||h.ts||Date.now());
+    const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const tags=(h.text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,3).join(' ');
+    const ab=h.account==='niko'?'<span style="font-size:9px;color:var(--orange);margin-left:3px">NJ</span>':'<span style="font-size:9px;color:var(--cyan);margin-left:3px">SJ</span>';
+    return `<div class="hi" onclick="tgH(${h.id})">
+      <div class="hir">
+        <span class="bdg hbdg ${cols[h.type]||'b-bl'}">${h.label}</span>
+        ${srcL[h.source]||srcL['copie']}${ab}
+        <span class="htxt">${h.text.substring(0,80)}…</span>
+        <button class="hcp" onclick="event.stopPropagation();cpH(${h.id})">📋</button>
+        <button class="hcp" onclick="event.stopPropagation();delH(${h.id})" style="color:rgba(255,23,68,.5)">✕</button>
+        ${h.views?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
+        <span class="htm">${ts}</span>
+      </div>
+      <div class="hex" id="hex-${h.id}">${h.text}
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
+          <label style="font-size:11px;color:var(--muted)">👁 Vues/impressions LinkedIn :</label>
+          <input type="number" min="0" inputmode="numeric" value="${h.views||''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
+        </div>
+      </div>
+      ${tags?`<div class="htgs">${tags}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function resetGenerated(){
+  if(!Q.length){toast('La file est déjà vide','in');return;}
+  if(!confirm('Vider entièrement la file ('+Q.length+' posts) et la regénérer avec de nouveaux thèmes ? Les posts retirés ne sont pas conservés (ni publiés, ni rejetés).'))return;
+  Q=[];
+  saveAll();renderQ();updateStats();rfTmr();
+  autoRefill();
+  toast('File regénérée avec de nouveaux thèmes ✓','ok');
+}
+function dedupQueueVsHistory(silent){
+  const usedTexts=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text)]);
+  const before=Q.length;
+  Q=Q.filter(q=>!usedTexts.has(q.text));
+  const removed=before-Q.length;
+  if(removed>0){saveAll();renderQ();updateStats();rfTmr();}
+  autoRefill(silent);
+  if(removed>0&&!silent)toast(removed+' doublon'+(removed>1?'s':'')+' avec l\'historique retiré'+(removed>1?'s':'')+' de la file','in');
+  return removed;
+}
+function toggleAddH(){
+  const f=document.getElementById('addh-form');
+  const open=f.style.display==='none'||!f.style.display;
+  f.style.display=open?'block':'none';
+  if(open)populateAddHTopics();
+}
+function populateAddHTopics(){
+  const sel=document.getElementById('addh-topic');
+  const themes=acc==='simon'?TS:TN;
+  sel.innerHTML=Object.keys(themes).map(k=>`<option value="${k}">${k}</option>`).join('')+'<option value="">Autre / republication</option>';
+}
+function addManualH(){
+  const txt=document.getElementById('addh-txt').value.trim();
+  if(!txt){toast('Colle le texte du post','er');return;}
+  const topic=document.getElementById('addh-topic').value;
+  const views=Math.max(0,parseInt(document.getElementById('addh-views').value,10)||0);
+  const entry={id:Date.now()+Math.floor(Math.random()*1000),text:txt,type:'original',topic,label:TL.original,account:acc,publishedAt:Date.now(),source:'manuel',views};
+  H.unshift(entry);
+  if(!stats[acc])stats[acc]={total:0,sent:0};
+  stats[acc].sent++;
+  saveAll();renderH();updateStats();
+  dedupQueueVsHistory();
+  document.getElementById('addh-txt').value='';
+  document.getElementById('addh-views').value='';
+  toggleAddH();
+  toast('Post ajouté à l\'historique ✓','ok');
+}
+function tgH(id){const el=document.getElementById('hex-'+id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+function tgRJ(id){const el=document.getElementById('rjex-'+id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+function renderRJ(){
+  const list=document.getElementById('rj-list'),badge=document.getElementById('rj-count');
+  if(!list)return;
+  if(badge)badge.textContent='('+RJ.length+')';
+  if(!RJ.length){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post mis de côté pour l\'instant.</div>';return;}
+  const cols={original:'b-bl',repost:'b-or',congrats:'b-gr'};
+  list.innerHTML=RJ.map(r=>{
+    const d=new Date(r.rejectedAt||Date.now());
+    const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const ab=r.account==='niko'?'<span style="font-size:9px;color:var(--orange);margin-left:3px">NJ</span>':'<span style="font-size:9px;color:var(--cyan);margin-left:3px">SJ</span>';
+    return `<div class="hi" onclick="tgRJ(${r.id})">
+      <div class="hir">
+        <span class="bdg hbdg ${cols[r.type]||'b-bl'}">${r.label||TL[r.type]||'📝'}</span>
+        ${ab}
+        <span class="htxt">${r.text.substring(0,80)}…</span>
+        <button class="hcp" onclick="event.stopPropagation();markPublishedRJ(${r.id})" title="Marquer comme publié sur LinkedIn">🚀</button>
+        <button class="hcp" onclick="event.stopPropagation();delRJ(${r.id})" style="color:rgba(255,23,68,.5)" title="Supprimer définitivement">🗑️</button>
+        <span class="htm">${ts}</span>
+      </div>
+      <div class="hex" id="rjex-${r.id}">${r.text}</div>
+    </div>`;
+  }).join('');
+}
+function markPublishedRJ(id){
+  const r=RJ.find(x=>x.id===id);if(!r)return;
+  if(!confirm('Marquer ce post comme publié sur LinkedIn ? (à faire seulement si tu l\'as réellement posté)'))return;
+  archive({id:r.id,text:r.text,type:r.type,topic:r.topic,label:r.label||TL[r.type],account:r.account},'publie');
+  RJ=RJ.filter(x=>x.id!==id);
+  saveAll();renderRJ();
+  toast('Marqué comme publié ✓','ok');
+}
+function delRJ(id){
+  if(!confirm('Supprimer définitivement ce post mis de côté ? Cette action est irréversible.'))return;
+  RJ=RJ.filter(x=>x.id!==id);
+  saveAll();renderRJ();
+  toast('Supprimé définitivement','in');
+}
+function setViews(id,val){
+  const h=H.find(x=>x.id===id);if(!h)return;
+  const n=Math.max(0,parseInt(val,10)||0);
+  h.views=n;saveAll();
+  toast(n?'👁 '+n+' vues enregistrées':'Vues réinitialisées','ok');
+}
+function cpH(id){const h=H.find(x=>x.id===id);if(h)navigator.clipboard.writeText(h.text).then(()=>toast('Copié ✓','ok'));}
+function delH(id){H=H.filter(x=>x.id!==id);saveAll();renderH();updateStats();}
+function clearHist(){H=[];if(stats[acc])stats[acc].sent=0;saveAll();renderH();updateStats();}
+
+/* ════ FÉLICITATIONS ════ */
+function toggleCff(){const f=document.getElementById('cff');f.style.display=f.style.display==='block'?'none':'block';}
+function addCf(){
+  const name=document.getElementById('cf-name').value.trim();if(!name){toast('Saisis un nom','er');return;}
+  const occ=document.getElementById('cf-occ').value,note=document.getElementById('cf-note').value.trim();
+  CF.push({id:Date.now(),name,occ,note});
+  document.getElementById('cf-name').value='';document.getElementById('cf-note').value='';
+  document.getElementById('cff').style.display='none';saveAll();renderCF();toast(name+' ajouté(e) 🎉','ok');
+}
+function renderCF(){
+  const list=document.getElementById('cf-list'),badge=document.getElementById('cf-bdg');badge.textContent=CF.length;
+  const ol={promotion:'Promotion',certification:'Certification',diplome:'Diplôme',alternance:'Alternance',projet:'Projet',anniversaire:'Anniversaire pro'};
+  if(!CF.length){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Ajoute des personnes à féliciter.</div>';return;}
+  list.innerHTML=CF.map(c=>`<div class="cfi"><div class="cfn">${c.name}</div><div class="cfo">🎉 ${ol[c.occ]||c.occ}</div>${c.note?`<div class="cfnt">${c.note}</div>`:''}<div class="cfac"><button class="cfb cfbg" onclick="genCf(${c.id})">⚡ Générer</button><button class="cfb cfbd" onclick="delCf(${c.id})">✕</button></div></div>`).join('');
+}
+function delCf(id){CF=CF.filter(x=>x.id!==id);saveAll();renderCF();}
+function genCf(id){
+  const c=CF.find(x=>x.id===id);if(!c)return;
+  const text=genTxt({type:'congrats',who:c.name,occ:c.occ,note:c.note,ctx:c.note});
+  renderPost(text);lastPost={id:Date.now(),text,type:'congrats',topic:c.name,label:'🎉 Félicitations',ts:Date.now(),account:acc};
+  if(!stats[acc])stats[acc]={total:0,sent:0};stats[acc].total++;saveAll();updateStats();
+  toast('Post pour '+c.name+' ✓','ok');document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function genAllCf(){
+  if(!CF.length){toast('Aucune personne','er');return;}
+  CF.forEach(c=>{
+    const text=genTxt({type:'congrats',who:c.name,occ:c.occ,note:c.note,ctx:c.note});
+    const base=Q.length?Math.max(...Q.map(q=>q.scheduledAt)):Date.now();
+    Q.push({id:Date.now()+Math.random()*1000,text,type:'congrats',topic:c.name,label:'🎉 Félicitations',scheduledAt:base+48*3600*1000,account:acc});
+    if(!stats[acc])stats[acc]={total:0,sent:0};stats[acc].total++;
+  });saveAll();renderQ();updateStats();toast('Tous générés et programmés !','ok');
+}
+
+/* ════ CONSOLE LINKEDIN ════ */
+function toggleLi(){
+  const b=document.getElementById('li-body');
+  const o=b.classList.toggle('open');
+  document.getElementById('li-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';
+  if(o){
+    // Reset tous les tabs et re-rendre avec le compte actif
+    document.querySelectorAll('.litp').forEach(b=>b.classList.remove('act'));
+    document.querySelector('.litp').classList.add('act');
+    document.getElementById('tab-actu').style.display='block';
+    document.getElementById('tab-feli').style.display='none';
+    document.getElementById('tab-repost').style.display='none';
+    renderFeed('actu');
+  }
+}
+function showTab(tab,btn){document.querySelectorAll('.litp').forEach(b=>b.classList.remove('act'));btn.classList.add('act');['actu','feli','repost'].forEach(t=>document.getElementById('tab-'+t).style.display=t===tab?'block':'none');renderFeed(tab);}
+function closeLi(){document.getElementById('li-body').classList.remove('open');document.getElementById('li-bdg').textContent='Ouvrir ▾';}
+function getA(i){return acc==='simon'?AS[i]:AN[i];}
+
+function toggleLi(){
+  const b=document.getElementById('li-body');
+  const o=b.classList.toggle('open');
+  document.getElementById('li-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';
+  if(o){
+    document.querySelectorAll('.litp').forEach(b=>b.classList.remove('act'));
+    document.querySelector('.litp').classList.add('act');
+    document.getElementById('tab-actu').style.display='block';
+    document.getElementById('tab-feli').style.display='none';
+    document.getElementById('tab-repost').style.display='none';
+    // Forcer la mise à jour du texte info avec le compte actif
+    document.getElementById('li-inf').textContent = acc==='simon'
+      ? '📡 Actualités cybersécurité · Simon · Clique pour pré-remplir.'
+      : '📡 Actualités assurance · Nicolas · Clique pour pré-remplir.';
+    renderFeed('actu');
+  }
+}
+function renderFeed(tab){
+  const a = acc; // Capturer acc à cet instant précis
+  const data = a==='simon' ? AS : AN;
+  if(tab==='actu'){
+    document.getElementById('actu-list').innerHTML=data.map((d,i)=>`<div class="fi"><div class="fia">${d.src.substring(0,2)}</div><div class="fib"><div class="fin">${d.src}</div><div class="fie" style="color:var(--orange)">${d.titre}</div><div class="fit">${d.detail}</div></div><div class="fiac"><button class="fibt fibtg" onclick="uA(${i})">✍️</button><button class="fibt fibtg" onclick="uAr(${i})" style="background:rgba(255,109,0,.1);color:var(--orange)">🔁</button></div></div>`).join('');
+  }else if(tab==='feli'){
+    document.getElementById('feli-list').innerHTML=FD.map((f,i)=>`<div class="fi"><div class="fia">${f.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div><div class="fib"><div class="fin">${f.name}</div><div class="fie">🎉 ${f.event}</div><div class="fit">${f.detail}</div></div><div class="fiac"><button class="fibt fibtg" onclick="uF(${i})">🎉</button></div></div>`).join('');
+  }else{
+    document.getElementById('rp-list').innerHTML=RD.map((r,i)=>`<div class="fi"><div class="fia">${r.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div><div class="fib"><div class="fin">${r.name} · <span style="color:var(--muted)">${r.likes}</span></div><div class="fie" style="color:var(--white)">${r.titre}</div><div class="fit">${r.preview}</div></div><div class="fiac"><button class="fibt fibtg" onclick="uR(${i})">🔁</button></div></div>`).join('');
+  }
+  // Mettre à jour getA pour utiliser les bonnes données
+  window._currentFeedData = data;
+}
+function uA(i){const a=getA(i);document.querySelector('[data-t="original"]').click();document.getElementById('ctx-inp').value='Parle de : "'+a.titre+'" — '+a.detail;closeLi();toast('Contexte pré-rempli','in');}
+function uAr(i){const a=getA(i);document.querySelector('[data-t="repost"]').click();document.getElementById('rp-txt').value=a.titre+' — '+a.src+'\n\n'+a.detail;closeLi();toast('Post pré-rempli','in');}
+function uF(i){const f=FD[i];document.querySelector('[data-t="congrats"]').click();document.getElementById('cw-who').value=f.name+' — '+f.detail;document.getElementById('cw-occ').value=f.occ;closeLi();toast('Pré-rempli pour '+f.name,'in');}
+function uR(i){const r=RD[i];document.querySelector('[data-t="repost"]').click();document.getElementById('rp-txt').value=r.titre+'\n\n'+r.preview;closeLi();toast('Post chargé','in');}
+
+/* ════ SYNC CLOUD (GitHub Gist privé) ════ */
+let syncBusy=false,syncTm=null;
+function ghHeaders(){return {'Authorization':'Bearer '+lsL(GK.tok,''),'Accept':'application/vnd.github+json','Content-Type':'application/json'};}
+function syncReady(){return !!lsL(GK.tok,'')&&!!lsL(GK.gid,'');}
+function syncStatus(s,msg){
+  const el=document.getElementById('sy-st');if(!el)return;
+  if(s==='busy'){el.textContent='🔄 Synchro en cours…';el.style.color='var(--cyan)';}
+  else if(s==='ok'){el.textContent='✓ Synchronisé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});el.style.color='var(--green)';}
+  else if(s==='er'){el.textContent='✕ '+(msg||'Erreur de synchro');el.style.color='var(--red)';}
+  else{el.textContent='Pas encore synchronisé';el.style.color='var(--muted)';}
+}
+function buildSyncPayload(){
+  const other=acc==='simon'?'niko':'simon';
+  const payload={updatedAt:Date.now(),stats:stats};
+  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ};
+  payload[other]={Q:lsL(qk(other),[]),H:lsL(hk(other),[]),CF:lsL(cfk(other),[]),RJ:lsL(rjk(other),[])};
+  return payload;
+}
+function applySyncPayload(p){
+  ['simon','niko'].forEach(a=>{if(p[a]){lsS(qk(a),p[a].Q||[]);lsS(hk(a),p[a].H||[]);lsS(cfk(a),p[a].CF||[]);lsS(rjk(a),p[a].RJ||[]);}});
+  if(p.stats){stats=p.stats;lsS(SK.stats,stats);}
+  loadAcc(acc);updateStats();renderQ();renderH();renderCF();renderRJ();
+  lsS(GK.ts,p.updatedAt);
+  dedupQueueVsHistory(true);
+}
+async function ghCreateGist(){
+  const t=lsL(GK.tok,'');
+  if(!t){toast('Renseigne ton token GitHub d\'abord','er');return;}
+  try{
+    const payload=buildSyncPayload();
+    const r=await fetch('https://api.github.com/gists',{method:'POST',headers:ghHeaders(),body:JSON.stringify({description:'BotLik sync (privé)',public:false,files:{'botlik-sync.json':{content:JSON.stringify(payload)}}})});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    lsS(GK.gid,d.id);lsS(GK.ts,payload.updatedAt);
+    document.getElementById('sy-gid').value=d.id;
+    toast('Gist créé ✓ Colle cet ID sur l\'autre appareil','ok');
+    syncStatus('ok');
+  }catch(e){toast('Erreur création du Gist','er');syncStatus('er','Création échouée');}
+}
+function ghSaveCreds(){
+  const t=document.getElementById('sy-tok').value.trim();
+  const g=document.getElementById('sy-gid').value.trim();
+  if(t)lsS(GK.tok,t);
+  if(g)lsS(GK.gid,g);
+  toast('Identifiants sauvegardés','ok');
+  if(syncReady())pullSync();else syncStatus('idle');
+}
+async function pushSync(){
+  if(!syncReady()||syncBusy)return;
+  syncBusy=true;syncStatus('busy');
+  try{
+    const payload=buildSyncPayload();
+    const r=await fetch('https://api.github.com/gists/'+lsL(GK.gid,''),{method:'PATCH',headers:ghHeaders(),body:JSON.stringify({files:{'botlik-sync.json':{content:JSON.stringify(payload)}}})});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    lsS(GK.ts,payload.updatedAt);syncStatus('ok');
+  }catch(e){syncStatus('er','Envoi échoué');}
+  syncBusy=false;
+}
+function buildFullBackup(){
+  const payload={updatedAt:Date.now(),stats:stats,app:'BotLik',exportedAt:Date.now()};
+  ['simon','niko'].forEach(a=>{payload[a]={Q:lsL(qk(a),[]),H:lsL(hk(a),[]),CF:lsL(cfk(a),[]),RJ:lsL(rjk(a),[])};});
+  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ}; // s'assure que le compte actif en mémoire est bien à jour
+  return payload;
+}
+function downloadBackup(){
+  const payload=buildFullBackup();
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const d=new Date();
+  const stamp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'_'+String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0');
+  const a=document.createElement('a');
+  a.href=url;a.download='botlik-sauvegarde-'+stamp+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('Sauvegarde téléchargée ✓','ok');
+}
+function importBackupFile(input){
+  const file=input.files&&input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const payload=JSON.parse(e.target.result);
+      const localSize=localPayloadSize(), remoteSize=remotePayloadSize(payload);
+      let msg='Importer cette sauvegarde ('+remoteSize+' éléments) et remplacer ta version actuelle ('+localSize+' éléments) ?';
+      if(remoteSize<localSize) msg='⚠️ Cette sauvegarde contient moins de données ('+remoteSize+') que ta version actuelle ('+localSize+'). '+msg;
+      if(!confirm(msg)){input.value='';return;}
+      applySyncPayload(payload);
+      lsS(GK.ts,payload.updatedAt||Date.now());
+      toast('Sauvegarde importée ✓','ok');
+    }catch(err){toast('Fichier de sauvegarde invalide','er');}
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+function localPayloadSize(){
+  let n=0;
+  ['simon','niko'].forEach(a=>{n+=lsL(qk(a),[]).length+lsL(hk(a),[]).length+lsL(rjk(a),[]).length;});
+  return n;
+}
+function remotePayloadSize(p){
+  let n=0;
+  ['simon','niko'].forEach(a=>{if(p[a])n+=(p[a].Q?.length||0)+(p[a].H?.length||0)+(p[a].RJ?.length||0);});
+  return n;
+}
+async function pullSync(silent){
+  if(!syncReady())return;
+  if(!silent)syncStatus('busy');
+  try{
+    const r=await fetch('https://api.github.com/gists/'+lsL(GK.gid,''),{headers:ghHeaders()});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    const f=d.files&&d.files['botlik-sync.json'];
+    if(!f)throw new Error('fichier introuvable');
+    const remote=JSON.parse(f.content);
+    if(remote.updatedAt>lsL(GK.ts,0)){
+      const localSize=localPayloadSize(), remoteSize=remotePayloadSize(remote);
+      if(remoteSize<localSize){
+        if(silent){
+          syncStatus('er','Cloud incomplet ('+remoteSize+' vs '+localSize+') — sync ignorée, vérifie manuellement');
+          return;
+        }
+        if(!confirm('⚠️ La version cloud contient moins de données ('+remoteSize+' éléments) que ta version locale ('+localSize+'). Es-tu sûr de vouloir écraser tes données locales avec celles du cloud ?')){
+          syncStatus('idle');toast('Synchro annulée pour protéger tes données locales','in');return;
+        }
+      }
+      applySyncPayload(remote);
+      if(!silent)toast('Données récupérées depuis le cloud ✓','ok');
+    }
+    syncStatus('ok');
+  }catch(e){if(!silent)syncStatus('er','Réception échouée');}
+}
+function queueSync(){
+  if(!syncReady())return;
+  clearTimeout(syncTm);
+  syncTm=setTimeout(pushSync,1200);
+}
+function toggleSync(){const b=document.getElementById('sy-body');const o=b.classList.toggle('open');document.getElementById('sy-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';}
+function toggleRJ(){const b=document.getElementById('rj-body');const o=b.classList.toggle('open');document.getElementById('rj-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderRJ();}
+
+/* ════ INIT ════ */
+const sa=lsL(SK.acc,'simon');
+if(!LS_AVAILABLE){
+  setTimeout(()=>{
+    toast('⚠️ Stockage indisponible — Safari en navigation privée ? Les données ne seront PAS sauvegardées.','er');
+  }, 800);
+}
+acc=sa;
+loadAcc(sa);
+
+// Appliquer l'UI du compte sauvegardé SANS appeler saveAll ni switchAcc
+(function applyUI(a){
+  const p=PR[a];
+  document.getElementById('btn-s').className='acc-btn'+(a==='simon'?' act-s':'');
+  document.getElementById('btn-n').className='acc-btn'+(a==='niko'?' act-n':'');
+  document.getElementById('dot-s').style.display=a==='simon'?'inline-block':'none';
+  document.getElementById('dot-n').style.display=a==='niko'?'inline-block':'none';
+  const hav=document.getElementById('hdr-av');
+  hav.className='hdr-av '+p.avc;hav.textContent=p.init;
+  document.getElementById('hdr-t').textContent='LinkedIn Bot — '+p.nom;
+  document.getElementById('hdr-s').textContent=p.role+' · Auto-publication 48h';
+  const ap=document.getElementById('ap-div');ap.className='ap '+p.apc;
+  const apav=document.getElementById('ap-av');apav.className='ap-av '+p.avc;apav.textContent=p.init;
+  document.getElementById('ap-name').textContent=p.nom+' — Compte actif';
+  document.getElementById('ap-desc').textContent=p.desc;
+  document.getElementById('ap-li').href=p.li;
+  document.getElementById('li-lnk').href=p.li;
+  document.getElementById('gen-bdg').textContent=a==='simon'?'Simon · Cyber':'Nicolas · Assurance';
+  document.getElementById('sec-s').style.display=a==='simon'?'block':'none';
+  document.getElementById('sec-n').style.display=a==='niko'?'block':'none';
+  document.getElementById('li-inf').textContent=a==='simon'?'📡 Actualités cybersécurité · Clique pour pré-remplir.':'📡 Actualités assurance & réseau · Clique pour pré-remplir.';
+  topic=a==='simon'?'Pentest':'Mutuelle santé';
+})(sa);
+
+updateStats();renderQ();renderH();renderCF();renderRJ();rfTmr();chkMissed();
+document.getElementById('sy-tok').value=lsL(GK.tok,'');
+document.getElementById('sy-gid').value=lsL(GK.gid,'');
+if(syncReady()){syncStatus('idle');pullSync(true);}
+
+// Pré-rendre le feed APRÈS avoir appliqué l'UI du bon compte (fix iOS notifications)
+setTimeout(()=>renderFeed('actu'), 0);
+
+if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
+if(lsL(SK.timer,false)&&Q.length){document.getElementById('st-txt').textContent='Reprise…';setTimeout(()=>startTimer(),300);}
+// Service Worker désactivé — évite les problèmes de cache iOS
+// if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').catch(()=>{});
+</script>
+</body>
+</html>
