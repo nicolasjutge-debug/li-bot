@@ -539,6 +539,30 @@ function toast(m,t='in'){const c=document.getElementById('tc'),el=document.creat
 })();
 
 /* ════ SWITCH COMPTE ════ */
+// BUGFIX MAJEUR : le thème sélectionné ('topic') retombait systématiquement sur la valeur
+// figée 'Pentest'/'Mutuelle santé' à chaque rechargement de page ET à chaque changement de
+// compte (switchAcc) — et ne changeait plus jamais tout seul ensuite. Si l'utilisateur cliquait
+// juste sur "⚡ Générer le post" sans re-sélectionner manuellement une autre pastille de thème,
+// il obtenait donc "toujours le même thème" — c'était probablement la cause n°1 du problème.
+function pickFreshTopic(a){
+  const themes=a==='simon'?TS:TN;
+  const usedTexts=new Set([...Q.map(q=>q.text),...H.map(h=>h.text),...RJ.map(r=>r.text)]);
+  const keys=Object.keys(themes);
+  const fresh=keys.filter(k=>{
+    const d=themes[k];
+    for(const ai of d.a){for(const ci of d.c){
+      if(!usedTexts.has((ai+'\n\n'+ci).trim()))return true;
+    }}
+    return false;
+  });
+  const pool=fresh.length?fresh:keys;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function syncTopicPill(a,t){
+  const container=document.getElementById(a==='simon'?'tp-s':'tp-n');
+  if(!container)return;
+  container.querySelectorAll('.tp').forEach(b=>b.classList.toggle('sel',b.textContent===t));
+}
 function switchAcc(a){
   if(a===acc)return;
   // Sauvegarder l'ancien compte avant de switcher
@@ -566,8 +590,8 @@ function switchAcc(a){
   document.getElementById('sec-s').style.display=typ==='original'&&a==='simon'?'block':'none';
   document.getElementById('sec-n').style.display=typ==='original'&&a==='niko'?'block':'none';
   document.getElementById('li-inf').textContent=a==='simon'?'📡 Actualités cybersécurité · Clique pour pré-remplir.':'📡 Actualités assurance & réseau · Clique pour pré-remplir.';
-  topic=a==='simon'?'Pentest':'Mutuelle santé';
-  document.querySelectorAll(a==='simon'?'#tp-s .tp':'#tp-n .tp').forEach((b,i)=>b.classList.toggle('sel',i===0));
+  topic=pickFreshTopic(a);
+  syncTopicPill(a,topic);
   if(tmrRun)pauseTimer();
   updateStats();renderQ();renderH();renderCF();renderRJ();rfTmr();
   // Mettre à jour le titre console avec le compte actif
@@ -1122,6 +1146,11 @@ function genPost(){
   stats[acc].total++;saveAll();updateStats();
   if(isDup) toast('⚠️ Toutes les variantes de ce thème sont déjà utilisées (texte en double avec un post existant)','er');
   else toast('Post généré ✓','ok');
+  // Fait tourner automatiquement la pastille de thème pour le prochain clic (voir pickFreshTopic)
+  if(typ==='original'){
+    topic=pickFreshTopic(acc);
+    syncTopicPill(acc,topic);
+  }
 }
 
 function archive(post,src='copie'){
@@ -1414,17 +1443,16 @@ function renderH(){
 }
 function resetGenerated(){
   if(!Q.length){toast('La file est déjà vide','in');return;}
-  if(!confirm('Vider entièrement la file ('+Q.length+' posts) et la regénérer avec de nouveaux thèmes ? Les posts retirés seront marqués comme rejetés (comme une suppression individuelle) pour ne plus jamais revenir.'))return;
-  // BUGFIX : avant, les posts vidés disparaissaient sans être archivés dans RJ — donc dès que
-  // l'anti-doublon relisait Q+H+RJ plus tard, ces textes redevenaient "frais" et pouvaient
-  // ressortir. On les traite maintenant exactement comme delQ() traite une suppression manuelle.
+  if(!confirm('Vider entièrement la file ('+Q.length+' posts) et la regénérer avec de nouveaux thèmes ? Les posts retirés seront placés dans « Posts mis de côté » (comme une suppression individuelle) pour ne plus jamais revenir.'))return;
+  // Les posts vidés sont archivés dans RJ, la liste affichée à l'écran sous « Posts mis de côté » —
+  // exactement comme delQ() le fait pour une suppression manuelle à l'unité.
   Q.forEach(q=>RJ.unshift({id:q.id,text:q.text,type:q.type,topic:q.topic,label:q.label||TL[q.type],account:acc,rejectedAt:Date.now()}));
   const clearedTexts = Q.map(q=>q.text);
   Q=[];
   saveAll();renderQ();renderRJ();updateStats();rfTmr();
   // extraAvoid en ceinture-et-bretelles pour ce rechargement immédiat précis
   autoRefill(false, clearedTexts);
-  toast('File regénérée — anciens posts définitivement écartés ✓','ok');
+  toast('File regénérée — anciens posts mis de côté ✓','ok');
 }
 function dedupQueueVsHistory(silent){
   const usedTexts=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text)]);
@@ -1770,8 +1798,9 @@ loadAcc(sa);
   document.getElementById('sec-s').style.display=a==='simon'?'block':'none';
   document.getElementById('sec-n').style.display=a==='niko'?'block':'none';
   document.getElementById('li-inf').textContent=a==='simon'?'📡 Actualités cybersécurité · Clique pour pré-remplir.':'📡 Actualités assurance & réseau · Clique pour pré-remplir.';
-  topic=a==='simon'?'Pentest':'Mutuelle santé';
+  topic=pickFreshTopic(a);
 })(sa);
+syncTopicPill(sa,topic);
 
 updateStats();renderQ();renderH();renderCF();renderRJ();rfTmr();chkMissed();
 document.getElementById('sy-tok').value=lsL(GK.tok,'');
