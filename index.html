@@ -436,8 +436,18 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <button class="btn btn-c" onclick="toggleAddH()">Annuler</button>
       </div>
     </div>
+    <div id="import-form" style="display:none;margin-bottom:14px;padding:12px;background:#060910;border:1px solid var(--border);border-radius:8px">
+      <div class="liinf">Importe le fichier <b>Shares.csv</b> de ton export LinkedIn (Paramètres du compte → Confidentialité des données → Obtenir une copie de vos données) pour retrouver ici tous les posts réellement publiés sur <b>ce compte</b> — même ceux jamais passés par l'app. Les vues n'y sont pas incluses (LinkedIn ne les exporte pas) : complète-les ensuite avec le filtre 👁 Sans vues ci-dessous. Les posts déjà connus de l'historique sont ignorés automatiquement.</div>
+      <div class="fld"><label>Fichier Shares.csv</label><input type="file" id="import-file" accept=".csv,text/csv"></div>
+      <div class="fld"><label>Ou coller le contenu du fichier</label><textarea id="import-paste" placeholder="Colle ici le contenu du fichier Shares.csv..." style="min-height:70px"></textarea></div>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="runLinkedInImport()">📥 Importer dans l'historique</button>
+        <button class="btn btn-c" onclick="toggleImportForm()">Annuler</button>
+      </div>
+    </div>
     <div class="tps" style="margin:0 0 10px">
       <button class="tp" id="h-filter-btn" onclick="toggleHViewFilter()" title="N'afficher que les posts sans vues renseignées — ces vues alimentent la pondération par popularité de la génération automatique">👁 Sans vues (<span id="h-filter-cnt">0</span>)</button>
+      <button class="tp" onclick="toggleImportForm()">📥 Importer LinkedIn</button>
     </div>
     <div class="hl" id="h-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div></div>
   </div>
@@ -1594,6 +1604,89 @@ function chkMissed(){
 }
 
 /* ════ HISTORIQUE ════ */
+/* ---- Import LinkedIn (fichier Shares.csv de l'export officiel "Obtenir une copie de vos données") ---- */
+function parseCSV(text){
+  const rows=[];
+  let row=[],field='',inQuotes=false;
+  text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQuotes){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else{inQuotes=false;} }
+      else{field+=c;}
+    }else{
+      if(c==='"'){inQuotes=true;}
+      else if(c===','){row.push(field);field='';}
+      else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}
+      else{field+=c;}
+    }
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows.filter(r=>!(r.length===1&&r[0].trim()===''));
+}
+function parseLinkedInCSV(raw){
+  const rows=parseCSV(raw);
+  if(rows.length<2)return{items:[],error:"CSV vide ou illisible."};
+  const headers=rows[0].map(h=>h.trim().toLowerCase());
+  const findCol=(...keys)=>headers.findIndex(h=>keys.some(k=>h.includes(k)));
+  const textCol=findCol('commentary','text','content');
+  const dateCol=findCol('date');
+  if(textCol===-1)return{items:[],error:"Colonne de texte introuvable — vérifie que c'est bien le fichier Shares.csv de l'export LinkedIn."};
+  const items=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    const text=(r[textCol]||'').trim();
+    if(!text)continue; // repost sans commentaire : rien à archiver
+    const dateStr=dateCol>-1?(r[dateCol]||'').trim():'';
+    const d=dateStr?new Date(dateStr):null;
+    const publishedAt=(d&&!isNaN(d))?d.getTime():Date.now();
+    items.push({text,publishedAt});
+  }
+  return{items,error:null};
+}
+function importLinkedInCSV(raw){
+  const {items,error}=parseLinkedInCSV(raw);
+  if(error){toast(error,'er');return;}
+  if(!items.length){toast('Aucun post exploitable trouvé (reposts sans commentaire exclus).','er');return;}
+  const existing=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text),...Q.map(q=>q.text)].map(stripTags));
+  let added=0,skipped=0;
+  items.forEach((it,i)=>{
+    const key=stripTags(it.text);
+    if(existing.has(key)){skipped++;return;}
+    existing.add(key);
+    H.push({id:Date.now()+i,text:it.text,type:'original',topic:'',label:TL.original,account:acc,publishedAt:it.publishedAt,source:'linkedin-import',views:0});
+    added++;
+  });
+  if(added){
+    H.sort((a,b)=>(b.publishedAt||0)-(a.publishedAt||0));
+    if(!stats[acc])stats[acc]={total:0,sent:0};
+    stats[acc].sent+=added;
+    saveAll();renderH();updateStats();
+  }
+  toast(added?`✅ ${added} post${added>1?'s':''} importé${added>1?'s':''} depuis LinkedIn`+(skipped?` · ${skipped} déjà connu${skipped>1?'s':''}`:''):`Rien de nouveau : ${skipped} post${skipped>1?'s':''} déjà dans l'historique.`,added?'ok':'in');
+}
+function toggleImportForm(){
+  const f=document.getElementById('import-form');
+  const open=f.style.display==='none'||!f.style.display;
+  f.style.display=open?'block':'none';
+}
+function runLinkedInImport(){
+  const fileInput=document.getElementById('import-file');
+  const pasteEl=document.getElementById('import-paste');
+  const file=fileInput.files&&fileInput.files[0];
+  if(file){
+    const reader=new FileReader();
+    reader.onload=e=>{importLinkedInCSV(e.target.result);fileInput.value='';pasteEl.value='';toggleImportForm();};
+    reader.onerror=()=>toast('Erreur de lecture du fichier','er');
+    reader.readAsText(file,'utf-8');
+  }else if(pasteEl.value.trim()){
+    importLinkedInCSV(pasteEl.value);
+    pasteEl.value='';
+    toggleImportForm();
+  }else{
+    toast('Choisis le fichier Shares.csv ou colle son contenu','er');
+  }
+}
 function toggleHViewFilter(){
   hFilterNoViews=!hFilterNoViews;
   const btn=document.getElementById('h-filter-btn');
@@ -1613,7 +1706,7 @@ function renderH(){
     return;
   }
   const cols={original:'b-bl',repost:'b-or',congrats:'b-gr'};
-  const srcL={'copie':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);margin-left:4px">📋</span>','copie-file':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2);margin-left:4px">📋 File</span>','publie':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);margin-left:4px">⚡</span>','manuel':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);margin-left:4px">✍️ Manuel</span>'};
+  const srcL={'copie':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);margin-left:4px">📋</span>','copie-file':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2);margin-left:4px">📋 File</span>','publie':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);margin-left:4px">⚡</span>','manuel':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);margin-left:4px">✍️ Manuel</span>','linkedin-import':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(10,102,194,.15);color:var(--li);border:1px solid rgba(10,102,194,.35);margin-left:4px">🔗 LinkedIn</span>'};
   list.innerHTML=shown.map(h=>{
     const d=new Date(h.publishedAt||h.ts||Date.now());
     const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
