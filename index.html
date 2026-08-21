@@ -436,6 +436,9 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <button class="btn btn-c" onclick="toggleAddH()">Annuler</button>
       </div>
     </div>
+    <div class="tps" style="margin:0 0 10px">
+      <button class="tp" id="h-filter-btn" onclick="toggleHViewFilter()" title="N'afficher que les posts sans vues renseignées — ces vues alimentent la pondération par popularité de la génération automatique">👁 Sans vues (<span id="h-filter-cnt">0</span>)</button>
+    </div>
     <div class="hl" id="h-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div></div>
   </div>
 </div>
@@ -516,6 +519,7 @@ let acc='simon', typ='original', topic='Pentest';
 let Q=[], H=[], CF=[], RJ=[];
 let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
 let lastPost=null, tmrRun=false, tmrIv=null;
+let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
 
 function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
 function saveAll(){
@@ -1590,13 +1594,27 @@ function chkMissed(){
 }
 
 /* ════ HISTORIQUE ════ */
+function toggleHViewFilter(){
+  hFilterNoViews=!hFilterNoViews;
+  const btn=document.getElementById('h-filter-btn');
+  if(btn)btn.classList.toggle('sel',hFilterNoViews);
+  renderH();
+}
 function renderH(){
   const list=document.getElementById('h-list'),badge=document.getElementById('h-bdg');
   badge.textContent=H.length;
-  if(!H.length){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div>';return;}
+  const missing=H.filter(h=>!h.views);
+  const cntEl=document.getElementById('h-filter-cnt');
+  if(cntEl)cntEl.textContent=missing.length;
+  const scrollPos=list.scrollTop;
+  const shown=hFilterNoViews?missing:H.slice(0,50);
+  if(!shown.length){
+    list.innerHTML=hFilterNoViews?'<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">🎉 Tous les posts archivés ont leurs vues renseignées.</div>':'<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div>';
+    return;
+  }
   const cols={original:'b-bl',repost:'b-or',congrats:'b-gr'};
   const srcL={'copie':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);margin-left:4px">📋</span>','copie-file':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.2);margin-left:4px">📋 File</span>','publie':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);margin-left:4px">⚡</span>','manuel':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.2);margin-left:4px">✍️ Manuel</span>'};
-  list.innerHTML=H.slice(0,50).map(h=>{
+  list.innerHTML=shown.map(h=>{
     const d=new Date(h.publishedAt||h.ts||Date.now());
     const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     const tags=(h.text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,3).join(' ');
@@ -1620,6 +1638,7 @@ function renderH(){
       ${tags?`<div class="htgs">${tags}</div>`:''}
     </div>`;
   }).join('');
+  list.scrollTop=scrollPos;
 }
 function resetGenerated(){
   if(!Q.length){toast('La file est déjà vide','in');return;}
@@ -1713,7 +1732,7 @@ function delRJ(id){
 function setViews(id,val){
   const h=H.find(x=>x.id===id);if(!h)return;
   const n=Math.max(0,parseInt(val,10)||0);
-  h.views=n;saveAll();
+  h.views=n;saveAll();renderH();
   toast(n?'👁 '+n+' vues enregistrées':'Vues réinitialisées','ok');
 }
 function cpH(id){const h=H.find(x=>x.id===id);if(h)navigator.clipboard.writeText(h.text).then(()=>toast('Copié ✓','ok'));}
