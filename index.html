@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="LI Bot"/>
 <meta name="theme-color" content="#0a66c2"/>
 <link rel="apple-touch-icon" sizes="192x192" href="bot-icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="bot-icon-192.png"/>
 <link rel="manifest" href="manifest-bot.json"/>
 <title>LinkedIn Bot — Simon & Nicolas JUTGÉ</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
@@ -1142,7 +1143,14 @@ const TN = {
 };
 
 /* ════ REPOST + CONGRATS ════ */
-const RS=[(ctx)=>`Ce post m'a interpellé et j'avais envie d'y ajouter ma perspective d'étudiant.\n\n${ctx?'Sur "'+ctx+'" : ':''}Ce qui me frappe c'est à quel point les enjeux cyber touchent maintenant tout le monde. En tant que lycéen de 17 ans qui se forme, je vois bien que le gap entre ceux qui comprennent ces risques et les autres se creuse.\n\nVous pensez que l'éducation numérique est suffisante en France ?\n\n${pickHashtags('repost','simon')}`,(ctx)=>`Je partage ce post car il touche à quelque chose qui me préoccupe dans ma formation.\n\n${ctx?'"'+ctx+'" — ':''}La cybersécurité évolue si vite qu'on a du mal à former assez de professionnels. Et nous les étudiants on doit souvent se débrouiller seuls.\n\nDes conseils pour un étudiant de Terminale qui vise une alternance cyber en 2027 ?\n\n${pickHashtags('repost','simon')}`,(ctx)=>`Je voulais réagir à ce post parce que le sujet me parle directement dans ma formation.\n\n${ctx?'"'+ctx+'" — ':''}Ce que je remarque en tant que lycéen qui débute, c'est que la théorie et la pratique sont vraiment deux mondes différents en cybersécurité. On apprend beaucoup en tâtonnant seul le soir.\n\nD'autres étudiants dans le même cas que moi par ici ?\n\n${pickHashtags('repost','simon')}`];
+const RS=[
+  // Réécrit à partir du vrai format de Simon observé dans son export LinkedIn (posts "Veille
+  // cybersécurité du jour" : accroche factuelle + emoji, réflexion "en tant que débutant",
+  // conseil concret, hashtags) — remplace les 3 formulations précédentes, plus génériques.
+  (ctx)=>`🚨 Veille cybersécurité du jour${ctx?' : '+ctx:''}\n\nCe genre d'actualité, je le suis de près depuis que je me forme sérieusement au sujet.\n\n💡 En tant que débutant, ça me rappelle surtout l'importance de :\n• suivre les bulletins de sécurité régulièrement\n• appliquer les mises à jour sans trop tarder\n• comprendre le mécanisme derrière la faille, pas juste le titre\n\nChaque actu comme celle-ci est aussi une occasion d'apprendre.\n\n${pickHashtags('repost','simon')}`,
+  (ctx)=>`${ctx?'En lisant sur "'+ctx+'"':'En lisant cette actu cyber'}, un truc me frappe à chaque fois : la théorie qu'on voit en cours et la réalité du terrain, ce sont deux mondes.\n\nJe suis encore en apprentissage, donc je prends ce genre de post comme un cas d'école plutôt qu'une simple actu qui passe.\n\nD'autres étudiants qui suivent l'actu cyber de près par ici ? Comment vous faites votre veille ?\n\n${pickHashtags('repost','simon')}`,
+  (ctx)=>`🔍 ${ctx?ctx:'Cette actualité cybersécurité'} mérite qu'on s'y arrête deux minutes.\n\nCe que je retiens, en tant que lycéen qui débute dans le domaine : la sécurité, c'est surtout une question d'habitudes simples tenues dans la durée, plus que de solutions miracles.\n\n🔒 Petit rappel du jour : vérifiez que vos appareils sont à jour, ça reste la meilleure protection de base.\n\n${pickHashtags('repost','simon')}`
+];
 const RN=[(ctx)=>`Ce partage m'interpelle dans mon quotidien de conseiller en assurance.\n\n${ctx?'"'+ctx+'" — ':''}Après 28 ans dans le secteur, je vois régulièrement le décalage entre ce que les gens pensent être couverts et ce que leur contrat prévoit.\n\nQuelle est votre plus grande incompréhension sur vos contrats d'assurance ?\n\n${pickHashtags('repost','niko')}`,(ctx)=>`Un sujet qui résonne avec ce que j'observe chez mes clients.\n\n${ctx?'Sur "'+ctx+'" : ':''}La relation de confiance entre un client et son conseiller se construit dans la durée. 28 ans dans ce métier m'ont appris que la technique c'est 30% du travail. Le reste c'est l'humain.\n\n${pickHashtags('repost','niko')}`,(ctx)=>`Ce post rejoint une conviction que j'ai depuis longtemps dans mon métier.\n\n${ctx?'"'+ctx+'" — ':''}Après 28 ans dans l'assurance, je constate que la pédagogie compte souvent plus que la performance technique d'un contrat. Un bon produit mal expliqué finit toujours par décevoir.\n\n${pickHashtags('repost','niko')}`];
 const CG={
   promotion:[(w,n,a)=>a==='simon'?`@${w} — Félicitations pour ce nouveau poste${n?' ('+n+')':''} ! 🎉\n\nC'est vraiment inspirant de voir des profils progresser dans la cybersécurité. En tant qu'étudiant qui cherche à entrer dans ce domaine, ça me motive.\n\n${pickHashtags('promotion','simon')}`:`@${w} — Toutes mes félicitations pour cette promotion${n?' : '+n:''} ! 🎉\n\nAprès 28 ans dans l'assurance, je sais combien ces reconnaissances sont méritées.\n\n${pickHashtags('promotion','niko')}`,(w,n,a)=>a==='simon'?`@${w} — Belle nouvelle pour ce nouveau poste${n?' ('+n+')':''} ! 🚀\n\nÇa fait plaisir de voir ce genre de parcours quand on est encore en train de se former. Ça montre que le secteur recrute vraiment.\n\n${pickHashtags('promotion','simon')}`:`@${w} — Bravo pour cette promotion${n?' : '+n:''} ! 🚀\n\nCe genre d'évolution ne doit rien au hasard. Belle suite à toi.\n\n${pickHashtags('promotion','niko')}`,(w,n,a)=>a==='simon'?`@${w} — Une nouvelle qui fait plaisir à voir passer dans mon fil ! 🎉${n?' ('+n+')':''}\n\nCe genre de parcours, ça motive à continuer de se former sérieusement.\n\n${pickHashtags('promotion','simon')}`:`@${w} — Une belle nouvelle qui mérite d'être relayée${n?' : '+n:''} ! 🎉\n\nCe genre d'évolution se construit sur la durée, rarement par hasard.\n\n${pickHashtags('promotion','niko')}`],
@@ -1156,9 +1164,12 @@ const CG={
 /* ════ HASHTAGS (détachés du texte pour éviter les fins toujours identiques) ════ */
 const HT={
   simon:{
-    generic:['#CyberSécurité','#Alternance2027','#STI2D'],
-    'Pentest':['#Pentest','#TryHackMe','#EthicalHacking','#Débutant'],
-    'SOC':['#SOC','#Analyste','#Cyberdéfense'],
+    // Pool générique enrichi avec les hashtags RÉELLEMENT utilisés par Simon (export LinkedIn
+    // Shares.csv du 21/08/2026, 81 posts) — #Découverte notamment était complètement absent
+    // alors que c'est son 3e hashtag le plus fréquent (25 occurrences).
+    generic:['#CyberSécurité','#Alternance2027','#STI2D','#Découverte','#Rennes','#RechercheAlternance','#OpenToWork'],
+    'Pentest':['#Pentest','#TryHackMe','#EthicalHacking','#Débutant','#RedTeam'],
+    'SOC':['#SOC','#Analyste','#Cyberdéfense','#BlueTeam'],
     'CTF':['#CTF','#TryHackMe','#HackTheBox','#Débutant'],
     'OSINT':['#OSINT','#Investigation'],
     'Ransomware':['#Ransomware','#Cybermenace'],
@@ -1181,7 +1192,7 @@ const HT={
     alternance:['#Alternance','#Recrutement'],
     projet:['#Innovation'],
     anniversaire:['#Parcours'],
-    repost:['#VeilleCyber','#ActualitéCyber']
+    repost:['#VeilleTechnologique','#VeilleCyber','#Sensibilisation']
   },
   niko:{
     generic:['#Assurance','#Rennes','#ConseilAssurance'],
@@ -2115,8 +2126,9 @@ setTimeout(()=>renderFeed('actu'), 0);
 
 if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
 if(lsL(SK.timer,false)&&Q.length){document.getElementById('st-txt').textContent='Reprise…';setTimeout(()=>startTimer(),300);}
-// Service Worker désactivé — évite les problèmes de cache iOS
-// if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').catch(()=>{});
+// Service Worker minimal (voir sw-bot.js) : ne cache rien, sert uniquement à rendre
+// l'app installable sur PC (Chrome/Edge) sans risque de version périmée.
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').catch(()=>{});
 </script>
 </body>
 </html>
