@@ -309,7 +309,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   <div class="lih" onclick="toggleRJ()">
     <div class="lilo" style="background:var(--orange)">🗑️</div>
     <h2>Posts mis de côté <span id="rj-count" style="font-size:11px;color:var(--muted)">(0)</span></h2>
-    <button onclick="event.stopPropagation();clearAllRJ()" style="background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🗑️ Tout supprimer</button>
     <span id="rj-bdg" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
   </div>
   <div class="lib" id="rj-body">
@@ -356,10 +355,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <button class="tp" onclick="selTp(this)">Forensic numérique</button>
         <button class="tp" onclick="selTp(this)">Fuites de données</button>
         <button class="tp" onclick="selTp(this)">Sécurité réseaux sociaux</button>
-        <button class="tp" onclick="selTp(this)">Active Directory</button>
-        <button class="tp" onclick="selTp(this)">Intelligence artificielle</button>
-        <button class="tp" onclick="selTp(this)">Reverse Engineering</button>
-        <button class="tp" onclick="selTp(this)">Threat Intelligence</button>
       </div>
     </div>
     <div id="sec-n" style="display:none">
@@ -962,174 +957,106 @@ const TS = {
   },
   "Réseaux": {
     "a": [
-      "Le modèle OSI, ses 7 couches, j'ai mis un moment à vraiment comprendre à quoi ça sert concrètement.",
-      "J'ai fait mon premier ping vers un serveur à l'autre bout du monde. Bête comme commande, mais un peu magique quand même.",
-      "On me demande souvent pourquoi je m'intéresse aux réseaux en plus de la cybersécurité. En fait, l'un ne va pas sans l'autre.",
-      "Configurer mon premier petit réseau sur Cisco Packet Tracer, entre deux exercices de cours. Ça aide clairement à visualiser.",
-      "Une adresse IP, un masque de sous-réseau, une passerelle... au début c'était du charabia total pour moi."
+      "Le modèle OSI et ses 7 couches, j'ai mis un moment à comprendre à quoi ça sert vraiment.",
+      "Premier ping vers un serveur à l'autre bout du monde. Bête comme commande, un peu magique quand même.",
+      "On me demande pourquoi je m'intéresse aux réseaux en plus de la cybersécurité. En fait, l'un ne va pas sans l'autre.",
+      "Configurer mon premier réseau sur Cisco Packet Tracer, entre deux exercices de cours. Ça aide vraiment à visualiser.",
+      "Adresse IP, masque de sous-réseau, passerelle... c'était du charabia total pour moi il y a encore quelques mois."
     ],
     "c": [
-      "Cette semaine en cours de SIN, on a bossé sur les bases des réseaux : adressage IP, DNS, protocoles...\n\nAu début j'avoue que je voyais ça comme une matière un peu à part de la cybersécurité. En fait c'est tout l'inverse : pour comprendre une attaque réseau, il faut d'abord comprendre comment un réseau fonctionne normalement.\n\nJe commence à voir le lien entre ce qu'on apprend en cours et ce que je fais le soir sur TryHackMe. Ça donne encore plus envie d'approfondir.",
-      "Le DNS, en gros, c'est l'annuaire d'Internet : il traduit un nom de site en adresse IP que les machines comprennent.\n\nJusqu'ici je l'utilisais sans trop me poser de questions. Depuis que je m'intéresse à la cybersécurité, je réalise que c'est aussi un point qu'on peut attaquer, genre le détourner vers un faux site.\n\nComprendre le fonctionnement normal avant de comprendre les attaques, ça change beaucoup ma façon d'apprendre.",
-      "3 commandes réseau toutes simples que j'utilise presque tous les jours depuis que je m'entraîne :\n\n1/ ping, pour vérifier si une machine répond.\n\n2/ traceroute, pour voir le chemin emprunté par mes données.\n\n3/ ipconfig, pour voir ma propre config réseau.\n\nRien de compliqué, mais ça débloque plein de choses pour comprendre ce qui se passe derrière un écran.",
-      "J'ai monté mon premier petit réseau simulé sur Cisco Packet Tracer ce week-end : deux PC, un switch, un routeur.\n\nÇa paraît basique, mais rien que de voir les paquets circuler entre les machines m'a aidé à comprendre des trucs que je lisais depuis des semaines sans vraiment les visualiser.\n\nEn SIN on utilise cet outil en cours, mais je m'amuse aussi à refaire des petits montages de mon côté le soir.",
-      "Longtemps j'ai confondu adresse IP publique et adresse IP privée, sans vraiment savoir pourquoi il y avait une différence.\n\nEn gros : l'adresse privée sert dans mon propre réseau à la maison, l'adresse publique c'est celle vue depuis Internet. C'est ma box qui fait le lien entre les deux.\n\nUn détail qui paraît basique, mais qui débloque la compréhension de plein d'autres sujets réseau derrière.",
-      "Ce qui me plaît avec les réseaux, c'est que ça rend concret tout ce qu'on apprend en cybersécurité.\n\nUne attaque, un pare-feu, un VPN... tout ça repose sur des bases réseau. Sans les comprendre, j'apprenais des concepts un peu en l'air.\n\nDepuis que je maîtrise un peu mieux les fondamentaux, tout le reste devient plus logique."
+      "Cette semaine en SIN, on a bossé sur les bases des réseaux : adressage IP, DNS, protocoles...\n\nAu début je voyais ça comme une matière à part de la cybersécurité. En fait c'est tout l'inverse : pour comprendre une attaque réseau, il faut d'abord comprendre comment un réseau fonctionne normalement.\n\nJe commence à voir le lien entre ce qu'on fait en cours et ce que j'explore le soir. Ça donne encore plus envie d'approfondir.",
+      "Le DNS c'est un peu l'annuaire d'Internet : il traduit un nom de site en adresse IP que les machines comprennent.\n\nJusqu'ici je l'utilisais sans me poser de questions. Depuis que je m'intéresse à la cybersécurité, je réalise que c'est aussi un vecteur d'attaque — on peut le détourner pour rediriger vers un faux site.\n\nComprendre le fonctionnement normal avant les attaques, ça change beaucoup ma façon d'apprendre.",
+      "3 commandes réseau que j'utilise presque tous les jours depuis que je m'entraîne :\n\n1/ ping — vérifier si une machine répond.\n\n2/ traceroute — voir le chemin de mes données.\n\n3/ ipconfig — voir ma propre config réseau.\n\nRien de spectaculaire, mais ça débloque beaucoup de choses pour comprendre ce qui se passe derrière l'écran.",
+      "Premier petit réseau simulé sur Cisco Packet Tracer ce week-end : deux PC, un switch, un routeur.\n\nParaît basique, mais voir les paquets circuler entre les machines m'a aidé à visualiser des trucs que je lisais depuis des semaines sans les comprendre vraiment.\n\nEn SIN on utilise cet outil en cours, mais je m'amuse aussi à faire des montages de mon côté le soir.",
+      "Longtemps j'ai confondu adresse IP publique et adresse IP privée, sans savoir pourquoi il y avait une différence.\n\nEn gros : l'adresse privée sert dans mon réseau local, l'adresse publique c'est celle vue depuis Internet. Ma box fait le lien.\n\nUn détail qui paraît basique, mais qui débloque la compréhension de plein d'autres sujets réseau.",
+      "Ce qui me plaît avec les réseaux, c'est que ça rend concret tout ce que j'apprends en cybersécurité.\n\nUne attaque, un pare-feu, un VPN... tout repose sur des bases réseau. Sans les comprendre, j'apprenais des concepts un peu en l'air.\n\nDepuis que je maîtrise un peu mieux les fondamentaux, tout le reste devient plus logique."
     ]
   },
   "Linux": {
     "a": [
-      "J'ai installé Linux pour la première fois ce week-end, en double boot à côté de Windows. Petit stress avant de lancer l'install.",
-      "Le terminal Linux, ça m'a fait peur au début. Maintenant je préfère souvent taper une commande plutôt que cliquer.",
-      "Toutes les machines qu'on attaque sur TryHackMe tournent sous Linux. Autant apprendre à l'utiliser sérieusement.",
-      "sudo rm -rf, une commande que j'ai apprise à respecter avant même de bien la comprendre.",
+      "J'ai installé Linux en double boot ce week-end, à côté de Windows. Petit stress avant de lancer l'install.",
+      "Le terminal Linux m'a fait peur au début. Maintenant je préfère souvent taper une commande plutôt que cliquer.",
+      "Toutes les machines sur TryHackMe tournent sous Linux. Autant apprendre à l'utiliser sérieusement.",
+      "sudo rm -rf, une commande que j'ai appris à respecter avant même de bien la comprendre.",
       "Ma première ligne de commande Linux tapée sans regarder un tuto à côté. Petite victoire du soir."
     ],
     "c": [
-      "Ce week-end, install de Linux en double boot sur mon PC, à côté de Windows.\n\nJ'appréhendais un peu, j'avais peur de tout casser. Au final ça s'est bien passé, et je comprends maintenant pourquoi tout le monde en cybersécurité conseille de s'y mettre tôt : la plupart des outils et des machines qu'on manipule tournent sous Linux.\n\nProchaine étape : arrêter de revenir sur Windows par réflexe dès que je bloque sur une commande.",
-      "Le terminal Linux m'a clairement fait peur les premières semaines. Un écran noir, du texte, aucun bouton à cliquer.\n\nEn m'entraînant petit à petit, je me rends compte que c'est en fait plus rapide et plus précis qu'une interface graphique, une fois qu'on connaît les bonnes commandes.\n\nJe suis loin de tout maîtriser, mais je commence à m'y sentir à l'aise pour les bases du quotidien.",
-      "5 commandes Linux que j'utilise presque tous les jours depuis que je m'entraîne au pentest :\n\n1/ ls, pour voir ce qu'il y a dans un dossier.\n\n2/ cd, pour se déplacer.\n\n3/ cat, pour lire un fichier direct dans le terminal.\n\n4/ grep, pour chercher un mot dans un fichier.\n\n5/ chmod, pour gérer les permissions.\n\nRien d'impressionnant, mais ça couvre déjà une bonne partie de ce dont j'ai besoin pour débuter.",
-      "J'ai mis du temps à comprendre pourquoi tout le monde en cybersécurité utilise une distribution Linux spécialisée comme Kali plutôt que Windows.\n\nEn fait, elle vient directement avec plein d'outils de sécurité déjà installés, et le terminal permet d'enchaîner des actions bien plus vite qu'en cliquant partout.\n\nJe m'entraîne dessus dans une machine virtuelle pour l'instant, le temps de me sentir plus à l'aise.",
-      "Petite frayeur cette semaine : j'ai tapé une commande Linux trouvée sur un forum sans vraiment comprendre ce qu'elle faisait. Rien de grave au final, mais ça m'a servi de leçon.\n\nDepuis, je prends toujours 30 secondes pour comprendre une commande avant de l'exécuter, surtout avec les droits administrateur.\n\nUn réflexe tout bête, mais qui évite pas mal de bêtises.",
-      "Ce qui me plaît le plus avec Linux, c'est de comprendre enfin ce qui se passe derrière l'ordinateur, au lieu de juste cliquer sur des icônes.\n\nChaque commande apprise débloque un peu plus ma compréhension globale de l'informatique, pas juste de la cybersécurité.\n\nUn passage obligé si je veux continuer sérieusement dans ce domaine, visiblement."
+      "Ce week-end, install de Linux en double boot sur mon PC, à côté de Windows.\n\nJ'appréhendais un peu, peur de tout casser. Au final ça s'est bien passé — et je comprends maintenant pourquoi tout le monde en cybersécurité conseille de s'y mettre tôt : la plupart des outils et des machines qu'on manipule tournent sous Linux.\n\nProchaine étape : arrêter de revenir sur Windows par réflexe dès que je bloque sur une commande.",
+      "Le terminal Linux m'a clairement fait peur les premières semaines. Un écran noir, du texte, aucun bouton.\n\nEn m'entraînant, je réalise que c'est plus rapide et plus précis qu'une interface graphique, une fois qu'on connaît les bonnes commandes.\n\nJe suis loin de tout maîtriser, mais je commence à me sentir à l'aise sur les bases.",
+      "5 commandes Linux que j'utilise presque tous les jours depuis que je m'entraîne :\n\n1/ ls — voir ce qu'il y a dans un dossier.\n\n2/ cd — se déplacer.\n\n3/ cat — lire un fichier direct dans le terminal.\n\n4/ grep — chercher un mot dans un fichier.\n\n5/ chmod — gérer les permissions.\n\nRien d'impressionnant, mais ça couvre l'essentiel pour débuter.",
+      "J'ai mis du temps à comprendre pourquoi tout le monde en cybersécurité utilise une distrib Linux comme Kali plutôt que Windows.\n\nElle vient directement avec plein d'outils de sécurité installés, et le terminal permet d'enchaîner des actions bien plus vite qu'en cliquant partout.\n\nJe m'entraîne dessus dans une VM pour l'instant, le temps de me sentir à l'aise.",
+      "Petite frayeur cette semaine : j'ai tapé une commande Linux trouvée sur un forum sans vraiment comprendre ce qu'elle faisait. Rien de grave au final, mais leçon retenue.\n\nDepuis, je prends toujours 30 secondes pour comprendre une commande avant de l'exécuter, surtout avec les droits admin.\n\nUn réflexe tout bête, mais qui évite pas mal de bêtises.",
+      "Ce que j'aime le plus avec Linux, c'est de comprendre enfin ce qui se passe derrière l'ordinateur, plutôt que de juste cliquer sur des icônes.\n\nChaque commande apprise débloque un peu plus ma compréhension globale de l'informatique, pas juste de la cybersécurité.\n\nUn passage obligé pour continuer sérieusement dans ce domaine."
     ]
   },
   "Sécurité web": {
     "a": [
-      "J'ai découvert qu'un simple formulaire de connexion mal protégé peut parfois laisser passer bien plus qu'un mot de passe.",
+      "Un simple formulaire de connexion mal protégé peut parfois laisser passer bien plus qu'un mot de passe.",
       "Mon premier XSS réussi sur un site d'entraînement légal. Petite mais vraie satisfaction.",
-      "L'injection SQL, j'en avais entendu parler cent fois avant de vraiment comprendre comment ça marche.",
-      "Un site qui affiche direct ce qu'on tape dans la barre de recherche, sans le filtrer. Terrain de jeu parfait pour un XSS.",
-      "Je m'entraîne maintenant aussi sur PortSwigger Academy, en plus de TryHackMe, pour la partie sécurité web."
+      "L'injection SQL, j'en avais entendu parler cent fois avant de comprendre vraiment comment ça marche.",
+      "Un site qui affiche direct ce qu'on tape dans la recherche sans le filtrer. Terrain de jeu pour un XSS.",
+      "Je m'entraîne aussi sur PortSwigger Academy en plus de TryHackMe, pour la partie sécurité web."
     ],
     "c": [
-      "Je découvre en ce moment la sécurité web, en plus du pentest plus classique que je pratiquais déjà sur TryHackMe.\n\nJe m'entraîne sur PortSwigger Web Security Academy, une plateforme gratuite avec plein d'exercices sur les failles web comme l'injection SQL ou le XSS.\n\nC'est un autre univers que le pentest réseau, mais tout aussi passionnant : ici on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie.",
-      "L'injection SQL, ça faisait un moment que j'en entendais parler sans vraiment comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut parfois glisser du code dans un simple champ de formulaire pour qu'il exécute autre chose que prévu par le développeur, genre afficher des infos censées rester privées.\n\nL'avoir fait moi-même sur un site d'entraînement légal m'a bien plus appris que dix articles lus avant.",
-      "3 choses que je retiens de mes débuts en sécurité web :\n\n1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.\n\nJe suis tout début, mais déjà bluffé par ce qu'on peut trouver.",
-      "Mon premier XSS réussi sur un exercice d'entraînement : faire s'afficher une petite popup sur une page, juste en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire vu de l'extérieur, mais pour moi c'est la preuve que je commence à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape : comprendre comment on corrige ce genre de faille, pas juste comment on la trouve.",
-      "Ce qui me frappe en découvrant la sécurité web : la même erreur revient sans arrêt sur des sites différents, ne pas filtrer ce que l'utilisateur envoie.\n\nÇa donne l'impression que la sécurité web, c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site.",
-      "Question pour les développeurs web qui passent par ici : est-ce qu'on vous forme vraiment aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?\n\nJe suis en train de découvrir la sécurité web côté attaque avec PortSwigger Academy, et je me demande comment ça se passe côté développement."
+      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe m'entraîne sur PortSwigger Web Security Academy, une plateforme gratuite avec des exercices sur les failles web comme l'injection SQL ou le XSS.\n\nC'est un autre univers que le pentest classique, mais tout aussi passionnant : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie.",
+      "L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut glisser du code dans un champ de formulaire pour qu'il exécute autre chose que prévu — genre afficher des infos censées rester privées.\n\nL'avoir fait moi-même sur un site d'entraînement légal m'a appris bien plus que dix articles lus avant.",
+      "3 choses que je retiens de mes débuts en sécurité web :\n\n1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.\n\nJe suis tout début, mais déjà bluffé.",
+      "Mon premier XSS réussi sur un exercice d'entraînement : faire apparaître une popup en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire vu de l'extérieur, mais pour moi c'est la preuve que je commence à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape : comprendre comment on corrige ce genre de faille.",
+      "Ce qui me frappe en découvrant la sécurité web : la même erreur revient sans arrêt sur des sites différents — ne pas filtrer ce que l'utilisateur envoie.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site.",
+      "Question pour les devs web qui passent par ici : on vous forme vraiment aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?\n\nJe découvre la sécurité web côté attaque avec PortSwigger Academy, et je me demande comment ça se passe côté développement."
     ]
   },
   "Forensic numérique": {
     "a": [
-      "Il existe un métier qui consiste à enquêter sur un ordinateur après une attaque. Je viens de découvrir ça et ça me passionne déjà.",
-      "La forensic numérique, ou comment retracer ce qui s'est passé sur une machine après coup, un peu comme une scène de crime version informatique.",
-      "Un fichier supprimé n'est presque jamais vraiment effacé tout de suite. Ça change ma vision de la corbeille vidée.",
-      "J'ai regardé comment un analyste forensic retrace le chemin d'un pirate après une attaque. Fascinant, presque comme une enquête policière.",
-      "Chaque action sur un ordinateur laisse une trace quelque part. C'est exactement ce qui rend la forensic numérique possible."
+      "Il existe un métier qui consiste à enquêter sur un ordinateur après une attaque. Je viens de découvrir ça.",
+      "Forensic numérique : retracer ce qui s'est passé sur une machine après coup. Un peu comme une scène de crime, version informatique.",
+      "Un fichier supprimé n'est presque jamais vraiment effacé tout de suite. Ça change ma vision de la corbeille.",
+      "J'ai regardé comment un analyste forensic retrace le chemin d'un pirate après une attaque. Fascinant, comme une enquête policière.",
+      "Chaque action sur un ordinateur laisse une trace quelque part. C'est ce qui rend la forensic numérique possible."
     ],
     "c": [
-      "Je viens de découvrir un domaine de la cybersécurité que je ne connaissais pas du tout : la forensic numérique, ou investigation numérique.\n\nEn gros, c'est le métier qui consiste à analyser un ordinateur ou un réseau après une attaque, pour comprendre ce qui s'est passé, comment l'attaquant est entré, et ce qu'il a fait.\n\nÇa ressemble beaucoup à une enquête policière, sauf que les indices sont des fichiers, des connexions et des horodatages plutôt que des empreintes.",
-      "Ce qui m'a le plus surpris en découvrant la forensic numérique : un fichier supprimé n'est presque jamais vraiment effacé tout de suite.\n\nEn général, seul le pointeur vers ce fichier disparaît, mais les données restent sur le disque jusqu'à ce qu'elles soient écrasées par autre chose. C'est ce qui permet parfois de les récupérer.\n\nÇa change complètement ma vision de ce que veut dire supprimer un fichier.",
-      "3 trucs que je retiens de mes premières lectures sur la forensic numérique :\n\n1/ Chaque action laisse une trace quelque part, fichiers, logs, horodatages.\n\n2/ L'ordre des opérations compte énormément, pour ne pas altérer les preuves en analysant la machine.\n\n3/ C'est un métier qui demande autant de rigueur que de curiosité technique.\n\nUn domaine que je ne connaissais absolument pas avant de m'intéresser à la cybersécurité.",
-      "J'ai regardé une vidéo où un analyste forensic explique comment il a retracé le chemin complet d'un pirate après une attaque, juste avec des logs et des horodatages.\n\nCe qui m'a marqué, c'est la patience que ça demande : recouper des dizaines de petits indices, un peu comme un puzzle, pour reconstituer toute l'histoire.\n\nÇa m'a donné une nouvelle idée de métier à creuser pour plus tard.",
-      "Avant de m'intéresser à la forensic numérique, je pensais que la cybersécurité c'était surtout de la prévention, empêcher une attaque.\n\nEn fait il y a tout un pan après coup : comprendre ce qui s'est passé une fois que l'attaque a déjà eu lieu, pour la documenter et éviter qu'elle se reproduise.\n\nLes deux me semblent aussi importants l'un que l'autre finalement.",
-      "Question pour ceux qui bossent dans l'investigation numérique : c'est plutôt un métier de patience et de méthode, ou il faut aussi être très fort techniquement au quotidien ?\n\nJe découvre ce domaine depuis peu et j'essaie de me faire une idée plus précise du métier avant d'y penser sérieusement pour mon orientation."
+      "Je viens de découvrir un domaine que je ne connaissais pas : la forensic numérique, ou investigation numérique.\n\nEn gros, c'est analyser un ordinateur ou un réseau après une attaque, pour comprendre ce qui s'est passé, comment l'attaquant est entré, et ce qu'il a fait.\n\nÇa ressemble à une enquête policière, sauf que les indices sont des fichiers, des connexions et des horodatages.",
+      "Ce qui m'a le plus surpris en découvrant la forensic numérique : un fichier supprimé n'est presque jamais vraiment effacé tout de suite.\n\nEn général, seul le pointeur disparaît, mais les données restent sur le disque jusqu'à ce qu'elles soient écrasées. C'est ce qui permet parfois de les récupérer.\n\nÇa change complètement ma vision de ce que veut dire supprimer un fichier.",
+      "3 trucs que je retiens de mes premières lectures sur la forensic numérique :\n\n1/ Chaque action laisse une trace : fichiers, logs, horodatages.\n\n2/ L'ordre des opérations compte énormément — ne pas altérer les preuves en analysant la machine.\n\n3/ C'est un métier qui demande autant de rigueur que de curiosité technique.\n\nUn domaine que je ne connaissais pas avant de m'intéresser à la cybersécurité.",
+      "J'ai regardé une vidéo où un analyste forensic explique comment il a retracé le chemin complet d'un pirate, juste avec des logs et des horodatages.\n\nCe qui m'a marqué, c'est la patience que ça demande : recouper des dizaines de petits indices, comme un puzzle, pour reconstituer toute l'histoire.\n\nÇa m'a donné une nouvelle idée de métier à creuser pour mon orientation.",
+      "Avant de m'intéresser à la forensic numérique, je pensais que la cybersécurité c'était surtout de la prévention.\n\nEn fait il y a tout un pan après coup : comprendre ce qui s'est passé une fois l'attaque terminée, pour la documenter et éviter qu'elle se reproduise.\n\nLes deux me semblent aussi importants finalement.",
+      "Question pour ceux qui bossent dans l'investigation numérique : c'est surtout un métier de patience et de méthode, ou il faut aussi être très fort techniquement au quotidien ?\n\nJe découvre ce domaine depuis peu et j'essaie de me faire une idée avant d'y penser sérieusement pour mon orientation."
     ]
   },
   "Fuites de données": {
     "a": [
       "J'ai vérifié si mon adresse mail était concernée par une fuite de données. Le résultat m'a surpris.",
-      "Une fuite de données, c'est quand les infos d'une entreprise, souvent des clients, se retrouvent accessibles publiquement, volées ou mal protégées.",
-      "Mon mail apparaît dans 3 fuites de données différentes, d'après un site fait pour vérifier ça. Aucune n'était de mon fait.",
-      "Ce que je fais maintenant après chaque grosse fuite de données dans l'actu : je vérifie si un de mes comptes est concerné.",
-      "Une base de données mal configurée, accessible par n'importe qui sans même la pirater. C'est plus fréquent qu'on ne croit."
+      "Une fuite de données : quand les infos d'une entreprise se retrouvent accessibles publiquement, volées ou mal protégées.",
+      "Mon mail apparaît dans plusieurs fuites différentes d'après un site fait pour ça. Aucune n'était de mon fait.",
+      "Ce que je fais maintenant après chaque grosse fuite dans l'actu : je vérifie si un de mes comptes est concerné.",
+      "Une base de données mal configurée, accessible sans même la pirater. C'est plus fréquent qu'on ne croit."
     ],
     "c": [
-      "J'ai testé un site qui vérifie si ton adresse mail a déjà été exposée dans une fuite de données connue, Have I Been Pwned, ça s'appelle.\n\nRésultat : mon mail apparaît dans plusieurs fuites différentes, sans que ce soit de ma faute, juste parce que j'étais inscrit sur des sites qui ont eux-mêmes été piratés.\n\nDepuis, j'ai changé les mots de passe concernés et activé la 2FA partout où c'était possible.",
-      "Une fuite de données, en gros, c'est quand les informations stockées par une entreprise, mails, mots de passe, parfois plus, se retrouvent accessibles publiquement, souvent suite à un piratage ou une mauvaise configuration.\n\nCe qui me marque le plus : ce n'est presque jamais la faute de l'utilisateur, juste de l'entreprise qui n'a pas assez protégé ses données.\n\nÇa montre bien pourquoi il faut éviter de réutiliser le même mot de passe partout : une seule fuite peut compromettre plusieurs comptes d'un coup.",
-      "3 réflexes que j'ai pris depuis que je m'intéresse aux fuites de données :\n\n1/ Vérifier régulièrement si mes mails apparaissent dans une fuite connue.\n\n2/ Ne jamais réutiliser le même mot de passe sur plusieurs sites.\n\n3/ Changer immédiatement un mot de passe concerné par une fuite, même si rien de suspect n'est arrivé encore.\n\nDes gestes simples, mais qui limitent beaucoup les dégâts en cas de souci.",
-      "Une fuite de données qui m'a marqué en la lisant : une base de données laissée accessible sur Internet, sans même de mot de passe, par simple erreur de configuration.\n\nPas besoin d'un piratage sophistiqué, juste un oubli. Ça montre que la sécurité c'est autant une question de rigueur dans les détails que de technique avancée.",
-      "Ce que je ne savais pas avant de creuser le sujet : après une fuite de données, ce ne sont pas que les mots de passe qui posent problème, mais aussi les infos qu'on ne peut pas changer, comme une date de naissance ou un numéro de téléphone.\n\nÇa donne un autre regard sur ce qu'on accepte de donner en s'inscrivant sur un site.",
-      "Depuis que je suis les fuites de données dans l'actu cybersécurité, j'ai pris l'habitude de vérifier mes comptes après chaque grosse fuite médiatisée.\n\nÇa prend 2 minutes et ça évite de découvrir un piratage des mois plus tard, par hasard.\n\nUn réflexe que je recommande à tout mon entourage maintenant."
+      "J'ai testé Have I Been Pwned, un site qui vérifie si ton adresse mail a été exposée dans une fuite de données connue.\n\nRésultat : mon mail apparaît dans plusieurs fuites, sans que ce soit de ma faute — juste parce que j'étais inscrit sur des sites qui ont eux-mêmes été piratés.\n\nDepuis, j'ai changé les mots de passe concernés et activé la 2FA partout où c'était possible.",
+      "Une fuite de données, c'est quand les informations stockées par une entreprise — mails, mots de passe, parfois plus — se retrouvent accessibles publiquement.\n\nCe qui me marque : ce n'est presque jamais la faute de l'utilisateur, juste de l'entreprise qui n'a pas assez protégé ses données.\n\nÇa montre pourquoi il faut éviter de réutiliser le même mot de passe partout : une seule fuite peut compromettre plusieurs comptes.",
+      "3 réflexes pris depuis que je m'intéresse aux fuites de données :\n\n1/ Vérifier régulièrement si mes mails apparaissent dans une fuite connue.\n\n2/ Ne jamais réutiliser le même mot de passe sur plusieurs sites.\n\n3/ Changer immédiatement un mot de passe concerné, même si rien de suspect n'est arrivé encore.\n\nDes gestes simples, mais qui limitent beaucoup les dégâts.",
+      "Une fuite de données qui m'a marqué en la lisant : une base de données laissée accessible sur Internet sans aucun mot de passe, par simple erreur de configuration.\n\nPas de piratage sophistiqué, juste un oubli. Ça montre que la sécurité c'est autant une question de rigueur dans les détails que de technique avancée.",
+      "Ce que je ne savais pas avant de creuser le sujet : après une fuite, ce ne sont pas que les mots de passe qui posent problème, mais aussi les infos qu'on ne peut pas changer — date de naissance, numéro de téléphone.\n\nÇa donne un autre regard sur ce qu'on accepte de donner en s'inscrivant sur un site.",
+      "Depuis que je suis les fuites de données dans l'actu cyber, j'ai pris l'habitude de vérifier mes comptes après chaque grosse fuite médiatisée.\n\nÇa prend 2 minutes et ça évite de découvrir un piratage des mois plus tard, par hasard.\n\nUn réflexe que je recommande autour de moi maintenant."
     ]
   },
   "Sécurité réseaux sociaux": {
     "a": [
       "Un faux compte qui se fait passer pour un pote sur Instagram m'a envoyé un message bizarre. Direct suspect.",
-      "Le piratage de compte Snapchat ou Instagram, c'est probablement ce qui touche le plus de monde autour de moi, plus que n'importe quelle autre attaque.",
-      "\"Ton compte va être supprimé, clique ici pour le confirmer\" : le message classique qui a piraté au moins deux comptes de gens que je connais.",
+      "Le piratage de compte Snapchat ou Instagram, c'est ce qui touche le plus de monde autour de moi.",
+      "\"Ton compte va être supprimé, clique ici\" : le message classique qui a piraté deux comptes de gens que je connais.",
       "J'ai aidé un ami à récupérer son compte Discord piraté ce week-end. L'occasion de revoir les bases avec lui.",
-      "Sur les réseaux sociaux, l'arnaque la plus efficace reste souvent la plus simple : se faire passer pour quelqu'un que tu connais déjà."
+      "Sur les réseaux sociaux, l'arnaque la plus efficace reste souvent la plus simple : se faire passer pour quelqu'un que tu connais."
     ],
     "c": [
-      "Cette semaine, un pote s'est fait pirater son compte Instagram via un faux message \"ton compte va être supprimé, clique ici pour le confirmer\".\n\nOn a essayé de le récupérer ensemble, sans succès pour l'instant. Ça m'a servi d'occasion pour rappeler autour de moi : jamais cliquer sur ce genre de lien, toujours vérifier directement depuis l'appli officielle.\n\nCe genre d'arnaque touche clairement plus de monde autour de moi que n'importe quelle attaque technique dont on parle en cours.",
-      "Le piratage de comptes Instagram, Snapchat ou Discord, c'est probablement la menace la plus concrète pour les gens de mon âge, bien plus que le hacking façon film.\n\nLa méthode est presque toujours la même : un faux message d'alerte, un lien qui ressemble au vrai site, et un mot de passe entré sans réfléchir.\n\nJ'essaie d'en parler autour de moi, parce que la plupart de mes amis n'ont même pas activé la double authentification sur ces comptes-là.",
-      "3 réflexes que j'essaie de faire adopter autour de moi pour les réseaux sociaux :\n\n1/ Ne jamais cliquer sur un lien reçu par message pour \"vérifier\" ou \"sauver\" son compte.\n\n2/ Activer la double authentification, même sur Instagram ou Discord, pas que sur les mails.\n\n3/ Se méfier même d'un message qui vient d'un compte connu : il peut avoir été piraté lui-même.\n\nDes gestes simples, mais que très peu de gens autour de moi appliquent encore.",
-      "Ce week-end, j'ai aidé un ami à essayer de récupérer son compte Discord piraté.\n\nEn creusant, on a compris qu'il avait cliqué sur un faux lien de \"cadeau gratuit\" envoyé par un compte piraté d'un autre ami à lui. Classique, mais ça marche toujours aussi bien apparemment.\n\nOn en a profité pour revoir ensemble les bases : mot de passe unique, double authentification, méfiance face aux liens trop beaux pour être vrais.",
-      "Ce qui me frappe avec les arnaques sur les réseaux sociaux : elles ne visent presque jamais une faille technique, juste la confiance qu'on a envers ses propres contacts.\n\nUn message qui vient d'un ami piraté passe beaucoup plus facilement qu'un mail random. C'est exactement ce que les arnaqueurs exploitent.\n\nÇa rejoint un peu ce que j'apprends sur l'ingénierie sociale, mais version très concrète et quotidienne.",
-      "Question pour ceux qui me lisent : est-ce que vous avez activé la double authentification sur vos réseaux sociaux, pas juste sur vos mails ?\n\nEn testant autour de moi, je me suis rendu compte que quasi personne ne l'a fait sur Instagram ou Discord, alors que c'est là que la plupart des piratages arrivent chez les gens de mon âge."
+      "Cette semaine, un pote s'est fait pirater son compte Instagram via un faux message \"ton compte va être supprimé, clique ici\".\n\nOn a essayé de le récupérer ensemble. Ça m'a servi d'occasion pour rappeler autour de moi : jamais cliquer sur ce genre de lien, toujours vérifier directement depuis l'appli officielle.\n\nCe genre d'arnaque touche clairement plus de monde autour de moi que n'importe quelle attaque technique qu'on voit en cours.",
+      "Le piratage de comptes Instagram, Snapchat ou Discord c'est probablement la menace la plus concrète pour les gens de mon âge, bien plus que le hacking façon film.\n\nLa méthode est presque toujours la même : un faux message d'alerte, un lien qui ressemble au vrai site, un mot de passe entré sans réfléchir.\n\nJ'essaie d'en parler autour de moi, parce que la plupart de mes amis n'ont même pas activé la 2FA sur ces comptes-là.",
+      "3 réflexes que j'essaie de faire adopter autour de moi pour les réseaux sociaux :\n\n1/ Ne jamais cliquer sur un lien reçu par message pour \"vérifier\" ou \"sauver\" son compte.\n\n2/ Activer la double authentification, même sur Instagram ou Discord, pas que sur les mails.\n\n3/ Se méfier même d'un message venant d'un compte connu — il peut avoir été piraté.\n\nDes gestes simples, que très peu de gens autour de moi appliquent encore.",
+      "Ce week-end, j'ai aidé un ami à essayer de récupérer son compte Discord piraté.\n\nEn creusant, on a compris qu'il avait cliqué sur un faux lien de \"cadeau\" envoyé par un compte piraté d'un autre ami. Classique, mais ça marche toujours.\n\nOn en a profité pour revoir ensemble les bases : mot de passe unique, double authentification, méfiance face aux liens trop beaux pour être vrais.",
+      "Ce qui me frappe avec les arnaques sur les réseaux sociaux : elles ne visent presque jamais une faille technique, juste la confiance envers ses propres contacts.\n\nUn message venant d'un ami piraté passe bien mieux qu'un mail random. C'est exactement ce qu'exploitent les arnaqueurs.\n\nÇa rejoint ce que j'apprends sur l'ingénierie sociale, mais version très concrète et quotidienne.",
+      "Question pour ceux qui me lisent : vous avez activé la double authentification sur vos réseaux sociaux, pas juste sur vos mails ?\n\nEn testant autour de moi, quasi personne ne l'a fait sur Instagram ou Discord — alors que c'est là que la plupart des piratages arrivent chez les gens de mon âge."
     ]
-  },
-  "Active Directory": {
-    "a": [
-      "Active Directory, le nom qui revient sans arrêt dès qu'on parle de sécurité en entreprise. J'ai enfin pris le temps de creuser ce que c'est vraiment.",
-      "Je me suis lancé dans mon premier labo Active Directory ce week-end, et j'ai compris pourquoi c'est une cible aussi stratégique pour les attaquants.",
-      "Question toute bête : c'est quoi, concrètement, un contrôleur de domaine ? J'ai enfin la réponse après quelques recherches.",
-      "Un chiffre qui m'a marqué : dans une grande partie des cyberattaques en entreprise, l'Active Directory se retrouve à un moment donné dans le chemin de l'attaquant.",
-      "Je pensais qu'Active Directory c'était juste un gros annuaire de comptes utilisateurs. En fait c'est beaucoup plus stratégique que ça."
-    ],
-    "c": [
-      "En creusant les métiers d'administrateur systèmes et réseaux, un nom revient sans arrêt : Active Directory. C'est en gros le système qui centralise tous les comptes, les ordinateurs et les droits d'accès d'une entreprise.\n\nJe commence tout juste à comprendre pourquoi c'est un sujet aussi central en BTS SIO SISR, la filière que je vise après mon bac STI2D. Toute l'infrastructure d'une entreprise repose souvent dessus.\n\nJe suis encore loin de tout maîtriser, mais je progresse petit à petit sur un labo virtuel le soir.",
-      "Je continue mon premier labo Active Directory, monté sur une machine virtuelle avec un contrôleur de domaine et quelques postes clients.\n\nCe qui m'a surpris : la moindre erreur de configuration sur les droits peut ouvrir un accès bien plus large que prévu. Un attaquant qui récupère un seul compte mal protégé peut parfois remonter jusqu'aux droits les plus élevés du réseau.\n\nEncore débutant sur le sujet, mais je commence à comprendre pourquoi les entreprises y consacrent autant d'attention.",
-      "Un trousseau de clés géant qui ouvre tous les bureaux d'une entreprise, avec un registre qui dit qui a le droit d'ouvrir quoi : c'est l'image qui m'a le plus aidé à comprendre l'Active Directory.\n\nSauf que si quelqu'un de malintentionné met la main sur le mauvais trousseau, ou sur celui du gardien, il peut potentiellement ouvrir toutes les portes.\n\nC'est ce qui rend ce système aussi puissant... et aussi sensible en sécurité.",
-      "Ce que j'ai retenu de mes premières lectures sur la sécurité d'Active Directory :\n\n1/ C'est le cœur de la gestion des comptes et des droits dans la majorité des entreprises.\n\n2/ Une mauvaise configuration des droits peut permettre à un attaquant de progresser bien plus loin que prévu dans le réseau.\n\n3/ Le surveiller et le durcir fait partie des missions clés en administration systèmes et réseaux.\n\nEncore beaucoup à apprendre, mais ça confirme que je suis sur la bonne voie avec le BTS SIO SISR.",
-      "Petit jalon perso ce week-end : j'ai réussi à créer mon premier contrôleur de domaine sur une VM et à y ajouter un utilisateur, tout seul, sans suivre un tuto ligne par ligne.\n\nRien d'impressionnant pour quelqu'un du métier, mais pour moi c'est la première fois que je comprends vraiment ce que je fais au lieu de recopier des commandes.\n\nProchaine étape : essayer de configurer des stratégies de groupe (GPO) pour restreindre certains droits.",
-      "Question pour les administrateurs systèmes et réseaux qui passent par ici, parce que mes recherches en solo ont leurs limites.\n\nJe découvre Active Directory de mon côté, et je me demande : au quotidien, la sécurisation de l'AD prend combien de temps par rapport au reste de l'administration système ?\n\nJe cherche à mieux comprendre le métier avant de me lancer dans un BTS SIO SISR à la rentrée 2027."
-    ]
-  },
-  "Intelligence artificielle": {
-    "a": [
-      "L'IA qui aide à détecter les cyberattaques, et l'IA qui aide à les préparer : je découvre les deux faces du sujet.",
-      "Un deepfake vocal a suffi à piéger une entreprise pour plusieurs millions d'euros. Ce genre d'histoire m'a donné envie de creuser le sujet IA et cybersécurité.",
-      "Je pensais que l'intelligence artificielle ne servait qu'à se défendre en cybersécurité. En fait les attaquants l'utilisent aussi, et c'est assez flippant.",
-      "Question que je me pose depuis un moment : est-ce que l'IA va remplacer les analystes SOC, ou juste changer leur métier ? J'ai des débuts de réponse.",
-      "Générer un mail de phishing crédible en quelques secondes grâce à l'IA : c'est devenu possible, et ça change beaucoup de choses pour la cybersécurité."
-    ],
-    "c": [
-      "Je m'intéresse de plus en plus au lien entre intelligence artificielle et cybersécurité, un sujet qui revient énormément en veille technologique en ce moment.\n\nD'un côté, l'IA aide à repérer des comportements suspects plus vite qu'un humain seul. De l'autre, elle sert aussi à générer des attaques plus crédibles : faux mails, fausses voix, faux visages.\n\nC'est un sujet que je veux continuer à suivre, parce qu'il va sûrement façonner tout le métier dans les années qui viennent, au moment où je chercherai mon alternance.",
-      "Je continue ma veille sur l'IA appliquée à la cybersécurité, et plus je lis, plus je vois à quel point le sujet est à double tranchant.\n\nCôté défense, des outils utilisent l'IA pour repérer des anomalies dans le trafic réseau que des règles classiques auraient loupées. Côté attaque, des cybercriminels s'en servent pour générer des messages de phishing sans les fautes qui les trahissaient avant.\n\nÇa me fait relativiser un vieux conseil : \"méfie-toi des mails bourrés de fautes\", ce repère devient de moins en moins fiable.",
-      "Un même outil qui peut servir à construire une serrure plus solide ou à en fabriquer un passe-partout, selon qui s'en sert : c'est un peu ça, l'IA en cybersécurité aujourd'hui.\n\nLes défenseurs s'en servent pour repérer des signaux faibles plus vite. Les attaquants s'en servent pour rendre leurs pièges plus crédibles et plus rapides à fabriquer.\n\nC'est ce double usage qui rend le sujet aussi passionnant à suivre en ce moment.",
-      "Ce que je retiens de mes lectures sur l'IA et la cybersécurité cette semaine :\n\n1/ L'IA aide les équipes de sécurité à traiter un volume d'alertes que des humains seuls ne pourraient pas gérer.\n\n2/ Les deepfakes (voix, vidéos) sont de plus en plus utilisés dans des arnaques ciblant des entreprises.\n\n3/ Le phishing généré par IA devient plus difficile à repérer, car les fautes de français qui le trahissaient disparaissent.\n\nUn sujet que je vais continuer à suivre de près, il bouge vite.",
-      "Petite expérience perso : j'ai essayé de repérer un deepfake vocal partagé dans une vidéo de sensibilisation, sans savoir à l'avance lequel des deux extraits était faux.\n\nJe me suis trompé. Le faux était plus convaincant que ce que j'imaginais, et ça m'a mis une petite claque sur la réalité de la menace.\n\nÇa motive encore plus à comprendre comment ces outils fonctionnent, pour mieux savoir comment s'en protéger.",
-      "Question pour les personnes du métier qui passent par ici, parce que le sujet évolue vite et mes recherches seul ont leurs limites.\n\nEst-ce que l'arrivée de l'IA change concrètement le quotidien d'un analyste SOC aujourd'hui, ou c'est encore surtout de la veille et des outils en test ?\n\nJe suis en train de me former en autodidacte avant de viser un BTS SIO SISR en alternance, et j'aimerais comprendre vers quoi le métier évolue."
-    ]
-  },
-  "Reverse Engineering": {
-    "a": [
-      "Ouvrir un programme pour comprendre comment il fonctionne à l'intérieur, sans avoir le code source : c'est ça, le reverse engineering. Je débute là-dedans.",
-      "J'ai regardé tourner mon premier malware... dans un environnement isolé et sans danger, rassurez-vous. Fascinant et flippant à la fois.",
-      "Question bête peut-être : comment on analyse un virus sans se faire infecter soi-même ? J'ai enfin compris le principe.",
-      "Le reverse engineering, c'est un peu le travail d'enquête de la cybersécurité. Je commence tout juste à m'y essayer.",
-      "Un fichier en apparence inoffensif peut cacher un comportement complètement différent une fois exécuté. C'est ce que j'ai découvert en m'intéressant à l'analyse de malware."
-    ],
-    "c": [
-      "Je m'intéresse depuis peu au reverse engineering, c'est-à-dire comprendre comment fonctionne un programme sans avoir accès à son code source.\n\nAppliqué à la cybersécurité, ça sert notamment à analyser des malwares pour comprendre ce qu'ils font réellement : quelles données ils visent, comment ils se propagent, comment les détecter.\n\nC'est un sujet plus technique que ce que j'ai fait jusqu'ici, clairement pas simple pour un débutant, mais ça me fascine.",
-      "Je continue à découvrir l'analyse de malware, cette fois avec un vrai échantillon (inoffensif, fourni pour l'entraînement) dans une machine virtuelle isolée.\n\nCe qui m'a marqué : un fichier peut avoir l'air totalement normal au premier coup d'œil, et cacher un comportement suspect qui ne se déclenche que sous certaines conditions précises.\n\nJe comprends mieux maintenant pourquoi les analystes passent autant de temps à observer un fichier avant de conclure quoi que ce soit.",
-      "Étudier un objet suspect derrière une vitre blindée, sans jamais le toucher directement : c'est un peu le principe d'une sandbox pour analyser un malware en sécurité.\n\nOn laisse le programme s'exécuter dans un environnement isolé, complètement coupé du reste, pour observer ce qu'il fait sans risquer de contaminer une vraie machine.\n\nC'est ce détail qui m'a le plus rassuré quand j'ai commencé à m'intéresser au sujet : on peut étudier une menace sans se mettre en danger, à condition de bien s'organiser.",
-      "Ce que j'ai compris sur l'analyse de malware ces dernières semaines :\n\n1/ On travaille toujours dans un environnement isolé (sandbox), jamais sur sa machine principale.\n\n2/ Il existe deux approches : observer le comportement du programme en le lançant (analyse dynamique), ou lire son code sans l'exécuter (analyse statique).\n\n3/ Le but n'est pas seulement de détecter un malware, mais de comprendre exactement ce qu'il fait pour mieux s'en protéger à l'avenir.\n\nEncore beaucoup à apprendre, mais le sujet me passionne de plus en plus.",
-      "Petit jalon perso : j'ai réussi à identifier, sur un exercice débutant, qu'un fichier tentait de se connecter à une adresse suspecte dès son lancement.\n\nRien de sorcier pour quelqu'un du métier, mais pour moi c'est la première fois que je repère un comportement malveillant par moi-même, sans qu'on me dise où regarder.\n\nJe garde une trace de chaque exercice dans un carnet, ça m'aide à voir mes progrès.",
-      "Question pour les analystes qui passent par ici, parce que je débute et mes recherches en solo ont leurs limites.\n\nPour se lancer dans l'analyse de malware quand on est débutant, vous conseillez de commencer par l'analyse statique (lire le code) ou dynamique (observer le comportement) ?\n\nJe m'entraîne petit à petit en autodidacte avant de viser une alternance en cybersécurité à la rentrée 2027."
-    ]
-  },
-  "Threat Intelligence": {
-    "a": [
-      "Le darkweb, ce n'est pas juste l'image de film qu'on s'en fait. Je me suis renseigné sérieusement sur le sujet.",
-      "Des données volées mises en vente quelques heures après une fuite : c'est le genre de choses que surveille la threat intelligence.",
-      "Question qu'on me pose souvent depuis que je parle de cybersécurité : c'est quoi vraiment le darkweb ? Voici ce que j'ai compris en creusant.",
-      "Je pensais que surveiller le darkweb, c'était réservé à des services secrets. En fait des entreprises le font aussi, pour se protéger.",
-      "Un détail qui m'a marqué : des identifiants volés circulent parfois pendant des mois avant que l'entreprise concernée ne s'en rende compte."
-    ],
-    "c": [
-      "Je me suis penché sur la threat intelligence, c'est-à-dire la veille sur les menaces : surveiller ce qui se dit sur le darkweb, repérer des fuites de données, anticiper des attaques avant qu'elles arrivent.\n\nCe qui m'a surpris, c'est que le darkweb n'est pas qu'un repaire de pirates dans le noir comme dans les films. C'est aussi un espace que des entreprises et des chercheurs surveillent activement pour se protéger.\n\nUn sujet que je trouve passionnant, à mi-chemin entre l'enquête et la technique.",
-      "Je continue à me renseigner sur la threat intelligence, et je commence à comprendre pourquoi certaines entreprises y consacrent une équipe entière.\n\nSavoir qu'une base de données contenant des identifiants de ses clients circule sur le darkweb, avant même que les clients ne s'en aperçoivent, ça change complètement la rapidité de réaction possible face à une fuite.\n\nJe suis encore loin de tout comprendre, mais le principe \"anticiper plutôt que subir\" me parle beaucoup dans cette approche.",
-      "Un peu comme surveiller les petites annonces d'un marché aux voleurs pour savoir si des objets volés chez vous y sont revendus : c'est l'image qui m'aide à comprendre la threat intelligence sur le darkweb.\n\nDes outils spécialisés scannent en continu ces espaces pour repérer si des données d'une entreprise ou d'une personne s'y retrouvent en vente.\n\nPlus la détection est rapide, plus l'entreprise peut réagir avant que les dégâts s'aggravent.",
-      "Ce que j'ai retenu de mes lectures sur le darkweb et la threat intelligence :\n\n1/ Le darkweb n'est qu'une petite partie d'internet, accessible seulement avec des outils spécifiques, et tout n'y est pas illégal.\n\n2/ Des identifiants ou des données volées y sont parfois mis en vente juste après une fuite chez une entreprise.\n\n3/ La threat intelligence consiste à surveiller ces espaces pour détecter une menace avant qu'elle ne touche vraiment l'entreprise.\n\nUn sujet que je veux continuer à creuser, il complète bien ce que j'apprends sur le SOC.",
-      "Petite expérience qui m'a marqué : j'ai vérifié sur un site spécialisé si une de mes anciennes adresses mail apparaissait dans des fuites de données connues. Résultat : oui, dans deux fuites différentes.\n\nRien de dramatique dans mon cas, mais ça m'a fait comprendre concrètement pourquoi la threat intelligence a un vrai intérêt : ces informations circulent, que ça nous arrange ou non.\n\nDepuis, j'ai changé les mots de passe concernés et activé la double authentification partout où c'était possible.",
-      "Question pour les personnes qui travaillent en threat intelligence ou en veille cyber, parce que le sujet me donne envie d'en savoir plus.\n\nAu quotidien, vous passez plus de temps à surveiller des sources ouvertes (forums, réseaux sociaux) ou des espaces plus fermés comme le darkweb ?\n\nJe découvre ce métier petit à petit, en parallèle de ma recherche d'alternance en cybersécurité pour 2027."
-    ]
-  },
+  }
 };
 
 /* ════ CONTENUS NIKO ════ */
@@ -1367,16 +1294,12 @@ const HT={
     'VPN':['#VPN','#Confidentialité'],
     'Sécurité IoT':['#IoT','#ObjetsConnectés'],
     'Sécurité mobile':['#SécuritéMobile','#Smartphone'],
-    'Réseaux':['#Réseaux','#TCPIP','#SIN'],
-    'Linux':['#Linux','#Terminal','#Kali'],
-    'Sécurité web':['#SécuritéWeb','#XSS','#SQLInjection'],
+    'Réseaux':['#Réseaux','#TCPIP','#SIN','#Cisco'],
+    'Linux':['#Linux','#Terminal','#Kali','#LearningByDoing'],
+    'Sécurité web':['#SécuritéWeb','#XSS','#SQLInjection','#PortSwigger'],
     'Forensic numérique':['#Forensic','#InvestigationNumérique'],
     'Fuites de données':['#FuiteDeDonnées','#DataBreach'],
-    'Sécurité réseaux sociaux':['#RéseauxSociaux','#Discord'],
-    'Active Directory':['#ActiveDirectory','#SISR','#AdminSystèmes'],
-    'Intelligence artificielle':['#IA','#CyberIA','#Deepfake'],
-    'Reverse Engineering':['#ReverseEngineering','#MalwareAnalysis','#Malware'],
-    'Threat Intelligence':['#ThreatIntelligence','#Darkweb','#CyberVeille'],
+    'Sécurité réseaux sociaux':['#RéseauxSociaux','#Discord','#Instagram'],
     promotion:['#Carrière','#Réseau'],
     certification:['#Certification','#Formation'],
     diplome:['#Diplôme','#Formation'],
@@ -1560,7 +1483,15 @@ function topicKeyOf(p){
   return 'original|'+(p.topic||'');
 }
 function genOnePost(extraAvoid=[]){
-  const plansSimon=[{type:'original',topic:'Pentest'},{type:'congrats',who:'la communauté cyber',occ:'certification'},{type:'original',topic:'CTF'},{type:'repost',content:'actualité cyber 2025'},{type:'original',topic:'SOC'},{type:'congrats',who:'mon réseau',occ:'alternance'},{type:'original',topic:'Bug Bounty'},{type:'original',topic:'OSINT'},{type:'original',topic:'Phishing'},{type:'original',topic:'Zero Day'},{type:'original',topic:'SIEM'},{type:'original',topic:'Cloud Security'},{type:'original',topic:'Cryptographie'},{type:'original',topic:'RGPD'},{type:'original',topic:'Ransomware'},{type:'original',topic:'Mots de passe'},{type:'original',topic:'Authentification 2FA'},{type:'original',topic:'Ingénierie sociale'},{type:'original',topic:'VPN'},{type:'original',topic:'Sécurité IoT'},{type:'original',topic:'Sécurité mobile'},{type:'original',topic:'Réseaux'},{type:'original',topic:'Linux'},{type:'original',topic:'Sécurité web'},{type:'original',topic:'Forensic numérique'},{type:'original',topic:'Fuites de données'},{type:'original',topic:'Sécurité réseaux sociaux'},{type:'original',topic:'Active Directory'},{type:'original',topic:'Intelligence artificielle'},{type:'original',topic:'Reverse Engineering'},{type:'original',topic:'Threat Intelligence'}];
+  // Dérivé automatiquement depuis Object.keys(TS) : tout thème ajouté à TS
+  // est immédiatement inclus dans le planning auto, sans aucune liste codée en dur à maintenir.
+  const plansSimon=[
+    {type:'congrats',who:'la communauté cyber',occ:'certification'},
+    {type:'repost',content:'actualité cyber 2025'},
+    {type:'congrats',who:'mon réseau',occ:'alternance'},
+    {type:'congrats',who:'un contact du réseau',occ:'diplome'},
+    ...Object.keys(TS).map(topic=>({type:'original',topic}))
+  ];
   const plansNiko=[{type:'original',topic:'Mutuelle santé'},{type:'congrats',who:'un client fidèle',occ:'anniversaire'},{type:'original',topic:'Prévoyance'},{type:'repost',content:'réforme assurance 2025'},{type:'original',topic:'Assurance vie'},{type:'congrats',who:'mon réseau assurance',occ:'promotion'},{type:'original',topic:'Conseils clients'},{type:'original',topic:'Assurance moto'},{type:'original',topic:'Épargne retraite'},{type:'original',topic:'RC Pro'},{type:'original',topic:'Gestion sinistre'},{type:'original',topic:'Fidélisation client'},{type:'original',topic:'Prospection'},{type:'original',topic:'Cyber risques pro'}];
   const plans = acc==='simon' ? plansSimon : plansNiko;
   // La redondance de thème est acceptée (et même favorisée par la popularité ci-dessous) ;
@@ -1625,8 +1556,16 @@ function genOnePost(extraAvoid=[]){
     return capped.reduce((s,v)=>s+v,0)/capped.length;
   }
   function weightedTake(arr){
-    // Pondération logarithmique : un thème très populaire reste favorisé mais n'écrase plus tout le reste
-    const weights=arr.map(p=>1+Math.min(8,Math.log10(1+viewsForTopic(topicKeyOf(p)))*2.2));
+    // BUGFIX "toujours les mêmes" : le coefficient 2.2 donnait jusqu'à ×9 aux thèmes populaires,
+    // écrasant les autres. Abaissé à ×2 max (facteur 0.7).
+    // Pénalité recency : si le thème est dans les 7 derniers posts de la file, son poids est
+    // divisé par 4 pour forcer la rotation avant de le reprendre.
+    const recentKeys=new Set(Q.slice(-7).map(q=>topicKeyOf({type:q.type,topic:q.topic})));
+    const weights=arr.map(p=>{
+      let w=1+Math.min(2,Math.log10(1+viewsForTopic(topicKeyOf(p)))*0.7);
+      if(recentKeys.has(topicKeyOf(p)))w/=4;
+      return w;
+    });
     const total=weights.reduce((a,b)=>a+b,0);
     let r=Math.random()*total;
     for(let i=0;i<arr.length;i++){r-=weights[i];if(r<=0)return arr.splice(i,1)[0];}
@@ -1637,7 +1576,7 @@ function genOnePost(extraAvoid=[]){
   const freshPlans = plans.filter(hasFreshContent);
   const pool = freshPlans.length ? freshPlans : plans;
   let post=null, candidates=[...pool];
-  for(let tries=0; tries<15 && !post; tries++){
+  for(let tries=0; tries<Math.max(15,pool.length*2) && !post; tries++){
     if(!candidates.length) candidates=[...pool];
     const p=weightedTake(candidates);
     const text=freshTextFor(p);
@@ -2005,7 +1944,11 @@ function renderRJ(){
   if(badge)badge.textContent='('+RJ.length+')';
   if(!RJ.length){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post mis de côté pour l\'instant.</div>';return;}
   const cols={original:'b-bl',repost:'b-or',congrats:'b-gr'};
-  list.innerHTML=RJ.map(r=>{
+  list.innerHTML='<div class="btn-row" style="padding:10px 14px 4px">'
+    +'<button class="btn btn-s" onclick="delAllRJ()" style="font-size:11px;padding:6px 14px">🗑️ Tout supprimer ('+RJ.length+')</button>'
+    +'<span style="font-size:10px;color:var(--muted);align-self:center;margin-left:4px">Ces posts pourront être regénérés après suppression</span>'
+    +'</div>'
+    +RJ.map(r=>{
     const d=new Date(r.rejectedAt||Date.now());
     const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     const ab=r.account==='niko'?'<span style="font-size:9px;color:var(--orange);margin-left:3px">NJ</span>':'<span style="font-size:9px;color:var(--cyan);margin-left:3px">SJ</span>';
@@ -2036,12 +1979,12 @@ function delRJ(id){
   saveAll();renderRJ();
   toast('Supprimé définitivement','in');
 }
-function clearAllRJ(){
-  if(!RJ.length){toast('Aucun post mis de côté','in');return;}
-  if(!confirm('Supprimer définitivement tous les posts mis de côté ('+RJ.length+') ? Cette action est irréversible.'))return;
+function delAllRJ(){
+  if(!RJ.length)return;
+  if(!confirm('Supprimer définitivement les '+RJ.length+' posts mis de côté ?\n\nIls pourront être regénérés automatiquement après suppression.'))return;
   RJ=[];
   saveAll();renderRJ();
-  toast('Tous les posts mis de côté ont été supprimés','in');
+  toast('Posts mis de côté vidés ✓','ok');
 }
 function setViews(id,val){
   const h=H.find(x=>x.id===id);if(!h)return;
