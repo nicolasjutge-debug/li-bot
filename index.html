@@ -1675,6 +1675,18 @@ function pubLiQ(id){
   const q=Q.find(x=>x.id===id);
   if(!q) return;
   archive({...q},'copie-file');
+  // BUGFIX MAJEUR "les posts restent dans la génération automatique" : cette fonction
+  // archivait le post mais ne le retirait JAMAIS de Q. Il restait donc affiché comme
+  // "à publier" indéfiniment, et comme Q ne raccourcissait jamais, autoRefill() ne
+  // générait jamais de remplaçant (Q.length < QUEUE_TARGET n'était jamais vrai).
+  // On retire maintenant le post, on recale les échéances des posts restants
+  // (cascade 48h, même logique que delQ), puis on régénère pour revenir à 7.
+  Q=Q.filter(x=>x.id!==id);
+  if(Q.length){
+    const base=Date.now();
+    Q.forEach((q2,i)=>{q2.scheduledAt=base+(i+1)*48*3600*1000;});
+  }
+  saveAll();renderQ();updateStats();rfTmr();
   if(navigator.share){
     navigator.share({
       title:'Post LinkedIn — '+PR[acc].nom,
@@ -1687,8 +1699,23 @@ function pubLiQ(id){
     window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encoded,'_blank');
     toast('Post copié + LinkedIn ouvert','ok');
   }
+  autoRefill(true);
 }
-function cpQ(id){const q=Q.find(x=>x.id===id);if(q){navigator.clipboard.writeText(q.text).then(()=>toast('Copié ! 💼','ok'));archive({...q},'copie-file');}}
+function cpQ(id){
+  const q=Q.find(x=>x.id===id);
+  if(!q)return;
+  navigator.clipboard.writeText(q.text).then(()=>toast('Copié ! 💼','ok'));
+  archive({...q},'copie-file');
+  // BUGFIX : même défaut que pubLiQ (voir commentaire ci-dessus) — le bouton copier
+  // archive aussi le post (stats.sent++) donc il doit lui aussi quitter la file.
+  Q=Q.filter(x=>x.id!==id);
+  if(Q.length){
+    const base=Date.now();
+    Q.forEach((q2,i)=>{q2.scheduledAt=base+(i+1)*48*3600*1000;});
+  }
+  saveAll();renderQ();updateStats();rfTmr();
+  autoRefill(true);
+}
 function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;renderPost(q.text);lastPost=q;document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});toast('Aperçu chargé','in');}
 function delQ(id){
   if(!confirm('Supprimer ce post de la file ?'))return;
