@@ -1560,36 +1560,33 @@ function genOnePost(extraAvoid=[]){
   // Un plan a-t-il encore au moins une formulation jamais utilisée ? Permet de ne tirer
   // que parmi les thèmes encore "frais" plutôt que de retomber sur un doublon par malchance.
   function hasFreshContent(p){return freshTextFor(p)!==null;}
-  // Popularité par thème — MOYENNE (pas somme) des vues, plafonnée par post au 90e
-  // percentile des vues de ce compte. Corrige 2 biais de l'ancienne version (somme brute) :
-  // 1) un thème avec beaucoup de posts n'était plus favorisé que par volume, indépendamment
-  //    de sa performance réelle (biais qui s'auto-renforce : plus choisi → plus de posts →
-  //    plus de vues cumulées → encore plus choisi) ;
-  // 2) un seul post avec des vues très importantes (viral, ou simple faute de frappe)
-  //    pouvait à lui seul faire dominer indéfiniment la sélection de son thème.
-  function viewsForTopic(key){
-    const mine = H.filter(h=>h.account===acc && h.views);
-    if(!mine.length) return 0;
-    const sorted = mine.map(h=>h.views).sort((a,b)=>a-b);
-    const cap = sorted[Math.min(sorted.length-1, Math.floor(sorted.length*0.9))] || 0;
-    const entries = mine.filter(h=>topicKeyOf({type:h.type,topic:h.topic})===key);
-    if(!entries.length) return 0;
-    const capped = entries.map(h=>cap>0?Math.min(h.views,cap):h.views);
-    return capped.reduce((s,v)=>s+v,0)/capped.length;
-  }
   function weightedTake(arr){
-    // BUGFIX "ne regarde pas l'historique / toujours les mêmes" :
-    // 1) Le coefficient 2.2 donnait jusqu'à ×9 aux thèmes populaires → réduit à ×2 max.
-    // 2) Pénalité FILE (Q) : ÷4 si le thème est dans les 7 derniers posts de la file.
-    // 3) Pénalité HISTORIQUE (H) : ÷3 si le thème a déjà été publié → les thèmes
-    //    jamais publiés sont fortement favorisés jusqu'à ce que chacun ait eu sa chance.
+    // BUGFIX "toujours les mêmes thèmes" (round 2) : l'ancienne version pondérait par
+    // POPULARITÉ (vues LinkedIn), avec un plafond ×3 max — un thème qui avait bien marché
+    // une fois restait donc structurellement avantagé pour toujours, qu'il ait déjà servi
+    // une fois ou dix fois (la pénalité "déjà publié" était un simple ÷3 fixe, jamais
+    // aggravé par la répétition). Résultat : les thèmes viraux monopolisaient la sélection
+    // pendant que d'autres (Forensic numérique, OSINT...) sortaient à peine.
+    //
+    // Nouveau calcul, aligné sur la demande "tous les thèmes doivent pouvoir sortir" :
+    // le poids ne dépend plus des vues du tout, seulement du NOMBRE de fois où ce thème a
+    // déjà servi (file + historique confondus, tous comptes). Chaque utilisation
+    // supplémentaire divise son poids par 2 : jamais utilisé = poids plein, déjà utilisé
+    // une fois = moitié, deux fois = un tiers, etc. Un thème encore vierge est donc TOUJOURS
+    // prioritaire sur un thème déjà sorti, quelle qu'ait été sa performance.
+    const usageCount={};
+    [...Q,...H].forEach(x=>{
+      const k=topicKeyOf({type:x.type,topic:x.topic});
+      usageCount[k]=(usageCount[k]||0)+1;
+    });
+    // Pénalité supplémentaire à court terme : éviter un retour quasi immédiat dans la file
+    // (les 7 derniers posts), au-delà du simple comptage global.
     const qKeys=new Set(Q.slice(-7).map(q=>topicKeyOf({type:q.type,topic:q.topic})));
-    const hKeys=new Set(H.map(h=>topicKeyOf({type:h.type,topic:h.topic})));
     const weights=arr.map(p=>{
       const key=topicKeyOf(p);
-      let w=1+Math.min(2,Math.log10(1+viewsForTopic(key))*0.7);
+      const n=usageCount[key]||0;
+      let w=1/(1+n);
       if(qKeys.has(key)) w/=4;
-      if(hKeys.has(key)) w/=3;
       return w;
     });
     const total=weights.reduce((a,b)=>a+b,0);
@@ -1740,9 +1737,9 @@ function cpQ(id){
   autoRefill(true);
 }
 // NOUVEAU : pour un post encore EN FILE (pas encore publié via l'app) qui s'avère être
-// un doublon d'un post déjà publié en vrai sur LinkedIn (cas remonté par Simon). Même logique
-// que markPublishedRJ (déjà existante pour les posts mis de côté) : on archive comme publié
-// sans ouvrir de partage, et on retire de la file + on régénère.
+// un doublon d'un post déjà publié en vrai sur LinkedIn. Même logique que markPublishedRJ
+// (déjà existante pour les posts mis de côté) : on archive comme publié sans ouvrir de
+// partage, et on retire de la file + on régénère.
 function markPubQ(id){
   const q=Q.find(x=>x.id===id);
   if(!q) return;
@@ -1972,9 +1969,9 @@ function resetGenerated(){
   toast('File regénérée — anciens posts mis de côté ✓','ok');
 }
 function dedupQueueVsHistory(silent){
-  const usedTexts=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text)].map(stripTags));
+  const usedTexts=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text)].map(norm));
   const before=Q.length;
-  Q=Q.filter(q=>!usedTexts.has(stripTags(q.text)));
+  Q=Q.filter(q=>!usedTexts.has(norm(q.text)));
   const removed=before-Q.length;
   if(removed>0){saveAll();renderQ();updateStats();rfTmr();}
   autoRefill(silent);
