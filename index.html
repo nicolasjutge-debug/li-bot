@@ -412,6 +412,9 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <button class="btn btn-s" onclick="schedPost()">⏰ Programmer</button>
         <button class="btn btn-li" id="li-lnk" onclick="publishLinkedIn()">📤 Partager sur LinkedIn</button>
       </div>
+      <div class="btn-row" style="margin-top:6px">
+        <button class="btn btn-s" onclick="markAlreadyPublished()" style="font-size:11px;opacity:.85">✔️ Déjà publié sur LinkedIn (ne plus reproposer)</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1351,6 +1354,11 @@ function pickHashtags(key,a){
    les textes archivés avant cette mise à jour (hashtags encore intégrés au texte)
    restent comparables aux nouvelles combinaisons (hashtags désormais séparés). */
 function stripTags(t){return (t||'').replace(/\n\n#[^\n]*$/,'').trim();}
+// BUGFIX robustesse anti-doublon : deux textes identiques sur le fond mais avec un espace,
+// un saut de ligne ou une casse différente (ex: retapé à la main avant publication réelle)
+// passaient à travers stripTags() seul (comparaison exacte). norm() ajoute un nettoyage
+// espaces + casse par-dessus stripTags, pour que ces quasi-doublons soient bien détectés.
+function norm(t){return stripTags(t).replace(/\s+/g,' ').trim().toLowerCase();}
 
 /* ════ FEED CONSOLE ════ */
 const AS=[{src:'CERT-FR',titre:'Campagne phishing active PME françaises',detail:'Spear-phishing avec deepfakes vocaux.'},{src:'ANSSI',titre:'Ransomwares +30% en France 2025',detail:'PME et collectivités restent les principales cibles.'},{src:'TryHackMe',titre:'Nouveaux parcours SOC analyst',detail:'Parcours certifiant avec entreprises françaises.'},{src:'Google',titre:'0-day Chrome corrigé en urgence',detail:'Faille V8 permettant échappée sandbox.'},{src:'HackTheBox',titre:'Top 10 techniques priv esc Linux 2025',detail:'Vecteurs les plus exploités en pentest et CTF.'},{src:'ZATAZ',titre:'2M comptes français exposés',detail:'Base de données mal configurée.'}];
@@ -1423,7 +1431,7 @@ function clearGenerator(){
 function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');if(lastPost)archive(lastPost,'copie');});}
 
 function genPost(){
-  const usedTexts=new Set([...Q.map(q=>q.text),...H.map(h=>h.text),...RJ.map(r=>r.text)].map(stripTags));
+  const usedTexts=new Set([...Q.map(q=>q.text),...H.map(h=>h.text),...RJ.map(r=>r.text)].map(norm));
   let text, isDup=false;
   if(typ==='original'){
     const themes=acc==='simon'?TS:TN;
@@ -1438,8 +1446,8 @@ function genPost(){
     const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===topic&&q.account===acc).map(q=>q.text);
     const combos=[];
     d.a.forEach(ai=>d.c.forEach(ci=>combos.push({ai,text:finalize(ai,ci)})));
-    let fresh=combos.filter(c=>!usedTexts.has(stripTags(c.text)));
-    const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>t.startsWith(c.ai)));
+    let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
+    const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
     if(freshNewIntro.length) fresh=freshNewIntro;
     let narrative;
     if(fresh.length){narrative=pick(fresh).text;}
@@ -1447,7 +1455,7 @@ function genPost(){
     text=(narrative+'\n\n'+pickHashtags(topic,acc)).trim();
   }else{
     text=genTxt();
-    isDup=usedTexts.has(stripTags(text));
+    isDup=usedTexts.has(norm(text));
   }
   renderPost(text);
   lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc};
@@ -1475,6 +1483,16 @@ function schedPost(){
   Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:acc});
   saveAll();renderQ();updateStats();toast('Programmé ✓','in');
 }
+// NOUVEAU : pour le cas exact remonté — un post généré correspond à quelque chose que Simon
+// a DÉJÀ publié sur LinkedIn en vrai (avant l'app, ou en dehors d'elle). L'outil ne peut exclure
+// que ce qu'il connaît : ce bouton lui apprend ce cas précis immédiatement, sans vrai partage.
+// Même logique que markPublishedRJ/markPubQ (source 'publie') pour rester cohérent.
+function markAlreadyPublished(){
+  if(!lastPost){toast('Génère d\'abord un post','er');return;}
+  archive(lastPost,'publie');
+  toast('Marqué comme publié — ne sera plus jamais reproposé ✓','ok');
+  clearGenerator();
+}
 
 /* Génère un seul post selon un plan aléatoire (pour auto-refill) */
 function topicKeyOf(p){
@@ -1498,7 +1516,7 @@ function genOnePost(extraAvoid=[]){
   // seul le texte exact déjà utilisé est strictement interdit.
   // N'accepte jamais un texte déjà en file, déjà publié, déjà supprimé manuellement (rejeté),
   // ni un texte tout juste vidé par une RAZ (extraAvoid, valable pour cet appel seulement)
-  const usedTexts = new Set([...Q.map(q=>q.text), ...H.map(h=>h.text), ...RJ.map(r=>r.text), ...extraAvoid].map(stripTags));
+  const usedTexts = new Set([...Q.map(q=>q.text), ...H.map(h=>h.text), ...RJ.map(r=>r.text), ...extraAvoid].map(norm));
   // BUGFIX : cherche une variante VRAIMENT inédite pour un plan, au lieu de tirer un texte
   // au hasard et croiser les doigts. Avant, avec un tirage aveugle (genTxt) sur 15 essais,
   // un thème presque épuisé (1 seule variante fraîche sur 16 combinaisons) avait ~35% de
@@ -1516,8 +1534,12 @@ function genOnePost(extraAvoid=[]){
       const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===p.topic&&q.account===acc).map(q=>q.text);
       const combos=[];
       d.a.forEach(ai=>d.c.forEach(ci=>combos.push({ai,text:(ai+'\n\n'+ci).trim()})));
-      let fresh=combos.filter(c=>!usedTexts.has(stripTags(c.text)));
-      const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>stripTags(t).startsWith(c.ai)));
+      // BUGFIX MAJEUR : comparait le texte BRUT du combo (usedTexts.has(c.text)) contre des
+      // entrées normalisées (stripTags) → un post déjà publié avec la moindre variation
+      // d'espace/casse/retour à la ligne n'était JAMAIS reconnu comme doublon. norm() aligne
+      // les deux côtés de la comparaison.
+      let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
+      const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
       if(freshNewIntro.length) fresh=freshNewIntro;
       return fresh.length?(pick(fresh).text+'\n\n'+pickHashtags(p.topic,acc)).trim():null;
     }
@@ -1525,12 +1547,12 @@ function genOnePost(extraAvoid=[]){
       const variants=CG[p.occ]||CG.promotion;
       // Chaque variante intègre désormais un tirage aléatoire de hashtags (pickHashtags) ;
       // on compare donc la version sans hashtags pour juger de la fraîcheur du fond du message.
-      const fresh=variants.map(fn=>fn(p.who,'',acc)).filter(t=>!usedTexts.has(stripTags(t)));
+      const fresh=variants.map(fn=>fn(p.who,'',acc)).filter(t=>!usedTexts.has(norm(t)));
       return fresh.length?pick(fresh):null;
     }
     if(p.type==='repost'){
       const variants=acc==='simon'?RS:RN;
-      const fresh=variants.map(fn=>fn(p.content||'')).filter(t=>!usedTexts.has(stripTags(t)));
+      const fresh=variants.map(fn=>fn(p.content||'')).filter(t=>!usedTexts.has(norm(t)));
       return fresh.length?pick(fresh):null;
     }
     return null;
@@ -1666,6 +1688,7 @@ function renderQ(){
         <button class="qbtn" onclick="cpQ(${q.id})" style="color:var(--cyan)" title="Copier">📋</button>
         <button class="qbtn" onclick="pubLiQ(${q.id})" style="color:#0a66c2" title="Publier sur LinkedIn">🚀</button>
         <button class="qbtn" onclick="prvQ(${q.id})" style="color:var(--muted)" title="Aperçu">👁</button>
+        <button class="qbtn" onclick="markPubQ(${q.id})" style="color:var(--muted)" title="Marquer comme déjà publié sur LinkedIn (sans partager maintenant)">✔️</button>
         <button class="qbtn" onclick="delQ(${q.id})" style="color:var(--muted)" title="Supprimer">✕</button>
       </div>
     </div>`;
@@ -1714,6 +1737,24 @@ function cpQ(id){
     Q.forEach((q2,i)=>{q2.scheduledAt=base+(i+1)*48*3600*1000;});
   }
   saveAll();renderQ();updateStats();rfTmr();
+  autoRefill(true);
+}
+// NOUVEAU : pour un post encore EN FILE (pas encore publié via l'app) qui s'avère être
+// un doublon d'un post déjà publié en vrai sur LinkedIn (cas remonté par Simon). Même logique
+// que markPublishedRJ (déjà existante pour les posts mis de côté) : on archive comme publié
+// sans ouvrir de partage, et on retire de la file + on régénère.
+function markPubQ(id){
+  const q=Q.find(x=>x.id===id);
+  if(!q) return;
+  if(!confirm('Marquer ce post comme déjà publié sur LinkedIn ? (à faire seulement si tu l\'as réellement posté, ailleurs ou avant)'))return;
+  archive({...q},'publie');
+  Q=Q.filter(x=>x.id!==id);
+  if(Q.length){
+    const base=Date.now();
+    Q.forEach((q2,i)=>{q2.scheduledAt=base+(i+1)*48*3600*1000;});
+  }
+  saveAll();renderQ();updateStats();rfTmr();
+  toast('Marqué comme publié — retiré de la file ✓','ok');
   autoRefill(true);
 }
 function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;renderPost(q.text);lastPost=q;document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});toast('Aperçu chargé','in');}
@@ -1832,10 +1873,10 @@ function importLinkedInCSV(raw){
   const {items,error}=parseLinkedInCSV(raw);
   if(error){toast(error,'er');return;}
   if(!items.length){toast('Aucun post exploitable trouvé (reposts sans commentaire exclus).','er');return;}
-  const existing=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text),...Q.map(q=>q.text)].map(stripTags));
+  const existing=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text),...Q.map(q=>q.text)].map(norm));
   let added=0,skipped=0;
   items.forEach((it,i)=>{
-    const key=stripTags(it.text);
+    const key=norm(it.text);
     if(existing.has(key)){skipped++;return;}
     existing.add(key);
     H.push({id:Date.now()+i,text:it.text,type:'original',topic:'',label:TL.original,account:acc,publishedAt:it.publishedAt,source:'linkedin-import',views:0});
