@@ -1501,8 +1501,9 @@ function topicKeyOf(p){
   return 'original|'+(p.topic||'');
 }
 function genOnePost(extraAvoid=[]){
-  // Auto-dérivé depuis Object.keys(TS) : tout thème ajouté à TS est inclus
-  // immédiatement dans le planning auto, sans liste codée en dur à maintenir.
+  // Auto-dérivé depuis Object.keys(TS)/Object.keys(TN) selon le compte : tout thème ajouté
+  // à TS ou TN est inclus immédiatement dans le planning auto, sans liste codée en dur à
+  // maintenir manuellement en double (une pour Simon, une pour Nicolas).
   const plansSimon=[
     {type:'congrats',who:'la communauté cyber',occ:'certification'},
     {type:'repost',content:'actualité cyber 2025'},
@@ -1510,7 +1511,12 @@ function genOnePost(extraAvoid=[]){
     {type:'congrats',who:'un contact du réseau',occ:'diplome'},
     ...Object.keys(TS).map(topic=>({type:'original',topic}))
   ];
-  const plansNiko=[{type:'original',topic:'Mutuelle santé'},{type:'congrats',who:'un client fidèle',occ:'anniversaire'},{type:'original',topic:'Prévoyance'},{type:'repost',content:'réforme assurance 2025'},{type:'original',topic:'Assurance vie'},{type:'congrats',who:'mon réseau assurance',occ:'promotion'},{type:'original',topic:'Conseils clients'},{type:'original',topic:'Assurance moto'},{type:'original',topic:'Épargne retraite'},{type:'original',topic:'RC Pro'},{type:'original',topic:'Gestion sinistre'},{type:'original',topic:'Fidélisation client'},{type:'original',topic:'Prospection'},{type:'original',topic:'Cyber risques pro'}];
+  const plansNiko=[
+    {type:'congrats',who:'un client fidèle',occ:'anniversaire'},
+    {type:'repost',content:'réforme assurance 2025'},
+    {type:'congrats',who:'mon réseau assurance',occ:'promotion'},
+    ...Object.keys(TN).map(topic=>({type:'original',topic}))
+  ];
   const plans = acc==='simon' ? plansSimon : plansNiko;
   // La redondance de thème est acceptée (et même favorisée par la popularité ci-dessous) ;
   // seul le texte exact déjà utilisé est strictement interdit.
