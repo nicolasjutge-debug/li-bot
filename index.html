@@ -570,7 +570,8 @@ function toast(m,t='in'){const c=document.getElementById('tc'),el=document.creat
 // il obtenait donc "toujours le même thème" — c'était probablement la cause n°1 du problème.
 function pickFreshTopic(a){
   const themes=a==='simon'?TS:TN;
-  const usedTexts=new Set([...Q.map(q=>q.text),...H.map(h=>h.text),...RJ.map(r=>r.text)]);
+  // BUGFIX indépendance des comptes : ne compare qu'aux textes DU MÊME compte.
+  const usedTexts=new Set([...Q.filter(x=>x.account===a).map(q=>q.text),...H.filter(x=>x.account===a).map(h=>h.text),...RJ.filter(x=>x.account===a).map(r=>r.text)]);
   const keys=Object.keys(themes);
   const fresh=keys.filter(k=>{
     const d=themes[k];
@@ -1431,7 +1432,10 @@ function clearGenerator(){
 function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');if(lastPost)archive(lastPost,'copie');});}
 
 function genPost(){
-  const usedTexts=new Set([...Q.map(q=>q.text),...H.map(h=>h.text),...RJ.map(r=>r.text)].map(norm));
+  // BUGFIX indépendance des comptes : usedTexts incluait Q/H/RJ des DEUX comptes mélangés.
+  // Un post déjà publié côté Nicolas ne doit jamais empêcher une formulation côté Simon
+  // (et inversement) — chaque profil a son propre historique, sa propre file.
+  const usedTexts=new Set([...Q.filter(x=>x.account===acc).map(q=>q.text),...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text)].map(norm));
   let text, isDup=false;
   if(typ==='original'){
     const themes=acc==='simon'?TS:TN;
@@ -1479,7 +1483,9 @@ function archive(post,src='copie'){
 
 function schedPost(){
   if(!lastPost){toast('Génère d\'abord un post','er');return;}
-  const base=Q.length?Math.max(...Q.map(q=>q.scheduledAt)):Date.now();
+  // BUGFIX indépendance : la base venait du dernier post TOUS COMPTES confondus.
+  const mine=Q.filter(q=>q.account===acc);
+  const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
   Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:acc});
   saveAll();renderQ();updateStats();toast('Programmé ✓','in');
 }
@@ -1499,6 +1505,21 @@ function topicKeyOf(p){
   if(p.type==='congrats') return 'congrats|'+(p.who||'')+'|'+(p.occ||'');
   if(p.type==='repost') return 'repost|'+(p.content||'');
   return 'original|'+(p.topic||'');
+}
+// NOUVEAU (indépendance des comptes) : Q et RJ sont des tableaux PARTAGÉS entre Simon et
+// Nicolas (chaque entrée porte juste un champ .account) — pratique pour tout afficher dans
+// une seule file/historique, mais dangereux pour les recalages de date : réécrire l'échéance
+// de TOUTE la file en cascade (comme le faisaient pubLiQ/cpQ/markPubQ/delQ/resetTimer) mélange
+// les deux comptes et casse la cadence 48h propre à chacun. Cette fonction ne recalcule QUE
+// les posts du compte demandé, sans toucher à l'autre, puis retrie Q par échéance pour que le
+// minuteur partagé (qui ne regarde que Q[0]) traite toujours le prochain post chronologique
+// tous comptes confondus, même après un recalage qui ne concernait qu'un seul des deux.
+function rescheduleAccountQueue(a){
+  const mine=Q.filter(q=>q.account===a);
+  if(!mine.length)return;
+  const base=Date.now();
+  mine.forEach((q,i)=>{q.scheduledAt=base+(i+1)*48*3600*1000;});
+  Q.sort((x,y)=>x.scheduledAt-y.scheduledAt);
 }
 function genOnePost(extraAvoid=[]){
   // Auto-dérivé depuis Object.keys(TS)/Object.keys(TN) selon le compte : tout thème ajouté
@@ -1522,7 +1543,8 @@ function genOnePost(extraAvoid=[]){
   // seul le texte exact déjà utilisé est strictement interdit.
   // N'accepte jamais un texte déjà en file, déjà publié, déjà supprimé manuellement (rejeté),
   // ni un texte tout juste vidé par une RAZ (extraAvoid, valable pour cet appel seulement)
-  const usedTexts = new Set([...Q.map(q=>q.text), ...H.map(h=>h.text), ...RJ.map(r=>r.text), ...extraAvoid].map(norm));
+  // BUGFIX indépendance des comptes : ne considère "déjà utilisé" que le texte DU MÊME compte.
+  const usedTexts = new Set([...Q.filter(x=>x.account===acc).map(q=>q.text), ...H.filter(x=>x.account===acc).map(h=>h.text), ...RJ.filter(x=>x.account===acc).map(r=>r.text), ...extraAvoid].map(norm));
   // BUGFIX : cherche une variante VRAIMENT inédite pour un plan, au lieu de tirer un texte
   // au hasard et croiser les doigts. Avant, avec un tirage aveugle (genTxt) sur 15 essais,
   // un thème presque épuisé (1 seule variante fraîche sur 16 combinaisons) avait ~35% de
@@ -1576,18 +1598,19 @@ function genOnePost(extraAvoid=[]){
     //
     // Nouveau calcul, aligné sur la demande "tous les thèmes doivent pouvoir sortir" :
     // le poids ne dépend plus des vues du tout, seulement du NOMBRE de fois où ce thème a
-    // déjà servi (file + historique confondus, tous comptes). Chaque utilisation
-    // supplémentaire divise son poids par 2 : jamais utilisé = poids plein, déjà utilisé
-    // une fois = moitié, deux fois = un tiers, etc. Un thème encore vierge est donc TOUJOURS
-    // prioritaire sur un thème déjà sorti, quelle qu'ait été sa performance.
+    // déjà servi (file + historique DU MÊME COMPTE UNIQUEMENT — indépendance des comptes :
+    // l'historique de Nicolas ne doit jamais influencer la sélection de Simon, et inversement).
+    // Chaque utilisation supplémentaire divise son poids par 2 : jamais utilisé = poids plein,
+    // déjà utilisé une fois = moitié, deux fois = un tiers, etc. Un thème encore vierge est
+    // donc TOUJOURS prioritaire sur un thème déjà sorti, quelle qu'ait été sa performance.
     const usageCount={};
-    [...Q,...H].forEach(x=>{
+    [...Q.filter(x=>x.account===acc),...H.filter(x=>x.account===acc)].forEach(x=>{
       const k=topicKeyOf({type:x.type,topic:x.topic});
       usageCount[k]=(usageCount[k]||0)+1;
     });
     // Pénalité supplémentaire à court terme : éviter un retour quasi immédiat dans la file
-    // (les 7 derniers posts), au-delà du simple comptage global.
-    const qKeys=new Set(Q.slice(-7).map(q=>topicKeyOf({type:q.type,topic:q.topic})));
+    // (les 7 derniers posts DE CE COMPTE), au-delà du simple comptage global.
+    const qKeys=new Set(Q.filter(x=>x.account===acc).slice(-7).map(q=>topicKeyOf({type:q.type,topic:q.topic})));
     const weights=arr.map(p=>{
       const key=topicKeyOf(p);
       const n=usageCount[key]||0;
@@ -1610,7 +1633,10 @@ function genOnePost(extraAvoid=[]){
     const p=weightedTake(candidates);
     const text=freshTextFor(p);
     if(text){
-      const base = Q.length ? Math.max(...Q.map(q=>q.scheduledAt)) : Date.now();
+      // BUGFIX indépendance : la base ne doit dépendre que des posts DU MÊME compte, sinon
+      // un profil très rempli retarde artificiellement l'échéance de l'autre.
+      const mineQ = Q.filter(x=>x.account===acc);
+      const base = mineQ.length ? Math.max(...mineQ.map(q=>q.scheduledAt)) : Date.now();
       post = {id:Date.now()+Math.floor(Math.random()*1000),text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
     }
   }
@@ -1620,7 +1646,8 @@ function genOnePost(extraAvoid=[]){
     // plus par tirage aveugle). On accepte un doublon plutôt que de bloquer la file, mais on
     // le signale désormais à l'appelant (wasDup) au lieu de le masquer silencieusement.
     const p=pick(pool),text=genTxt(p);
-    const base = Q.length ? Math.max(...Q.map(q=>q.scheduledAt)) : Date.now();
+    const mineQ = Q.filter(x=>x.account===acc);
+    const base = mineQ.length ? Math.max(...mineQ.map(q=>q.scheduledAt)) : Date.now();
     post = {id:Date.now()+Math.floor(Math.random()*1000),text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
     wasDup=true;
   }
@@ -1636,7 +1663,10 @@ const QUEUE_TARGET = 7;
    sans les ajouter définitivement à l'historique ou aux rejets. */
 function autoRefill(silent=false, extraAvoid=[]){
   let added = 0, dupCount = 0;
-  while(Q.length < QUEUE_TARGET){
+  // BUGFIX indépendance : la cible de 7 s'appliquait à Q.length TOUS COMPTES CONFONDUS —
+  // si Simon avait déjà 7 posts, Nicolas ne recevait plus jamais de regénération automatique
+  // tant que la file globale restait ≥7. Chaque compte doit maintenir SES PROPRES 7 posts.
+  while(Q.filter(x=>x.account===acc).length < QUEUE_TARGET){
     const r=genOnePost(extraAvoid);
     if(r&&r.wasDup) dupCount++;
     added++;
@@ -1658,10 +1688,19 @@ function autoGen(){
   // congrats-alternance, Bug Bounty DANS CET ORDRE, à chaque pression — et ne consultait JAMAIS
   // Q/H/RJ. C'est très probablement LA cause principale de "toujours les mêmes thèmes" puisque
   // c'est le bouton le plus utilisé pour (re)créer le planning. Il route maintenant vers
-  // genOnePost() : pioche parmi TOUS les thèmes du compte, pondérée par popularité, avec
+  // genOnePost() : pioche parmi TOUS les thèmes du compte, pondérée par équité, avec
   // recherche garantie de texte inédit — exactement la même logique fiable que le reste de l'app.
+  //
+  // BUGFIX indépendance : ajoutait auparavant TOUJOURS 7 posts de plus, sans regarder combien
+  // il y en avait déjà (ni même à quel compte ils appartenaient) — deux clics de suite sur ce
+  // bouton pour un même profil donnaient 14 posts en file. Complète maintenant jusqu'à 7 POUR
+  // LE COMPTE ACTIF, comme autoRefill, sans jamais toucher à l'autre profil.
+  if(Q.filter(x=>x.account===acc).length>=QUEUE_TARGET){
+    toast(`La file de ${PR[acc].nom} est déjà à ${QUEUE_TARGET} posts`,'in');
+    return;
+  }
   let dupCount=0;
-  for(let i=0;i<7;i++){
+  while(Q.filter(x=>x.account===acc).length<QUEUE_TARGET){
     const r=genOnePost();
     if(r&&r.wasDup) dupCount++;
   }
@@ -1673,9 +1712,11 @@ function autoGen(){
 /* ════ QUEUE ════ */
 function renderQ(){
   const list=document.getElementById('q-list'),badge=document.getElementById('q-bdg');
-  if(!Q.length){list.innerHTML='<div class="qe">Aucun post programmé.</div>';badge.textContent='0 posts';return;}
-  badge.textContent=Q.length+' post'+(Q.length>1?'s':'');
-  list.innerHTML=Q.map((q,i)=>{
+  // BUGFIX indépendance : Q contient les deux comptes mélangés ; on n'affiche ici que celui actif.
+  const mine=Q.filter(q=>q.account===acc);
+  if(!mine.length){list.innerHTML='<div class="qe">Aucun post programmé.</div>';badge.textContent='0 posts';return;}
+  badge.textContent=mine.length+' post'+(mine.length>1?'s':'');
+  list.innerHTML=mine.map((q,i)=>{
     const diff=q.scheduledAt-Date.now(),ts=diff>0?'Dans '+fmtD(diff):'⚡ À publier';
     const tags=(q.text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,4);
     const ab=q.account==='niko'?'<span style="color:var(--orange)">NJ</span>':'<span style="color:var(--cyan)">SJ</span>';
@@ -1708,10 +1749,9 @@ function pubLiQ(id){
   // On retire maintenant le post, on recale les échéances des posts restants
   // (cascade 48h, même logique que delQ), puis on régénère pour revenir à 7.
   Q=Q.filter(x=>x.id!==id);
-  if(Q.length){
-    const base=Date.now();
-    Q.forEach((q2,i)=>{q2.scheduledAt=base+(i+1)*48*3600*1000;});
-  }
+  // BUGFIX indépendance : ne recale QUE les échéances du compte de ce post (voir
+  // rescheduleAccountQueue) — l'autre profil n'est plus jamais décalé par cette action.
+  rescheduleAccountQueue(q.account);
   saveAll();renderQ();updateStats();rfTmr();
   if(navigator.share){
     navigator.share({
@@ -1735,10 +1775,7 @@ function cpQ(id){
   // BUGFIX : même défaut que pubLiQ (voir commentaire ci-dessus) — le bouton copier
   // archive aussi le post (stats.sent++) donc il doit lui aussi quitter la file.
   Q=Q.filter(x=>x.id!==id);
-  if(Q.length){
-    const base=Date.now();
-    Q.forEach((q2,i)=>{q2.scheduledAt=base+(i+1)*48*3600*1000;});
-  }
+  rescheduleAccountQueue(q.account);
   saveAll();renderQ();updateStats();rfTmr();
   autoRefill(true);
 }
@@ -1752,10 +1789,7 @@ function markPubQ(id){
   if(!confirm('Marquer ce post comme déjà publié sur LinkedIn ? (à faire seulement si tu l\'as réellement posté, ailleurs ou avant)'))return;
   archive({...q},'publie');
   Q=Q.filter(x=>x.id!==id);
-  if(Q.length){
-    const base=Date.now();
-    Q.forEach((q2,i)=>{q2.scheduledAt=base+(i+1)*48*3600*1000;});
-  }
+  rescheduleAccountQueue(q.account);
   saveAll();renderQ();updateStats();rfTmr();
   toast('Marqué comme publié — retiré de la file ✓','ok');
   autoRefill(true);
@@ -1764,15 +1798,12 @@ function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;renderPost(q.text);l
 function delQ(id){
   if(!confirm('Supprimer ce post de la file ?'))return;
   const removed=Q.find(x=>x.id===id);
-  if(removed)RJ.unshift({id:removed.id,text:removed.text,type:removed.type,topic:removed.topic,label:removed.label||TL[removed.type],account:acc,rejectedAt:Date.now()});
+  if(removed)RJ.unshift({id:removed.id,text:removed.text,type:removed.type,topic:removed.topic,label:removed.label||TL[removed.type],account:removed.account,rejectedAt:Date.now()});
   Q=Q.filter(x=>x.id!==id);
-  if(Q.length){
-    const base=Date.now();
-    Q.forEach((q,i)=>{q.scheduledAt=base+(i+1)*48*3600*1000;});
-  }
+  if(removed) rescheduleAccountQueue(removed.account);
   saveAll();renderQ();updateStats();renderRJ();rfTmr();
   autoRefill();
-  if(Q.length)toast('Échéances recalculées (48h en cascade)','in');
+  if(Q.some(x=>x.account===(removed&&removed.account)))toast('Échéances recalculées (48h en cascade)','in');
 }
 
 /* ════ TIMER ════ */
@@ -1789,12 +1820,13 @@ function startTimer(){
 function pauseTimer(){tmrRun=false;clearInterval(tmrIv);lsS(SK.timer,false);document.getElementById('st-txt').textContent='En pause';}
 function resetTimer(){
   pauseTimer();
-  // Recalculer réellement les échéances de tous les posts en file en cascade de 48h
+  // BUGFIX indépendance : une SEULE cascade sur toute la file mélangeait les deux comptes —
+  // chaque post de l'AUTRE compte "volait" un cran de 48h, doublant de fait l'écart réel
+  // entre deux posts consécutifs d'un même profil. On recale maintenant Simon et Nicolas
+  // séparément (chacun sa propre cascade de 48h depuis maintenant), voir rescheduleAccountQueue.
   if(Q.length){
-    let base = Date.now();
-    Q.forEach((q,i)=>{
-      q.scheduledAt = base + (i+1)*48*3600*1000;
-    });
+    rescheduleAccountQueue('simon');
+    rescheduleAccountQueue('niko');
     saveAll();
     renderQ();
   }
@@ -1802,7 +1834,7 @@ function resetTimer(){
   document.getElementById('st-nxt').textContent=Q.length?'48h':'—';
   document.getElementById('t-nt').textContent=Q[0]?.label||'—';
   document.getElementById('st-txt').textContent='Prêt';
-  if(Q.length) toast('Échéances de tous les posts recalculées (48h en cascade)','ok');
+  if(Q.length) toast('Échéances recalculées (48h en cascade, séparément pour chaque profil)','ok');
 }
 function pubNext(){
   const q=Q.shift();if(!q)return;
@@ -1876,7 +1908,9 @@ function importLinkedInCSV(raw){
   const {items,error}=parseLinkedInCSV(raw);
   if(error){toast(error,'er');return;}
   if(!items.length){toast('Aucun post exploitable trouvé (reposts sans commentaire exclus).','er');return;}
-  const existing=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text),...Q.map(q=>q.text)].map(norm));
+  // BUGFIX indépendance : un import pour Nicolas ne doit jamais être bloqué par (ni bloquer)
+  // l'historique de Simon, et inversement.
+  const existing=new Set([...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text),...Q.filter(x=>x.account===acc).map(q=>q.text)].map(norm));
   let added=0,skipped=0;
   items.forEach((it,i)=>{
     const key=norm(it.text);
@@ -1923,12 +1957,14 @@ function toggleHViewFilter(){
 }
 function renderH(){
   const list=document.getElementById('h-list'),badge=document.getElementById('h-bdg');
-  badge.textContent=H.length;
-  const missing=H.filter(h=>!h.views);
+  // BUGFIX indépendance : H mélange les deux comptes ; on n'affiche ici que celui actif.
+  const mineH=H.filter(h=>h.account===acc);
+  badge.textContent=mineH.length;
+  const missing=mineH.filter(h=>!h.views);
   const cntEl=document.getElementById('h-filter-cnt');
   if(cntEl)cntEl.textContent=missing.length;
   const scrollPos=list.scrollTop;
-  const shown=hFilterNoViews?missing:H.slice(0,50);
+  const shown=hFilterNoViews?missing:mineH.slice(0,50);
   if(!shown.length){
     list.innerHTML=hFilterNoViews?'<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">🎉 Tous les posts archivés ont leurs vues renseignées.</div>':'<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div>';
     return;
@@ -1962,23 +1998,28 @@ function renderH(){
   list.scrollTop=scrollPos;
 }
 function resetGenerated(){
-  if(!Q.length){toast('La file est déjà vide','in');return;}
-  if(!confirm('Vider entièrement la file ('+Q.length+' posts) et la regénérer avec de nouveaux thèmes ? Les posts retirés seront placés dans « Posts mis de côté » (comme une suppression individuelle) pour ne plus jamais revenir.'))return;
+  // BUGFIX MAJEUR indépendance : cette RAZ vidait TOUTE la file (Q=[]), donc en cliquant depuis
+  // l'onglet Nicolas on effaçait AUSSI la file de Simon (et inversement) sans même le dire.
+  // Ne touche désormais qu'aux posts DU COMPTE ACTIF.
+  const mine=Q.filter(q=>q.account===acc);
+  if(!mine.length){toast('La file de '+PR[acc].nom+' est déjà vide','in');return;}
+  if(!confirm('Vider la file de '+PR[acc].nom+' ('+mine.length+' posts) et la regénérer avec de nouveaux thèmes ? Les posts retirés seront placés dans « Posts mis de côté » (comme une suppression individuelle) pour ne plus jamais revenir.\n\nLa file de l\'autre profil n\'est pas concernée.'))return;
   // Les posts vidés sont archivés dans RJ, la liste affichée à l'écran sous « Posts mis de côté » —
   // exactement comme delQ() le fait pour une suppression manuelle à l'unité.
-  Q.forEach(q=>RJ.unshift({id:q.id,text:q.text,type:q.type,topic:q.topic,label:q.label||TL[q.type],account:acc,rejectedAt:Date.now()}));
-  const clearedTexts = Q.map(q=>q.text);
-  Q=[];
+  mine.forEach(q=>RJ.unshift({id:q.id,text:q.text,type:q.type,topic:q.topic,label:q.label||TL[q.type],account:acc,rejectedAt:Date.now()}));
+  const clearedTexts = mine.map(q=>q.text);
+  Q=Q.filter(q=>q.account!==acc);
   saveAll();renderQ();renderRJ();updateStats();rfTmr();
   // extraAvoid en ceinture-et-bretelles pour ce rechargement immédiat précis
   autoRefill(false, clearedTexts);
-  toast('File regénérée — anciens posts mis de côté ✓','ok');
+  toast('File de '+PR[acc].nom+' regénérée — anciens posts mis de côté ✓','ok');
 }
 function dedupQueueVsHistory(silent){
-  const usedTexts=new Set([...H.map(h=>h.text),...RJ.map(r=>r.text)].map(norm));
-  const before=Q.length;
-  Q=Q.filter(q=>!usedTexts.has(norm(q.text)));
-  const removed=before-Q.length;
+  // BUGFIX indépendance : ne compare et ne retire que les posts DU COMPTE ACTIF.
+  const usedTexts=new Set([...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text)].map(norm));
+  const before=Q.filter(x=>x.account===acc).length;
+  Q=Q.filter(q=>q.account!==acc||!usedTexts.has(norm(q.text)));
+  const removed=before-Q.filter(x=>x.account===acc).length;
   if(removed>0){saveAll();renderQ();updateStats();rfTmr();}
   autoRefill(silent);
   if(removed>0&&!silent)toast(removed+' doublon'+(removed>1?'s':'')+' avec l\'historique retiré'+(removed>1?'s':'')+' de la file','in');
@@ -2016,14 +2057,16 @@ function tgRJ(id){const el=document.getElementById('rjex-'+id);if(el)el.style.di
 function renderRJ(){
   const list=document.getElementById('rj-list'),badge=document.getElementById('rj-count');
   if(!list)return;
-  if(badge)badge.textContent='('+RJ.length+')';
-  if(!RJ.length){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post mis de côté pour l\'instant.</div>';return;}
+  // BUGFIX indépendance : RJ mélange les deux comptes ; on n'affiche ici que celui actif.
+  const mine=RJ.filter(r=>r.account===acc);
+  if(badge)badge.textContent='('+mine.length+')';
+  if(!mine.length){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post mis de côté pour l\'instant.</div>';return;}
   const cols={original:'b-bl',repost:'b-or',congrats:'b-gr'};
   list.innerHTML='<div style="padding:10px 14px 4px">'
-    +'<button class="btn btn-s" onclick="delAllRJ()" style="font-size:11px">🗑️ Tout supprimer ('+RJ.length+')</button>'
+    +'<button class="btn btn-s" onclick="delAllRJ()" style="font-size:11px">🗑️ Tout supprimer ('+mine.length+')</button>'
     +'<span style="font-size:10px;color:var(--muted);margin-left:8px">Les posts supprimés pourront être regénérés</span>'
     +'</div>'
-    +RJ.map(r=>{
+    +mine.map(r=>{
     const d=new Date(r.rejectedAt||Date.now());
     const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     const ab=r.account==='niko'?'<span style="font-size:9px;color:var(--orange);margin-left:3px">NJ</span>':'<span style="font-size:9px;color:var(--cyan);margin-left:3px">SJ</span>';
@@ -2055,11 +2098,13 @@ function delRJ(id){
   toast('Supprimé définitivement','in');
 }
 function delAllRJ(){
-  if(!RJ.length)return;
-  if(!confirm('Supprimer définitivement les '+RJ.length+' posts mis de côté ?\n\nIls pourront être regénérés automatiquement après suppression.'))return;
-  RJ=[];
+  // BUGFIX indépendance : ne supprime que les posts mis de côté DU COMPTE ACTIF.
+  const mine=RJ.filter(r=>r.account===acc);
+  if(!mine.length)return;
+  if(!confirm('Supprimer définitivement les '+mine.length+' posts mis de côté de '+PR[acc].nom+' ?\n\nIls pourront être regénérés automatiquement après suppression. L\'autre profil n\'est pas concerné.'))return;
+  RJ=RJ.filter(r=>r.account!==acc);
   saveAll();renderRJ();
-  toast('Posts mis de côté vidés ✓','ok');
+  toast('Posts mis de côté de '+PR[acc].nom+' vidés ✓','ok');
 }
 function setViews(id,val){
   const h=H.find(x=>x.id===id);if(!h)return;
@@ -2109,7 +2154,9 @@ function genAllCf(){
   if(!CF.length){toast('Aucune personne','er');return;}
   CF.forEach(c=>{
     const text=genTxt({type:'congrats',who:c.name,occ:c.occ,note:c.note,ctx:c.note});
-    const base=Q.length?Math.max(...Q.map(q=>q.scheduledAt)):Date.now();
+    // BUGFIX indépendance : base calculée uniquement sur la file du compte actif.
+    const mineQ=Q.filter(x=>x.account===acc);
+    const base=mineQ.length?Math.max(...mineQ.map(q=>q.scheduledAt)):Date.now();
     Q.push({id:Date.now()+Math.random()*1000,text,type:'congrats',topic:c.name,label:'🎉 Félicitations',scheduledAt:base+48*3600*1000,account:acc});
     if(!stats[acc])stats[acc]={total:0,sent:0};stats[acc].total++;
   });saveAll();renderQ();updateStats();toast('Tous générés et programmés !','ok');
