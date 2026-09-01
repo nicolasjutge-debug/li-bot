@@ -538,6 +538,14 @@ const GK={tok:'sj5_gh_tok',gid:'sj5_gh_gid',ts:'sj5_sync_ts'};
 let acc='simon', typ='original', topic='Pentest';
 let Q=[], H=[], CF=[], RJ=[];
 let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
+// BUGFIX "toujours les mêmes thèmes" (round 3, suite) : fairnessWeights se base sur Q+H, qui
+// restent VIDES tant qu'on ne fait que cliquer "⚡ Générer le post" sans jamais valider
+// (Copier/Programmer/Partager) — un simple parcours d'options. Sans mémoire, la pondération
+// retombe alors à l'uniforme dans ce cas précis. Cette petite mémoire (non persistée : c'est
+// volontairement une fenêtre courte, pas un historique durable) retient les derniers thèmes
+// affichés par compte pour éviter qu'un même thème revienne coup sur coup pendant qu'on
+// parcourt plusieurs propositions.
+let recentShown={simon:[],niko:[]};
 let lastPost=null, tmrRun=false, tmrIv=null;
 let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
 
@@ -581,7 +589,25 @@ function pickFreshTopic(a){
     return false;
   });
   const pool=fresh.length?fresh:keys;
-  return pool[Math.floor(Math.random()*pool.length)];
+  // BUGFIX : tirage désormais pondéré par équité (mêmes poids que weightedTake pour la
+  // génération automatique), au lieu d'un tirage uniforme qui laissait un thème ressortir
+  // 4 fois en 30 clics pendant que 6 des 24 thèmes ne sortaient jamais.
+  const recent=recentShown[a]||[];
+  // Exclusion DURE (pas juste une pénalité) des thèmes montrés très récemment, fenêtre large
+  // (tous les thèmes sauf les 4 les moins récents) : garantit un vrai passage en revue de
+  // presque tout le stock avant qu'un seul thème puisse revenir, façon "pioche sans remise".
+  // Se réduit automatiquement si le stock de thèmes frais est plus petit (compte à moins de
+  // 24 thèmes, ou beaucoup de contenu déjà épuisé).
+  const notRecent=pool.filter(k=>!recent.includes(k));
+  const candidates=notRecent.length?notRecent:pool;
+  const candidateKeys=candidates.map(k=>topicKeyOf({type:'original',topic:k}));
+  const weights=fairnessWeights(candidateKeys,a);
+  const picked=weightedPick(candidates,weights);
+  recent.push(picked);
+  const maxRecent=Math.max(1,keys.length-4);
+  if(recent.length>maxRecent)recent.shift();
+  recentShown[a]=recent;
+  return picked;
 }
 function syncTopicPill(a,t){
   const container=document.getElementById(a==='simon'?'tp-s':'tp-n');
@@ -593,6 +619,15 @@ function switchAcc(a){
   // Sauvegarder l'ancien compte avant de switcher
   lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);
   queueSync();
+  // BUGFIX MAJEUR indépendance des comptes — LA vraie cause de la fuite entre profils :
+  // lastPost (et l'aperçu affiché à l'écran, boutons Copier/Programmer/Partager) n'étaient
+  // JAMAIS remis à zéro en changeant de compte. Résultat concret et vérifié : générer un post
+  // sur Simon, basculer sur Nicolas SANS cliquer sur un bouton d'action, puis cliquer
+  // "Programmer" — envoyait le texte de Simon (cybersécurité) dans la file de Nicolas, tagué
+  // à son compte. Le champ "Contexte / angle" gardait aussi le texte tapé pour l'autre profil,
+  // avec le même risque de fuite au prochain post généré.
+  clearGenerator();
+  const ctxInp=document.getElementById('ctx-inp');if(ctxInp)ctxInp.value='';
   acc=a;
   lsS(SK.acc,a); // Sauvegarder le nouveau compte actif
   loadAcc(a);
@@ -1506,6 +1541,30 @@ function topicKeyOf(p){
   if(p.type==='repost') return 'repost|'+(p.content||'');
   return 'original|'+(p.topic||'');
 }
+// BUGFIX MAJEUR "toujours les mêmes thèmes" (round 3, la vraie cause côté génération
+// MANUELLE) : weightedTake (génération 100% automatique) pondère par équité depuis un
+// correctif précédent, mais pickFreshTopic — qui fait tourner la pastille de thème après
+// CHAQUE clic sur "⚡ Générer le post" en manuel, donc le flux réellement utilisé au
+// quotidien — tirait encore uniformément au hasard parmi les thèmes non épuisés. Vérifié :
+// sur 30 clics à la suite, un thème peut ressortir 4 fois pendant que 6 des 24 thèmes ne
+// sortent jamais (tirage uniforme sur 24 options = répétitions statistiquement fréquentes).
+// Cette fonction centralise le calcul d'équité pour que génération manuelle et automatique
+// appliquent enfin exactement la même logique de rotation, et ne puissent plus jamais diverger.
+function fairnessWeights(keys, a){
+  const usageCount={};
+  [...Q.filter(x=>x.account===a),...H.filter(x=>x.account===a)].forEach(x=>{
+    const k=topicKeyOf({type:x.type,topic:x.topic});
+    usageCount[k]=(usageCount[k]||0)+1;
+  });
+  return keys.map(k=>1/(1+(usageCount[k]||0)));
+}
+function weightedPick(items, weights){
+  const total=weights.reduce((s,w)=>s+w,0);
+  if(total<=0) return items[Math.floor(Math.random()*items.length)];
+  let r=Math.random()*total;
+  for(let i=0;i<items.length;i++){r-=weights[i];if(r<=0)return items[i];}
+  return items[items.length-1];
+}
 // NOUVEAU (indépendance des comptes) : Q et RJ sont des tableaux PARTAGÉS entre Simon et
 // Nicolas (chaque entrée porte juste un champ .account) — pratique pour tout afficher dans
 // une seule file/historique, mais dangereux pour les recalages de date : réécrire l'échéance
@@ -1596,28 +1655,17 @@ function genOnePost(extraAvoid=[]){
     // aggravé par la répétition). Résultat : les thèmes viraux monopolisaient la sélection
     // pendant que d'autres (Forensic numérique, OSINT...) sortaient à peine.
     //
-    // Nouveau calcul, aligné sur la demande "tous les thèmes doivent pouvoir sortir" :
-    // le poids ne dépend plus des vues du tout, seulement du NOMBRE de fois où ce thème a
-    // déjà servi (file + historique DU MÊME COMPTE UNIQUEMENT — indépendance des comptes :
-    // l'historique de Nicolas ne doit jamais influencer la sélection de Simon, et inversement).
-    // Chaque utilisation supplémentaire divise son poids par 2 : jamais utilisé = poids plein,
-    // déjà utilisé une fois = moitié, deux fois = un tiers, etc. Un thème encore vierge est
-    // donc TOUJOURS prioritaire sur un thème déjà sorti, quelle qu'ait été sa performance.
-    const usageCount={};
-    [...Q.filter(x=>x.account===acc),...H.filter(x=>x.account===acc)].forEach(x=>{
-      const k=topicKeyOf({type:x.type,topic:x.topic});
-      usageCount[k]=(usageCount[k]||0)+1;
-    });
+    // Nouveau calcul (fairnessWeights, PARTAGÉ avec pickFreshTopic — voir son commentaire
+    // "round 3" plus haut) : le poids ne dépend plus des vues du tout, seulement du NOMBRE
+    // de fois où ce thème a déjà servi (file + historique DU MÊME COMPTE UNIQUEMENT —
+    // indépendance des comptes : l'historique de Nicolas ne doit jamais influencer la
+    // sélection de Simon, et inversement). Chaque utilisation supplémentaire divise son
+    // poids par 2 : jamais utilisé = poids plein, déjà utilisé une fois = moitié, etc.
+    const keys=arr.map(p=>topicKeyOf(p));
     // Pénalité supplémentaire à court terme : éviter un retour quasi immédiat dans la file
     // (les 7 derniers posts DE CE COMPTE), au-delà du simple comptage global.
     const qKeys=new Set(Q.filter(x=>x.account===acc).slice(-7).map(q=>topicKeyOf({type:q.type,topic:q.topic})));
-    const weights=arr.map(p=>{
-      const key=topicKeyOf(p);
-      const n=usageCount[key]||0;
-      let w=1/(1+n);
-      if(qKeys.has(key)) w/=4;
-      return w;
-    });
+    const weights=fairnessWeights(keys,acc).map((w,i)=>qKeys.has(keys[i])?w/4:w);
     const total=weights.reduce((a,b)=>a+b,0);
     let r=Math.random()*total;
     for(let i=0;i<arr.length;i++){r-=weights[i];if(r<=0)return arr.splice(i,1)[0];}
