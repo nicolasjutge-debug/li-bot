@@ -355,6 +355,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <button class="tp" onclick="selTp(this)">Forensic numérique</button>
         <button class="tp" onclick="selTp(this)">Fuites de données</button>
         <button class="tp" onclick="selTp(this)">Sécurité réseaux sociaux</button>
+        <button class="tp" onclick="selTp(this)">CyberQuest</button>
       </div>
     </div>
     <div id="sec-n" style="display:none">
@@ -580,7 +581,10 @@ function pickFreshTopic(a){
   const themes=a==='simon'?TS:TN;
   // BUGFIX indépendance des comptes : ne compare qu'aux textes DU MÊME compte.
   const usedTexts=new Set([...Q.filter(x=>x.account===a).map(q=>q.text),...H.filter(x=>x.account===a).map(h=>h.text),...RJ.filter(x=>x.account===a).map(r=>r.text)]);
-  const keys=Object.keys(themes);
+  // Exclusion (consigne §6 du complément) : CyberQuest ne doit jamais être suggéré tout seul
+  // après un clic sur "Générer" — seulement choisi à la main par l'utilisateur via sa pastille,
+  // pour ne le mentionner que lors d'une vraie actualité du projet, jamais artificiellement.
+  const keys=Object.keys(themes).filter(k=>!(a==='simon'&&k==='CyberQuest'));
   const fresh=keys.filter(k=>{
     const d=themes[k];
     for(const ai of d.a){for(const ci of d.c){
@@ -734,7 +738,7 @@ const TS = {
       "Hier j'ai enfin réussi un exercice sur TryHackMe après avoir bloqué pendant un bon moment. La sensation quand ça marche enfin, c'est génial.\n\nCe que j'aime avec ces exercices (on les appelle des CTF), c'est qu'on apprend en pratiquant directement, pas juste en lisant de la théorie. On a un petit ordinateur \"piège\" et on doit trouver comment rentrer dedans.\n\nJe suis vraiment débutant encore, je rate souvent, je cherche des indices ou je regarde des explications après avoir essayé. Mais j'apprends à chaque fois un truc nouveau.\n\nPour les autres lycéens qui aimeraient essayer : TryHackMe a une partie gratuite pour débutants, c'est plutôt sympa pour commencer.",
       "Presque tous les soirs cette semaine, retour aux CTF (des défis de cybersécurité en ligne).\n\nCe qui me motive le plus, c'est pas juste de réussir un défi, c'est de voir sur les forums comment d'autres l'ont résolu différemment de moi. Y'a souvent 3 ou 4 façons d'arriver au même résultat.\n\nJe suis loin d'être le meilleur, je regarde encore beaucoup de writeups (les explications après coup) quand je bloque trop longtemps. Mais j'apprends à chaque fois, même sur les défis que je ne finis pas.",
       "Petit bilan du mois sur les CTF : plus de régularité, un peu moins de découragement quand je bloque.\n\nLe vrai changement, c'est d'avoir accepté de lire un writeup après 30-40 minutes de blocage au lieu de m'acharner pendant des heures. J'apprends autant, en beaucoup moins de temps perdu.\n\nSimple à dire, plus dur à appliquer, mais ça marche.",
-      "Ce que les CTF m'ont appris ces dernières semaines, en 3 points :\n\n1/ Il y a presque toujours plusieurs chemins pour arriver au même résultat.\n\n2/ Bloquer longtemps sur un truc n'est pas un échec, c'est presque la norme.\n\n3/ Comparer sa méthode à celle des autres après coup apprend souvent plus que le défi lui-même.\n\nJe suis loin d'être bon, mais je progresse à mon rythme.",
+      "Ce que les CTF m'ont appris ces dernières semaines, en 3 points :\n\n1/ Il y a souvent plusieurs chemins pour arriver au même résultat.\n\n2/ Bloquer longtemps sur un truc n'est pas un échec, c'est presque la norme.\n\n3/ Comparer sa méthode à celle des autres après coup apprend souvent plus que le défi lui-même.\n\nJe suis loin d'être bon, mais je progresse à mon rythme.",
       "J'ai abandonné un CTF en plein milieu la semaine dernière, frustré, persuadé d'être nul. Le lendemain, à froid, j'ai relu l'énoncé et trouvé la solution en 10 minutes.\n\nDepuis j'ai pris une règle : quand je bloque trop longtemps, je ferme l'ordi et j'y reviens le lendemain plutôt que de m'acharner le soir même, fatigué.",
       "Avant de commencer les CTF, je pensais qu'il fallait déjà tout savoir en cybersécurité pour s'y mettre. En fait c'est l'inverse : c'est en butant sur les défis, en cherchant, en ratant, qu'on apprend le plus vite.\n\nJ'aurais aimé le savoir plus tôt, ça m'aurait évité de repousser le moment de commencer."
     ]
@@ -766,8 +770,8 @@ const TS = {
     ],
     "c": [
       "Une vidéo expliquant comment marchent les ransomwares (ces virus qui bloquent tous les fichiers d'une entreprise jusqu'à ce qu'elle paie une rançon) m'a bien éclairé sur le sujet.\n\nCe qui m'a surpris c'est que souvent ça commence par un truc tout simple : quelqu'un clique sur un mail piégé, ou un mot de passe trop facile à deviner.\n\nC'est en regardant ce genre de cas que je comprends pourquoi la cybersécurité c'est important, même pour des petites entreprises qui pensent que ça n'arrive qu'aux grandes.",
-      "Les ransomwares restent un sujet qui m'intéresse particulièrement : ces attaques qui bloquent tous les fichiers d'une entreprise et demandent une rançon pour les débloquer.\n\nCe qui me marque, c'est que ça peut toucher n'importe qui : hôpitaux, écoles, petites entreprises... pas que les grosses boîtes comme je le pensais au début.\n\nJ'ai appris que la meilleure protection reste souvent la plus simple : faire des sauvegardes régulières et ne pas cliquer n'importe où. Pas besoin d'être expert pour comprendre ça.",
-      "Plusieurs cas de ransomware étudiés ces derniers temps, et trois choses qui reviennent tout le temps :\n\n1/ Ça touche autant les petites structures que les grandes, parfois même plus.\n\n2/ Le point d'entrée est presque toujours humain : un mail, un mot de passe faible.\n\n3/ Les sauvegardes régulières restent la meilleure protection, bien avant les outils compliqués.\n\nDes bases simples, mais visiblement pas si appliquées que ça sur le terrain.",
+      "Les ransomwares restent un sujet qui m'intéresse particulièrement : ces attaques qui bloquent tous les fichiers d'une entreprise et demandent une rançon pour les débloquer.\n\nCe qui me marque, c'est que ça peut toucher n'importe qui : hôpitaux, écoles, petites entreprises... pas que les grosses boîtes comme je le pensais au début.\n\nJ'ai appris qu'une protection simple peut déjà faire une vraie différence : faire des sauvegardes régulières et ne pas cliquer n'importe où. Pas besoin d'être expert pour comprendre ça.",
+      "Plusieurs cas de ransomware étudiés ces derniers temps, et trois choses qui reviennent tout le temps :\n\n1/ Ça touche autant les petites structures que les grandes, parfois même plus.\n\n2/ Le point d'entrée est souvent humain : un mail, un mot de passe faible.\n\n3/ Les sauvegardes régulières comptent parmi les protections les plus efficaces, avant même les outils compliqués.\n\nDes bases simples, mais visiblement pas si appliquées que ça sur le terrain.",
       "Certaines entreprises payent la rançon et ne récupèrent même pas tous leurs fichiers. Ça, ça m'a marqué en lisant sur les ransomwares.\n\nAucune garantie, juste un pari risqué. Ça montre bien que prévenir coûte toujours moins cher que guérir, même en informatique.",
       "En révisant le sujet, une statistique m'a fait tiquer : une bonne partie des entreprises touchées par un ransomware n'ont toujours pas de sauvegarde externe à jour au moment de l'attaque.\n\nLe conseil de base (sauvegarder ailleurs, régulièrement) existe depuis toujours, mais visiblement il est encore trop peu appliqué en vrai.",
       "Question que je me pose en étudiant les ransomwares : pourquoi on continue à sous-estimer un risque qu'on connaît depuis des années ?\n\nJe crois que c'est un peu comme le sport ou l'alimentation : on sait ce qu'il faudrait faire, mais tant que ça n'arrive qu'aux autres, on repousse. En cybersécurité, ce réflexe coûte cher."
@@ -787,7 +791,7 @@ const TS = {
       "Petit récap des réflexes anti-phishing que j'ai fini par adopter :\n\n1/ Toujours vérifier l'adresse complète de l'expéditeur, pas juste le nom affiché.\n\n2/ Se méfier de toute urgence artificielle (\"24h pour agir\").\n\n3/ Ne jamais cliquer depuis le mail, aller directement sur le site officiel.\n\nRien de très technique, juste de la méfiance saine.",
       "Je m'entraîne à repérer des faux mails de phishing, et certains sont vraiment bien imités.\n\nCe qui m'intéresserait de savoir de la part de pros du domaine : est-ce que les techniques évoluent vite, ou est-ce que ce sont toujours un peu les mêmes ficelles qui reviennent ?\n\nCurieux d'avoir des retours d'expérience.",
       "Ma mère a failli se faire avoir par un faux SMS \"colis en attente\" la semaine dernière. Je lui ai montré comment vérifier le lien avant de cliquer (survoler, regarder le vrai nom de domaine), et depuis elle me demande son avis avant de cliquer sur quoi que ce soit.\n\nPetite victoire de sensibilisation à la maison.",
-      "Le réflexe le plus simple que j'ai adopté contre le phishing : ne jamais cliquer depuis le mail ou le SMS, toujours retaper l'adresse du site moi-même dans le navigateur.\n\nÇa prend 10 secondes de plus et ça évite direct la grande majorité des pièges, même les mieux imités."
+      "Le réflexe le plus simple que j'ai adopté contre le phishing : ne jamais cliquer depuis le mail ou le SMS, toujours retaper l'adresse du site moi-même dans le navigateur.\n\nÇa prend 10 secondes de plus et ça évite déjà pas mal de pièges, même les mieux imités."
     ]
   },
   "Zero Day": {
@@ -843,7 +847,7 @@ const TS = {
   },
   "Bug Bounty": {
     "a": [
-      "J'ai découvert qu'on peut être payé pour trouver des failles dans des sites, légalement. Ça s'appelle le bug bounty.",
+      "Un rapport de bug bounty qui m'a scotché : plusieurs milliers d'euros pour une seule faille signalée, par quelqu'un qui a commencé sans diplôme.",
       "Je continue à m'intéresser au bug bounty, ça reste un des trucs qui me motive le plus en cybersécurité.",
       "Être payé pour signaler une faille plutôt que pour la garder secrète. Le bug bounty a un côté un peu \"gagnant-gagnant\" que j'aime bien.",
       "Je regarde les rapports de débutants en bug bounty plus que ceux des experts. C'est là que j'apprends le plus.",
@@ -895,7 +899,7 @@ const TS = {
   "Mots de passe": {
     "a": [
       "Je me suis mis à utiliser un gestionnaire de mots de passe, et je me demande pourquoi j'ai attendu aussi longtemps.",
-      "On parle souvent de hacking impressionnant, mais la base de la cybersécurité c'est juste d'avoir de bons mots de passe.",
+      "Mon prof de SIN répète que beaucoup des piratages qu'il a vus commencent par un mot de passe faible, pas par une technique de génie.",
       "J'ai vérifié en combien de temps un ordinateur peut deviner mon ancien mot de passe. Résultat gênant.",
       "La base de la cybersécurité tient parfois à un détail bête : ne pas réutiliser le même mot de passe partout.",
       "J'ai vérifié les mots de passe de mes parents (juste la force, pas le contenu). Sans surprise, quasiment les mêmes partout depuis des années."
@@ -919,8 +923,8 @@ const TS = {
     ],
     "c": [
       "Ce week-end j'ai pris le temps d'activer la double authentification (2FA) sur mes comptes principaux : mail, réseaux sociaux, etc.\n\nEn gros, même si quelqu'un trouve mon mot de passe, il lui faudrait aussi un code généré sur mon téléphone pour se connecter. Ça complique beaucoup les choses pour un attaquant.\n\nC'est gratuit, ça prend 5 minutes par compte, et c'est clairement un des conseils de cybersécurité les plus simples à appliquer.",
-      "Je recommande à tout le monde autour de moi d'activer la double authentification, depuis que j'ai compris à quel point ça change la sécurité d'un compte.\n\nC'est juste une étape en plus à la connexion, mais ça empêche la grande majorité des piratages de comptes classiques.\n\nC'est le genre de conseil simple que j'aimerais avoir entendu plus tôt.",
-      "Avant d'activer la double authentification partout, je pensais que ça allait juste m'embêter à chaque connexion.\n\nEn fait, une fois configurée, on la voit à peine au quotidien, et elle bloque la grande majorité des tentatives de piratage classiques.\n\nLe petit effort de départ vaut largement la tranquillité que ça donne après.",
+      "Je recommande à tout le monde autour de moi d'activer la double authentification, depuis que j'ai compris à quel point ça change la sécurité d'un compte.\n\nC'est juste une étape en plus à la connexion, mais ça empêche une grande partie des piratages de comptes classiques.\n\nC'est le genre de conseil simple que j'aimerais avoir entendu plus tôt.",
+      "Avant d'activer la double authentification partout, je pensais que ça allait juste m'embêter à chaque connexion.\n\nEn fait, une fois configurée, on la voit à peine au quotidien, et elle bloque une grande partie des tentatives de piratage classiques.\n\nLe petit effort de départ vaut largement la tranquillité que ça donne après.",
       "Peu de gens le savent : même si votre mot de passe fuite dans une base de données piratée ailleurs, la double authentification garde votre compte protégé sans le second facteur.\n\nC'est littéralement le conseil le plus simple et le plus efficace que je peux donner.",
       "La preuve par l'exemple : quelqu'un qui a évité un piratage de compte grâce à la 2FA, alors que son mot de passe avait fuité dans une base de données piratée ailleurs. Sans ce deuxième verrou, il perdait direct l'accès.\n\nÇa montre bien pourquoi ce petit réglage change tout le jour où ça compte vraiment.",
       "Petit conseil que j'applique depuis peu : privilégier une application d'authentification plutôt que les codes reçus par SMS, plus faciles à intercepter.\n\nÇa prend 2 minutes à configurer pour un niveau de protection nettement meilleur."
@@ -928,7 +932,7 @@ const TS = {
   },
   "Ingénierie sociale": {
     "a": [
-      "J'ai découvert que la plupart des piratages ne sont pas que technique, mais jouent surtout sur la confiance des gens.",
+      "Mon prof a piraté sa propre boîte mail devant toute la classe, juste en appelant le support et en jouant la comédie. Pas une ligne de code.",
       "Le hacking, c'est pas toujours de la technique pure : parfois c'est juste convaincre quelqu'un de faire une erreur.",
       "On peut avoir le meilleur pare-feu du monde et se faire avoir par un simple coup de fil bien joué.",
       "Le maillon le plus faible en cybersécurité, c'est souvent pas la machine. C'est nous.",
@@ -938,7 +942,7 @@ const TS = {
       "En apprenant les bases de la cybersécurité, j'ai découvert un concept qui m'a marqué : l'ingénierie sociale.\n\nEn gros, plutôt que de pirater un système technique, l'attaquant manipule directement une personne pour qu'elle donne elle-même l'accès (un mot de passe, un clic sur un lien...).\n\nÇa montre bien que la cybersécurité, c'est pas que de la technique, c'est aussi beaucoup de bon sens et de méfiance saine.",
       "L'ingénierie sociale me fascine presque plus que le piratage technique en lui-même.\n\nUn attaquant peut se faire passer pour un collègue, un technicien, ou même quelqu'un de la famille, juste pour obtenir une info ou un accès.\n\nÇa me fait réfléchir à mes propres réflexes : est-ce que je vérifierais vraiment l'identité de quelqu'un avant de lui donner une information sensible ?",
       "L'ingénierie sociale, c'est un peu comme un tour de magie : l'attaquant ne force rien, il détourne l'attention pour qu'on lui donne l'info nous-mêmes.\n\nUn faux technicien au téléphone, un mail qui joue sur l'urgence, une fausse demande d'un \"collègue\"... aucune technique compliquée, juste de la manipulation bien préparée.\n\nÇa m'a appris à toujours vérifier avant de faire confiance, même quand ça semble légitime.",
-      "Trois cas concrets d'ingénierie sociale étudiés, et le même schéma qui revient :\n\n1/ L'urgence est presque toujours le premier signal d'alerte.\n\n2/ Un vrai professionnel ne demande jamais un mot de passe par téléphone ou par mail.\n\n3/ Vérifier par un autre canal (rappeler soi-même le numéro officiel) coûte 2 minutes et évite bien des problèmes.\n\nDe la méfiance saine, rien de plus.",
+      "Trois cas concrets d'ingénierie sociale étudiés, et le même schéma qui revient :\n\n1/ L'urgence est souvent le premier signal d'alerte.\n\n2/ Un vrai professionnel ne demande jamais un mot de passe par téléphone ou par mail.\n\n3/ Vérifier par un autre canal (rappeler soi-même le numéro officiel) coûte 2 minutes et évite bien des problèmes.\n\nDe la méfiance saine, rien de plus.",
       "On m'a appelé en se faisant passer pour le \"support technique\" de mon opérateur, en me demandant un code reçu par SMS soi-disant pour \"vérifier mon identité\". J'ai raccroché et rappelé le numéro officiel moi-même : rien à voir avec un vrai appel du service client.\n\nÇa fait bizarre de vivre en vrai ce qu'on apprend en cours.",
       "Un expert en sécurité qui teste en direct s'il arrive à se faire ouvrir une porte d'entreprise juste en portant un uniforme crédible et en ayant l'air pressé : résultat troublant, dans la vidéo que je viens de voir.\n\nÇa montre que la confiance qu'on accorde par réflexe est souvent la faille la plus facile à exploiter."
     ]
@@ -1089,11 +1093,28 @@ const TS = {
     ],
     "c": [
       "Cette semaine, un pote s'est fait pirater son compte Instagram via un faux message \"ton compte va être supprimé, clique ici\".\n\nOn a essayé de le récupérer ensemble. Ça m'a servi d'occasion pour rappeler autour de moi : jamais cliquer sur ce genre de lien, toujours vérifier directement depuis l'appli officielle.\n\nCe genre d'arnaque touche clairement plus de monde autour de moi que n'importe quelle attaque technique vue en cours.",
-      "Le piratage de comptes Instagram, Snapchat ou Discord c'est la menace la plus concrète pour les gens de mon âge, bien plus que le hacking façon film.\n\nLa méthode est presque toujours la même : un faux message d'alerte, un lien qui ressemble au vrai site, un mot de passe entré sans réfléchir.\n\nJ'essaie d'en parler autour de moi, parce que la plupart de mes amis n'ont même pas activé la 2FA sur ces comptes-là.",
+      "Le piratage de comptes Instagram, Snapchat ou Discord c'est la menace la plus concrète pour les gens de mon âge, bien plus que le hacking façon film.\n\nLa méthode est souvent la même : un faux message d'alerte, un lien qui ressemble au vrai site, un mot de passe entré sans réfléchir.\n\nJ'essaie d'en parler autour de moi, parce que la plupart de mes amis n'ont même pas activé la 2FA sur ces comptes-là.",
       "3 réflexes que j'essaie de faire adopter autour de moi pour les réseaux sociaux :\n\n1/ Ne jamais cliquer sur un lien reçu par message pour \"vérifier\" ou \"sauver\" son compte.\n\n2/ Activer la double authentification, même sur Instagram ou Discord, pas que sur les mails.\n\n3/ Se méfier même d'un message venant d'un compte connu — il peut avoir été piraté.\n\nDes gestes simples que très peu de gens autour de moi appliquent encore.",
       "Ce week-end, j'ai aidé un ami à essayer de récupérer son compte Discord piraté.\n\nEn creusant, on a compris qu'il avait cliqué sur un faux lien de \"cadeau\" envoyé par un compte piraté d'un autre ami. Classique, mais ça marche toujours.\n\nOn en a profité pour revoir ensemble les bases : mot de passe unique, double authentification, méfiance face aux liens trop beaux pour être vrais.",
       "Ce qui me frappe avec les arnaques sur les réseaux sociaux : elles ne visent presque jamais une faille technique, juste la confiance envers ses propres contacts.\n\nUn message venant d'un ami piraté passe bien mieux qu'un mail random. C'est exactement ce qu'exploitent les arnaqueurs.\n\nÇa rejoint ce que j'apprends sur l'ingénierie sociale, mais version très concrète et quotidienne.",
       "Question pour ceux qui me lisent : vous avez activé la double authentification sur vos réseaux sociaux, pas juste sur vos mails ?\n\nEn testant autour de moi, quasi personne ne l'a fait sur Instagram ou Discord — alors que c'est là que la plupart des piratages arrivent chez les gens de mon âge."
+    ]
+  },
+  "CyberQuest": {
+    "a": [
+      "Je code un petit projet perso depuis quelques semaines : CyberQuest, une appli pour apprendre les bases de la cybersécurité en s'amusant.",
+      "CyberQuest avance doucement. L'IA m'aide beaucoup à structurer le code, mais comprendre ce qui se passe reste tout un apprentissage.",
+      "J'ai fait tester CyberQuest à deux camarades de classe hier. Leurs retours m'ont donné plus d'idées que prévu.",
+      "Un bug sur CyberQuest m'a occupé une bonne partie du week-end. Petite victoire quand j'ai enfin trouvé d'où il venait.",
+      "CyberQuest, mon projet perso, vient de passer une étape : le premier quiz complet est jouable de bout en bout."
+    ],
+    "c": [
+      "Je me suis lancé dans un petit projet perso il y a quelques semaines : CyberQuest, une appli où on apprend les bases de la cybersécurité à travers des mini-quiz et des défis simples.\n\nJe m'aide beaucoup de l'IA pour avancer plus vite sur les parties de code que je ne maîtrise pas encore. Mais je prends le temps de comprendre chaque bout avant de l'intégrer, sinon ça n'a pas grand intérêt pour moi.\n\nUn projet loin d'être fini, mais qui m'apprend autant que les cours.",
+      "Petite étape sur CyberQuest cette semaine : j'ai enfin un premier quiz jouable de bout en bout, sur les bases des mots de passe.\n\nCe qui m'a pris le plus de temps, ce n'est pas le code en lui-même, c'est de rendre les questions ni trop faciles ni trop dures pour un vrai débutant.\n\nJ'ai refait les questions plusieurs fois avant d'être satisfait.",
+      "J'ai fait tester CyberQuest à deux camarades de classe ce week-end, en vrais bêta-testeurs.\n\nLeurs retours m'ont surpris : certains trucs que je trouvais évidents ne l'étaient pas du tout pour eux, et inversement.\n\nJe garde ça en tête pour la suite : ce n'est pas parce qu'un truc me paraît clair que ça l'est pour tout le monde.",
+      "Un bug sur CyberQuest m'a occupé une bonne partie du week-end : le score ne s'enregistrait pas correctement d'un quiz à l'autre.\n\nAprès pas mal de recherches, et l'aide de l'IA pour comprendre certains messages d'erreur, j'ai fini par trouver : une variable réinitialisée au mauvais endroit.\n\nRien de très glorieux, mais une vraie satisfaction une fois résolu.",
+      "Ce que je retiens de CyberQuest jusqu'ici, ce n'est pas tant le code que la gestion de projet.\n\nAvoir une idée, c'est facile. La transformer en quelque chose qui fonctionne vraiment, avec des allers-retours et des bugs à corriger, c'est une autre histoire.\n\nJ'apprends autant sur moi-même que sur la technique en le construisant petit à petit.",
+      "Prochaine étape sur CyberQuest : ajouter un mini-défi sur le phishing, avec de faux mails à repérer.\n\nSi vous avez des idées de fonctionnalités simples pour ce genre de projet, ou des retours sur le concept, je suis preneur — c'est encore très perfectible."
     ]
   }
 };
@@ -1339,6 +1360,7 @@ const HT={
     'Forensic numérique':['#Forensic','#InvestigationNumérique'],
     'Fuites de données':['#FuiteDeDonnées','#DataBreach'],
     'Sécurité réseaux sociaux':['#RéseauxSociaux','#Discord','#Instagram'],
+    'CyberQuest':['#CyberQuest','#ProjetPerso','#Dev','#IA'],
     promotion:['#Carrière','#Réseau'],
     certification:['#Certification','#Formation'],
     diplome:['#Diplôme','#Formation'],
@@ -1377,7 +1399,7 @@ function pickHashtags(key,a){
   const specific=pool[key]||[];
   const all=[...new Set([...specific,...pool.generic])];
   if(!all.length)return '';
-  const n=Math.min(all.length,2+Math.floor(Math.random()*3));
+  const n=Math.min(all.length,3+Math.floor(Math.random()*3));
   const shuffled=[...all].sort(()=>Math.random()-0.5);
   let chosen=shuffled.slice(0,n);
   if(specific.length && !chosen.some(t=>specific.includes(t))){
@@ -1550,13 +1572,25 @@ function topicKeyOf(p){
 // sortent jamais (tirage uniforme sur 24 options = répétitions statistiquement fréquentes).
 // Cette fonction centralise le calcul d'équité pour que génération manuelle et automatique
 // appliquent enfin exactement la même logique de rotation, et ne puissent plus jamais diverger.
+// D'après les consignes de contenu fournies (§5 "Lutter contre la redondance") : ces thèmes
+// sont explicitement listés comme "déjà très présents" dans les publications réelles de Simon
+// et doivent être "espacés fortement" — une info que le compte de la file/historique interne
+// ne peut pas connaître à elle seule (elle reflète surtout ce que CET outil a généré, pas
+// forcément tout ce que Simon a déjà posté par ailleurs). On applique donc en plus une
+// pénalité fixe à ces thèmes précis, indépendamment de leur usageCount mesuré ici.
+const OVERUSED_THEMES=new Set(['Cloud Security','SOC','SIEM','Phishing','Ingénierie sociale','Zero Day','Ransomware','Sécurité IoT','RGPD','Bug Bounty','VPN','OSINT','Sécurité mobile','Authentification 2FA']);
 function fairnessWeights(keys, a){
   const usageCount={};
   [...Q.filter(x=>x.account===a),...H.filter(x=>x.account===a)].forEach(x=>{
     const k=topicKeyOf({type:x.type,topic:x.topic});
     usageCount[k]=(usageCount[k]||0)+1;
   });
-  return keys.map(k=>1/(1+(usageCount[k]||0)));
+  return keys.map(k=>{
+    let w=1/(1+(usageCount[k]||0));
+    const topic=k.startsWith('original|')?k.slice(9):'';
+    if(a==='simon'&&OVERUSED_THEMES.has(topic))w/=3;
+    return w;
+  });
 }
 function weightedPick(items, weights){
   const total=weights.reduce((s,w)=>s+w,0);
@@ -1584,12 +1618,16 @@ function genOnePost(extraAvoid=[]){
   // Auto-dérivé depuis Object.keys(TS)/Object.keys(TN) selon le compte : tout thème ajouté
   // à TS ou TN est inclus immédiatement dans le planning auto, sans liste codée en dur à
   // maintenir manuellement en double (une pour Simon, une pour Nicolas).
+  // EXCEPTION explicite (consigne §6 du complément) : CyberQuest ne doit JAMAIS être choisi
+  // par l'algorithme — seulement quand l'utilisateur le sélectionne lui-même via la pastille,
+  // pour une vraie actualité du projet. Sinon il finirait mentionné "artificiellement" juste
+  // parce qu'il est un thème encore frais dans le calcul d'équité.
   const plansSimon=[
     {type:'congrats',who:'la communauté cyber',occ:'certification'},
     {type:'repost',content:'actualité cyber 2025'},
     {type:'congrats',who:'mon réseau',occ:'alternance'},
     {type:'congrats',who:'un contact du réseau',occ:'diplome'},
-    ...Object.keys(TS).map(topic=>({type:'original',topic}))
+    ...Object.keys(TS).filter(t=>t!=='CyberQuest').map(topic=>({type:'original',topic}))
   ];
   const plansNiko=[
     {type:'congrats',who:'un client fidèle',occ:'anniversaire'},
