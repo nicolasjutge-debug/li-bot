@@ -547,6 +547,10 @@ let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
 // affichés par compte pour éviter qu'un même thème revienne coup sur coup pendant qu'on
 // parcourt plusieurs propositions.
 let recentShown={simon:[],niko:[]};
+// NOUVEAU (consigne "VARIÉTÉ RÉELLE DES STRUCTURES DE POSTS", règle 6) : garde la famille
+// narrative (voir AF plus bas) des derniers posts générés, par compte. Si les 3 derniers
+// partagent la même famille, le prochain tirage l'évite — indépendamment du thème choisi.
+let recentFamilies={simon:[],niko:[]};
 let lastPost=null, tmrRun=false, tmrIv=null;
 let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
 
@@ -1506,13 +1510,16 @@ function genPost(){
     // file pour ce thème, pour ne jamais avoir deux posts avec la même accroche dans l'aperçu.
     const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===topic&&q.account===acc).map(q=>q.text);
     const combos=[];
-    d.a.forEach(ai=>d.c.forEach(ci=>combos.push({ai,text:finalize(ai,ci)})));
+    d.a.forEach((ai,aIdx)=>d.c.forEach(ci=>combos.push({ai,aIdx,text:finalize(ai,ci)})));
     let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
     const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
     if(freshNewIntro.length) fresh=freshNewIntro;
-    let narrative;
-    if(fresh.length){narrative=pick(fresh).text;}
-    else{narrative=pick(combos).text;isDup=true;}
+    // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
+    fresh=applyFamilyDiversity(fresh,topic,acc);
+    let narrative,pickedAIdx;
+    if(fresh.length){const chosen=pick(fresh);narrative=chosen.text;pickedAIdx=chosen.aIdx;}
+    else{const chosen=pick(combos);narrative=chosen.text;pickedAIdx=chosen.aIdx;isDup=true;}
+    recordFamily(topic,pickedAIdx,acc);
     text=(narrative+'\n\n'+pickHashtags(topic,acc)).trim();
   }else{
     text=genTxt();
@@ -1579,6 +1586,62 @@ function topicKeyOf(p){
 // forcément tout ce que Simon a déjà posté par ailleurs). On applique donc en plus une
 // pénalité fixe à ces thèmes précis, indépendamment de leur usageCount mesuré ici.
 const OVERUSED_THEMES=new Set(['Cloud Security','SOC','SIEM','Phishing','Ingénierie sociale','Zero Day','Ransomware','Sécurité IoT','RGPD','Bug Bounty','VPN','OSINT','Sécurité mobile','Authentification 2FA']);
+// Famille narrative de chaque accroche (TS[thème].a[i]), même index — sert à diversifier la
+// MÉCANIQUE du post, indépendamment du thème (consigne "VARIÉTÉ RÉELLE DES STRUCTURES DE
+// POSTS" : deux thèmes différents peuvent quand même utiliser le même squelette narratif
+// répété — accroche surprenante → expérience → réflexion → apprentissage — et cette table
+// permet de le détecter même quand le thème change). Étiquetage fait à la main sur le texte
+// réel de chaque accroche (une classification par mots-clés s'est révélée peu fiable en test).
+// Familles : decouverte, experience, difficulte, pensee_avant, question, anecdote_tiers,
+// observation, cours.
+const AF={
+  "Pentest":["experience","pensee_avant","observation","difficulte","decouverte"],
+  "SOC":["observation","ressource","question","decouverte","pensee_avant"],
+  "CTF":["experience","observation","experience","observation","observation"],
+  "OSINT":["decouverte","decouverte","experience","observation","anecdote_tiers"],
+  "Ransomware":["ressource","observation","decouverte","observation","observation"],
+  "Phishing":["experience","experience","observation","experience","anecdote_tiers"],
+  "Zero Day":["decouverte","decouverte","observation","observation","ressource"],
+  "SIEM":["experience","observation","observation","experience","experience"],
+  "Cloud Security":["experience","decouverte","observation","observation","experience"],
+  "Bug Bounty":["ressource","observation","observation","ressource","experience"],
+  "Cryptographie":["observation","observation","observation","decouverte","experience"],
+  "RGPD":["decouverte","observation","observation","anecdote_tiers","experience"],
+  "Mots de passe":["experience","anecdote_tiers","experience","observation","anecdote_tiers"],
+  "Authentification 2FA":["experience","observation","observation","experience","experience"],
+  "Ingénierie sociale":["anecdote_tiers","observation","observation","observation","experience"],
+  "VPN":["experience","pensee_avant","experience","observation","experience"],
+  "Sécurité IoT":["cours","decouverte","observation","cours","anecdote_tiers"],
+  "Sécurité mobile":["experience","observation","observation","observation","observation"],
+  "Réseaux":["difficulte","experience","question","cours","difficulte"],
+  "Linux":["experience","difficulte","observation","decouverte","experience"],
+  "Sécurité web":["observation","experience","pensee_avant","observation","experience"],
+  "Forensic numérique":["decouverte","observation","decouverte","ressource","observation"],
+  "Fuites de données":["experience","observation","experience","observation","observation"],
+  "Sécurité réseaux sociaux":["anecdote_tiers","observation","anecdote_tiers","anecdote_tiers","observation"],
+  "CyberQuest":["experience","observation","anecdote_tiers","difficulte","experience"]
+};
+function familyOf(topic,aIndex){return (AF[topic]&&AF[topic][aIndex])||'observation';}
+// Applique la règle 6 de la consigne "VARIÉTÉ RÉELLE DES STRUCTURES" : compare la famille
+// narrative envisagée aux 3 derniers posts (pas juste leur thème). Si ces 3 partagent la
+// même famille, on l'écarte des candidats — sauf si ça viderait complètement la liste (dans
+// ce cas, mieux vaut un post que rien, mais ce cas reste rare vu la diversité des familles).
+function applyFamilyDiversity(fresh,topic,a){
+  const recent=recentFamilies[a]||[];
+  if(recent.length>=3){
+    const last3=recent.slice(-3);
+    if(last3.every(f=>f===last3[0])){
+      const varied=fresh.filter(c=>familyOf(topic,c.aIdx)!==last3[0]);
+      if(varied.length) return varied;
+    }
+  }
+  return fresh;
+}
+function recordFamily(topic,aIdx,a){
+  const list=recentFamilies[a]||(recentFamilies[a]=[]);
+  list.push(familyOf(topic,aIdx));
+  if(list.length>7)list.shift();
+}
 function fairnessWeights(keys, a){
   const usageCount={};
   [...Q.filter(x=>x.account===a),...H.filter(x=>x.account===a)].forEach(x=>{
@@ -1658,7 +1721,7 @@ function genOnePost(extraAvoid=[]){
       // pour ce même thème, tant qu'une alternative existe.
       const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===p.topic&&q.account===acc).map(q=>q.text);
       const combos=[];
-      d.a.forEach(ai=>d.c.forEach(ci=>combos.push({ai,text:(ai+'\n\n'+ci).trim()})));
+      d.a.forEach((ai,aIdx)=>d.c.forEach(ci=>combos.push({ai,aIdx,text:(ai+'\n\n'+ci).trim()})));
       // BUGFIX MAJEUR : comparait le texte BRUT du combo (usedTexts.has(c.text)) contre des
       // entrées normalisées (stripTags) → un post déjà publié avec la moindre variation
       // d'espace/casse/retour à la ligne n'était JAMAIS reconnu comme doublon. norm() aligne
@@ -1666,19 +1729,23 @@ function genOnePost(extraAvoid=[]){
       let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
       const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
       if(freshNewIntro.length) fresh=freshNewIntro;
-      return fresh.length?(pick(fresh).text+'\n\n'+pickHashtags(p.topic,acc)).trim():null;
+      // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
+      fresh=applyFamilyDiversity(fresh,p.topic,acc);
+      if(!fresh.length) return null;
+      const chosen=pick(fresh);
+      return {text:(chosen.text+'\n\n'+pickHashtags(p.topic,acc)).trim(),aIdx:chosen.aIdx};
     }
     if(p.type==='congrats'){
       const variants=CG[p.occ]||CG.promotion;
       // Chaque variante intègre désormais un tirage aléatoire de hashtags (pickHashtags) ;
       // on compare donc la version sans hashtags pour juger de la fraîcheur du fond du message.
       const fresh=variants.map(fn=>fn(p.who,'',acc)).filter(t=>!usedTexts.has(norm(t)));
-      return fresh.length?pick(fresh):null;
+      return fresh.length?{text:pick(fresh),aIdx:null}:null;
     }
     if(p.type==='repost'){
       const variants=acc==='simon'?RS:RN;
       const fresh=variants.map(fn=>fn(p.content||'')).filter(t=>!usedTexts.has(norm(t)));
-      return fresh.length?pick(fresh):null;
+      return fresh.length?{text:pick(fresh),aIdx:null}:null;
     }
     return null;
   }
@@ -1717,13 +1784,14 @@ function genOnePost(extraAvoid=[]){
   for(let tries=0; tries<pool.length+10 && !post; tries++){
     if(!candidates.length) candidates=[...pool];
     const p=weightedTake(candidates);
-    const text=freshTextFor(p);
-    if(text){
+    const result=freshTextFor(p);
+    if(result){
       // BUGFIX indépendance : la base ne doit dépendre que des posts DU MÊME compte, sinon
       // un profil très rempli retarde artificiellement l'échéance de l'autre.
       const mineQ = Q.filter(x=>x.account===acc);
       const base = mineQ.length ? Math.max(...mineQ.map(q=>q.scheduledAt)) : Date.now();
-      post = {id:Date.now()+Math.floor(Math.random()*1000),text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
+      post = {id:Date.now()+Math.floor(Math.random()*1000),text:result.text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
+      if(p.type==='original'&&result.aIdx!=null) recordFamily(p.topic,result.aIdx,acc);
     }
   }
   let wasDup=false;
