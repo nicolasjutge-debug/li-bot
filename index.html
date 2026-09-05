@@ -317,6 +317,18 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   </div>
 </div>
 
+<div class="lic">
+  <div class="lih" onclick="toggleStatsPanel()">
+    <div class="lilo" style="background:var(--green)">📊</div>
+    <h2>Performance</h2>
+    <span id="st-pf-bdg" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
+  </div>
+  <div class="lib" id="st-pf-body">
+    <div class="liinf">📈 Analyse des vues des posts déjà publiés — sert uniquement à comprendre ce qui fonctionne. N'influence jamais la sélection automatique des prochains posts (thème, famille narrative ou texte).</div>
+    <div id="st-pf-content"></div>
+  </div>
+</div>
+
 <div class="grid">
 
 
@@ -1540,9 +1552,27 @@ function genPost(){
 
 function archive(post,src='copie'){
   if(H.find(x=>x.id===post.id))return;
-  H.unshift({...post,publishedAt:Date.now(),source:src});
+  // NOUVEAU (consigne statuts BROUILLON/PRÊT/PUBLIÉ) : copier ou ouvrir le partage LinkedIn ne
+  // GARANTIT PAS que le post a réellement été publié — l'app ne peut pas le vérifier (pas de
+  // connexion à l'API LinkedIn). Seules les sources qui représentent une confirmation fiable
+  // (marquage explicite "déjà publié", ou import d'un post réellement présent dans l'export
+  // LinkedIn) comptent par défaut comme publication confirmée. Les autres (copie, partage
+  // ouvert) restent "à confirmer" tant que l'utilisateur ne le fait pas via toggleConfirmed().
+  const confirmed = (src==='publie'||src==='linkedin-import');
+  H.unshift({...post,publishedAt:Date.now(),source:src,confirmed});
   if(!stats[acc])stats[acc]={total:0,sent:0};
   stats[acc].sent++;saveAll();renderH();updateStats();
+}
+// Bascule le statut confirmé d'un post archivé — sert à la fois à confirmer après coup
+// qu'une copie a bien été publiée, ET à corriger une entrée enregistrée à tort comme publiée
+// (fonction de restauration/correction de l'historique demandée).
+function toggleConfirmed(id){
+  const h=H.find(x=>x.id===id);if(!h)return;
+  h.confirmed=!h.confirmed;
+  saveAll();renderH();
+  const stBody=document.getElementById('st-pf-body');
+  if(stBody&&stBody.classList.contains('open'))renderStatsPanel();
+  toast(h.confirmed?'Marqué comme publication confirmée ✓':'Repassé en "à confirmer" (retiré des stats de performance)','in');
 }
 
 function schedPost(){
@@ -2070,7 +2100,7 @@ function importLinkedInCSV(raw){
     const key=norm(it.text);
     if(existing.has(key)){skipped++;return;}
     existing.add(key);
-    H.push({id:Date.now()+i,text:it.text,type:'original',topic:'',label:TL.original,account:acc,publishedAt:it.publishedAt,source:'linkedin-import',views:0});
+    H.push({id:Date.now()+i,text:it.text,type:'original',topic:'',label:TL.original,account:acc,publishedAt:it.publishedAt,source:'linkedin-import',views:0,confirmed:true});
     added++;
   });
   if(added){
@@ -2130,11 +2160,15 @@ function renderH(){
     const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     const tags=(h.text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,3).join(' ');
     const ab=h.account==='niko'?'<span style="font-size:9px;color:var(--orange);margin-left:3px">NJ</span>':'<span style="font-size:9px;color:var(--cyan);margin-left:3px">SJ</span>';
+    const confBdg=h.confirmed
+      ?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.3);margin-left:3px" title="Publication confirmée">✅ Confirmé</span>'
+      :'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,193,7,.12);color:#ffc107;border:1px solid rgba(255,193,7,.3);margin-left:3px" title="Copié/partagé mais pas confirmé publié — n\'entre pas dans les stats de performance">🕓 À confirmer</span>';
     return `<div class="hi" onclick="tgH(${h.id})">
       <div class="hir">
         <span class="bdg hbdg ${cols[h.type]||'b-bl'}">${h.label}</span>
-        ${srcL[h.source]||srcL['copie']}${ab}
+        ${srcL[h.source]||srcL['copie']}${ab}${confBdg}
         <span class="htxt">${h.text.substring(0,80)}…</span>
+        <button class="hcp" onclick="event.stopPropagation();toggleConfirmed(${h.id})" title="${h.confirmed?'Repasser en à confirmer':'Confirmer la publication'}">${h.confirmed?'🔄':'✅'}</button>
         <button class="hcp" onclick="event.stopPropagation();cpH(${h.id})">📋</button>
         <button class="hcp" onclick="event.stopPropagation();delH(${h.id})" style="color:rgba(255,23,68,.5)">✕</button>
         ${h.views?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
@@ -2264,6 +2298,8 @@ function setViews(id,val){
   const h=H.find(x=>x.id===id);if(!h)return;
   const n=Math.max(0,parseInt(val,10)||0);
   h.views=n;saveAll();renderH();
+  const stBody=document.getElementById('st-pf-body');
+  if(stBody&&stBody.classList.contains('open'))renderStatsPanel();
   toast(n?'👁 '+n+' vues enregistrées':'Vues réinitialisées','ok');
 }
 function cpH(id){const h=H.find(x=>x.id===id);if(h)navigator.clipboard.writeText(h.text).then(()=>toast('Copié ✓','ok'));}
@@ -2509,6 +2545,82 @@ function queueSync(){
 }
 function toggleSync(){const b=document.getElementById('sy-body');const o=b.classList.toggle('open');document.getElementById('sy-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';}
 function toggleRJ(){const b=document.getElementById('rj-body');const o=b.classList.toggle('open');document.getElementById('rj-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderRJ();}
+function toggleStatsPanel(){const b=document.getElementById('st-pf-body');const o=b.classList.toggle('open');document.getElementById('st-pf-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderStatsPanel();}
+// Détermine la famille narrative d'un post archivé en comparant son texte à l'accroche
+// connue du thème (AF) — pas de champ dédié stocké sur H, pour ne rien changer au schéma
+// existant. Ne fonctionne que pour les thèmes/textes générés par cet outil (un post importé
+// depuis LinkedIn n'a pas de famille reconnue, ce qui est normal : c'est un texte externe).
+function familyOfText(topic,text){
+  const themes=acc==='simon'?TS:TN;
+  const d=themes[topic];
+  if(!d||!AF[topic])return null;
+  const t=norm(text);
+  for(let i=0;i<d.a.length;i++){
+    if(t.startsWith(norm(d.a[i]))) return AF[topic][i]||null;
+  }
+  return null;
+}
+function renderStatsPanel(){
+  const el=document.getElementById('st-pf-content');
+  if(!el)return;
+  // NOUVEAU (consigne statuts) : les stats de performance ne portent QUE sur les publications
+  // CONFIRMÉES — un post juste copié ou juste partagé (sans confirmation) ne doit jamais
+  // gonfler artificiellement le nombre de "vraies" publications.
+  const confirmedMine=H.filter(h=>h.account===acc&&h.confirmed);
+  const measured=confirmedMine.filter(h=>h.views>0);
+  const unconfirmedCount=H.filter(h=>h.account===acc&&!h.confirmed).length;
+  let notice=unconfirmedCount?`<div style="font-size:11px;color:#ffc107;margin-bottom:10px">🕓 ${unconfirmedCount} post${unconfirmedCount>1?'s':''} en attente de confirmation dans l'historique (non compté${unconfirmedCount>1?'s':''} ici).</div>`:'';
+  if(!measured.length){
+    el.innerHTML=notice+'<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucune publication confirmée avec vues renseignées pour l\'instant.</div>';
+    return;
+  }
+  const total=measured.reduce((s,h)=>s+h.views,0);
+  const avg=Math.round(total/measured.length);
+  const sortedViews=[...measured].sort((a,b)=>a.views-b.views);
+  const mid=Math.floor(sortedViews.length/2);
+  const median=sortedViews.length%2?sortedViews[mid].views:Math.round((sortedViews[mid-1].views+sortedViews[mid].views)/2);
+  const ranked=[...measured].sort((a,b)=>b.views-a.views);
+  const best=ranked[0],worst=ranked[ranked.length-1];
+
+  const byTheme={};
+  measured.forEach(h=>{if(!h.topic)return;(byTheme[h.topic]=byTheme[h.topic]||[]).push(h.views);});
+  const themeAvg=Object.entries(byTheme).filter(([,v])=>v.length>=2).map(([t,v])=>({topic:t,avg:Math.round(v.reduce((a,b)=>a+b,0)/v.length),n:v.length})).sort((a,b)=>b.avg-a.avg);
+
+  const byFam={};
+  measured.forEach(h=>{const f=familyOfText(h.topic,h.text);if(!f)return;(byFam[f]=byFam[f]||[]).push(h.views);});
+  const famAvg=Object.entries(byFam).filter(([,v])=>v.length>=2).map(([f,v])=>({fam:f,avg:Math.round(v.reduce((a,b)=>a+b,0)/v.length),n:v.length})).sort((a,b)=>b.avg-a.avg);
+
+  let evo='';
+  if(measured.length>=4){
+    const chrono=[...measured].sort((a,b)=>(a.publishedAt||0)-(b.publishedAt||0));
+    const half=Math.floor(chrono.length/2);
+    const older=chrono.slice(0,half),recent=chrono.slice(half);
+    const avgOlder=Math.round(older.reduce((s,h)=>s+h.views,0)/older.length);
+    const avgRecent=Math.round(recent.reduce((s,h)=>s+h.views,0)/recent.length);
+    const trend=avgRecent>avgOlder*1.1?'en hausse 📈':avgRecent<avgOlder*0.9?'en baisse 📉':'stable ➡️';
+    evo=`<div class="stat-row">Évolution : ${trend} (${avgOlder} → ${avgRecent} vues en moyenne)</div>`;
+  }
+
+  let html=notice;
+  html+=`<div class="stat-row">🏆 <b>Post le plus vu</b> — ${stripTags(best.text).slice(0,55)}… (${best.views} vues)</div>`;
+  html+=`<div class="stat-row">📉 <b>Post le moins vu</b> — ${stripTags(worst.text).slice(0,55)}… (${worst.views} vues)</div>`;
+  html+=`<div class="stat-row">📊 <b>Moyenne</b> — ${avg} vues · <b>Médiane</b> — ${median} vues (sur ${measured.length} posts confirmés)</div>`;
+  html+=evo;
+  if(famAvg.length){
+    html+=`<div class="stat-row">🧩 <b>Famille narrative la plus performante</b> — ${famAvg[0].fam} (${famAvg[0].avg} vues moy., ${famAvg[0].n} posts)</div>`;
+    if(famAvg.length>1){
+      const wf=famAvg[famAvg.length-1];
+      html+=`<div class="stat-row">📉 <b>Famille la moins performante</b> — ${wf.fam} (${wf.avg} vues moy., ${wf.n} posts)</div>`;
+    }
+  }
+  if(themeAvg.length){
+    html+='<div style="height:1px;background:var(--border);margin:10px 0"></div><div style="font-size:11px;color:var(--muted);margin-bottom:6px">Moyenne par thème (≥2 posts confirmés) :</div>';
+    html+=themeAvg.map(t=>`<div style="font-size:12px;padding:3px 0">${t.topic} — <b>${t.avg}</b> vues moy. (${t.n})</div>`).join('');
+  }
+  html+='<div style="height:1px;background:var(--border);margin:10px 0"></div><div style="font-size:11px;color:var(--muted);margin-bottom:6px">Classement complet :</div>';
+  html+=ranked.map((h,i)=>`<div style="font-size:12px;padding:3px 0">${i+1}. ${stripTags(h.text).slice(0,45)}… — <b>${h.views}</b> vues</div>`).join('');
+  el.innerHTML=html;
+}
 
 /* ════ INIT ════ */
 const sa=lsL(SK.acc,'simon');
