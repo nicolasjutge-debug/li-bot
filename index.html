@@ -566,115 +566,7 @@ let recentFamilies={simon:[],niko:[]};
 let lastPost=null, tmrRun=false, tmrIv=null;
 let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
 
-/* ════ TEXTES CONTRÔLÉS — posts audités ensemble (Simon) ════
-   L'original reste conservé dans H.text. correctedText est le texte affiché dans l'historique/
-   visibilité après contrôle. Il ne transforme pas l'historique factuel et n'est pas réinjecté
-   automatiquement dans le générateur. */
-const CONTROLLED_HISTORY_CORRECTIONS = [
-  {topic:'Sécurité web',match:"Mon premier XSS réussi sur un exercice d'entraînement",text:`La sécurité web m'intéresse de plus en plus, notamment le principe du XSS (Cross-Site Scripting).
-
-L'idée est qu'un site mal protégé peut parfois interpréter une donnée saisie par l'utilisateur comme du contenu à exécuter.
-
-Je découvre encore ce sujet et je n'ai pas la pratique nécessaire pour prétendre avoir réalisé un test moi-même. Ce qui m'intéresse pour l'instant, c'est de comprendre le mécanisme et surtout les moyens de protection.
-
-C'est un bon exemple de la façon dont une petite erreur dans une application peut avoir des conséquences importantes.
-
-#Découverte #SécuritéWeb #XSS #CyberSécurité`},
-  {topic:'SOC',match:"Un chiffre m'a marqué cette semaine",text:`Le métier d'analyste SOC m'intéresse de plus en plus.
-
-En me renseignant sur ce métier, je comprends mieux le principe : surveiller des événements de sécurité, repérer des comportements inhabituels et chercher à comprendre ce qui se passe derrière une alerte.
-
-Ce qui m'attire surtout, c'est le côté enquête. Il faut faire la différence entre une activité normale et un signal qui mérite d'être étudié.
-
-Je suis encore au stade de la découverte, mais c'est un domaine que j'aimerais approfondir pendant ma formation.
-
-#SOC #CyberDéfense #CyberSécurité #Découverte #Alternance2027`},
-  {topic:'Ingénierie sociale',match:"Le maillon le plus faible en cybersécurité, c'est souvent pas la machine",text:`En cybersécurité, une attaque ne passe pas forcément par une faille technique.
-
-L'ingénierie sociale consiste notamment à manipuler une personne pour obtenir une information, provoquer un clic ou lui faire réaliser une action qu'elle n'aurait normalement pas faite.
-
-L'urgence, l'autorité ou la confiance peuvent être utilisées pour mettre quelqu'un sous pression.
-
-Je découvre encore ce sujet, mais il montre bien que la cybersécurité ne repose pas uniquement sur les outils techniques.
-
-#IngénierieSociale #Phishing #CyberSécurité #Découverte`},
-  {topic:'Authentification 2FA',match:'Petit changement récent : je suis passé des codes 2FA par SMS',text:`La double authentification ajoute une protection supplémentaire à un compte en demandant un second élément en plus du mot de passe.
-
-Par exemple, un code temporaire généré par une application peut être demandé lors de la connexion.
-
-Cela ne rend pas un compte invulnérable, mais cela peut limiter les conséquences d'un mot de passe compromis.
-
-C'est une mesure simple à comprendre et intéressante à connaître quand on commence à s'intéresser à la cybersécurité.
-
-#2FA #CyberSécurité #Découverte #CyberHygiène`},
-  {topic:'Réseaux',match:"Le modèle OSI et ses 7 couches, j'ai mis du temps à comprendre",text:`Le DNS est l'un des mécanismes que j'essaie de mieux comprendre en réseaux.
-
-Son rôle est notamment de traduire un nom de domaine en adresse IP afin que les machines puissent communiquer avec le bon serveur.
-
-En cybersécurité, comprendre le fonctionnement normal d'un service est une bonne base pour comprendre ensuite les risques qui peuvent lui être associés.
-
-Je découvre encore ces notions en STI2D, mais je commence à mieux voir le lien entre réseaux et cybersécurité.
-
-#Réseaux #DNS #STI2D #Découverte`},
-  {topic:'VPN',match:"J'ai regardé ce qu'un inconnu pouvait voir de ma connexion",text:`Un VPN peut protéger une partie des communications entre un appareil et un serveur VPN, notamment lorsqu'on utilise un réseau qui n'est pas de confiance.
-
-Mais ce n'est pas un outil qui rend invisible sur Internet : les sites consultés peuvent toujours avoir leurs propres moyens d'identification et de suivi, et un VPN ne protège pas contre un faux site ou un mot de passe donné volontairement.
-
-Je découvre encore ces différences, mais c'est un bon exemple d'outil dont il faut comprendre les limites avant de parler de sécurité.
-
-#VPN #Réseaux #CyberSécurité #Découverte`},
-  {topic:'Réseaux',match:'Adresse IP, masque de sous-réseau, passerelle... du charabia total',text:`Adresse IP, masque de sous-réseau, passerelle... du charabia total pour moi il y a encore quelques mois.
-
-Longtemps j'ai confondu adresse IP publique et adresse IP privée, sans savoir pourquoi il y en avait deux.
-
-En gros : l'adresse privée sert dans mon réseau local, l'adresse publique c'est celle vue depuis Internet. Ma box fait le lien.
-
-Un détail qui paraît basique, mais qui débloque la compréhension de plein d'autres sujets réseau.
-
-#STI2D #Réseaux #Découverte`},
-  {topic:'CTF',match:"J'ai abandonné un CTF en plein milieu la semaine dernière",text:`Les CTF sont souvent utilisés pour apprendre la cybersécurité à travers des défis et des scénarios à résoudre.
-
-Le principe me paraît intéressant pour comprendre certaines notions de manière concrète : on cherche des indices, on formule des hypothèses et on essaie de comprendre pourquoi une solution fonctionne.
-
-Je n'ai pas encore la pratique nécessaire pour dire que c'est ma méthode d'apprentissage, mais c'est un format que j'aimerais découvrir davantage pendant ma formation.
-
-#CTF #Débutant #CyberSécurité #Découverte`},
-  {topic:'RGPD',match:"Je continue à m'intéresser au RGPD, et je trouve que c'est plus lié",text:`Je continue à m'intéresser au RGPD, et je trouve que c'est plus lié à la cybersécurité que je ne le pensais.
-
-Je pensais que le RGPD (les règles sur la protection des données personnelles) c'était juste un truc juridique. En fait ça a aussi un vrai lien avec la cybersécurité.
-
-Par exemple, les entreprises doivent protéger les données personnelles avec des mesures adaptées, et certaines violations de données doivent être notifiées dans les conditions prévues par le RGPD.
-
-C'est un sujet que je découvre, mais je trouve ça important de comprendre les deux côtés (technique et règles) pour bien faire ce métier plus tard.
-
-#Découverte #DonnéesPersonnelles #RechercheAlternance #Rennes`},
-  {topic:'Sécurité web',match:"Un simple formulaire mal protégé peut parfois laisser passer bien plus qu'un mot de passe",text:`Un simple formulaire mal protégé peut parfois permettre à une injection SQL de modifier la manière dont une requête est interprétée.
-
-L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.
-
-En gros, si une application construit mal ses requêtes avec des données fournies par l'utilisateur, une entrée spécialement conçue peut être interprétée comme une partie de la requête au lieu d'être traitée comme une simple donnée.
-
-Je découvre encore ce sujet et je n'ai pas la pratique nécessaire pour prétendre l'avoir testé moi-même. Comprendre le principe et les moyens de protection est déjà une bonne première étape.
-
-#Découverte #SécuritéWeb #SQLInjection #CyberSécurité`}
-];
-function applyControlledHistoryCorrections(history,a){
-  if(a!=='simon'||!Array.isArray(history))return false;
-  let changed=false;
-  history.forEach(h=>{
-    const c=CONTROLLED_HISTORY_CORRECTIONS.find(x=>h.topic===x.topic && h.text && h.text.includes(x.match));
-    if(!c)return;
-    if(h.correctedText!==c.text){
-      h.correctedText=c.text;
-      h.corrections=Array.isArray(h.corrections)?h.corrections:[];
-      if(!h.corrections.some(x=>x&&x.type==='controle-li-bot-v1'))h.corrections.push({type:'controle-li-bot-v1',date:Date.now(),text:c.text});
-      changed=true;
-    }
-  });
-  return changed;
-}
-
-function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);if(applyControlledHistoryCorrections(H,a))lsS(hk(a),H);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
+function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
 function saveAll(){
   lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);lsS(SK.stats,stats);lsS(SK.acc,acc);
   const b=document.getElementById('sv-bdg');b.textContent='💾 Sauvegardé';b.style.color='var(--green)';setTimeout(()=>b.style.color='',1500);
@@ -818,7 +710,7 @@ function updateStats(){
 const TS = {
   "Pentest": {
     "a": [
-      "J'ai testé mon premier petit exercice de piratage \"éthique\" ce week-end et c'était trop cool.",
+      "J'ai testé un petit exercice de piratage \"éthique\" ce week-end et c'était trop cool.",
       "Le pentest c'est pas du tout ce que je croyais avant de m'y intéresser.",
       "Personne ne nous apprend ça en cours, alors j'apprends tout seul le soir.",
       "Trois heures bloqué sur un exercice hier soir, et puis le déclic. Ce sentiment-là, j'en redemande.",
@@ -830,7 +722,7 @@ const TS = {
       "Un mois que je m'entraîne régulièrement au pentest sur TryHackMe, et voici ce que ça m'a appris jusqu'ici :\n\n1/ La patience compte plus que la technique. Je passe souvent plus de temps à chercher qu'à \"pirater\" vraiment.\n\n2/ Écrire ce que j'essaie, même quand ça rate, m'aide à avancer. Je note tout dans un carnet.\n\n3/ La communauté est hyper accessible. Les forums et les writeups m'ont débloqué plein de fois.\n\nEncore débutant, mais je progresse un peu chaque semaine.",
       "On me demande souvent ce qu'est le pentest \"en vrai\". J'ai trouvé une comparaison qui parle à mes potes : c'est un peu comme tester si les portes et fenêtres d'une maison sont bien fermées, sauf que la maison c'est un site web ou une appli.\n\nOn essaie plein de choses, méthodiquement, pour voir ce qui a été oublié. Sauf qu'ici, on a le droit de le faire, et c'est même hyper recherché par les entreprises.\n\nPlus j'apprends, plus je me dis que c'est exactement ce genre de métier que je veux faire.",
       "Petit fail assumé : la semaine dernière j'ai passé 2h à chercher une faille compliquée sur un exercice TryHackMe... alors que la solution était un mot de passe par défaut jamais changé. Je me suis senti bête, et en même temps c'est exactement ça la leçon : on cherche souvent trop compliqué alors que les failles simples sont les plus fréquentes en vrai.\n\nJe note ce genre d'erreur dans mon carnet, ça m'aide à progresser plus que les exercices réussis du premier coup.",
-      "Un chiffre qui m'a marqué en lisant sur le pentest : dans beaucoup de tests d'intrusion, la faille exploitée n'est pas une technique de génie, c'est une mise à jour jamais faite ou un accès mal configuré.\n\nÇa change ma façon de voir le métier : c'est pas que du génie technique, c'est aussi beaucoup de rigueur et de méthode. Ça me rassure un peu, en tant que débutant — la rigueur, ça s'apprend."
+      "Ce qui revient tout le temps en lisant sur le pentest : dans beaucoup de tests d'intrusion, la faille exploitée n'est pas une technique de génie, c'est une mise à jour jamais faite ou un accès mal configuré.\n\nÇa change ma façon de voir le métier : la rigueur et la méthode comptent souvent plus que le génie technique pur. Ça me rassure un peu, en tant que débutant — la rigueur, ça s'apprend."
     ]
   },
   "SOC": {
@@ -838,7 +730,7 @@ const TS = {
       "Je crois que le métier d'analyste cybersécurité c'est ce que je veux faire plus tard.",
       "J'ai regardé des vidéos sur le métier d'analyste en sécurité informatique, ça m'intéresse beaucoup.",
       "Question bête peut-être, mais c'est quoi la vraie différence entre un antivirus et un SOC ? J'ai creusé.",
-      "Une info qui m'a marqué cette semaine : certaines attaques restent invisibles plusieurs mois avant d'être repérées.",
+      "Un truc qui surprend en lisant sur le sujet : certaines attaques restent invisibles plusieurs mois avant d'être repérées.",
       "Je pensais qu'un analyste SOC passait ses journées à \"arrêter des hackers\". La réalité est visiblement plus nuancée que ça."
     ],
     "c": [
@@ -847,12 +739,12 @@ const TS = {
       "Je cherchais une image simple pour comprendre le métier de SOC. Voilà celle qui m'a aidé : c'est un peu comme un gardien qui regarde tous les écrans de vidéosurveillance d'un immeuble en même temps, sauf que les écrans ce sont des connexions et des fichiers.\n\nLe plus dur, d'après ce que je lis, c'est de repérer LE truc bizarre au milieu de milliers de trucs normaux.\n\nC'est exactement le genre de challenge qui m'attire.",
       "Question pour les pros du SOC qui passent par ici, parce que mes recherches tout seul ne suffisent plus à y répondre.\n\nCe que je n'arrive pas encore à visualiser : à quoi ressemble VRAIMENT une journée type ? Entre ce qu'on voit dans les vidéos et la réalité du terrain, j'imagine qu'il y a un écart.\n\nSi certains veulent bien partager leur quotidien, je suis preneur, ça m'aiderait beaucoup pour mon orientation.",
       "Petit jalon perso : j'ai enfin réussi à comprendre, sans vidéo d'aide, comment lire un log d'alerte basique sur un simulateur SOC en ligne. Rien d'extraordinaire pour quelqu'un du métier, mais pour moi c'est la première fois que ça fait vraiment sens, pas juste appris par cœur.\n\nÇa donne envie de continuer à creuser ce métier d'analyste.",
-      "J'ai regardé une conférence en replay sur le quotidien d'un analyste SOC, et un truc m'a marqué : la personne qui témoignait disait qu'elle passe plus de temps à écarter des fausses alertes qu'à traiter de vraies attaques.\n\nJe ne m'attendais pas à ça. Ça montre que le métier demande autant de patience que de technique, un peu comme trier plutôt que juste réagir."
+      "J'ai regardé une conférence en replay sur le quotidien d'un analyste SOC, et un détail m'a surpris : la personne qui témoignait disait qu'elle passe plus de temps à écarter des fausses alertes qu'à traiter de vraies attaques.\n\nJe ne m'attendais pas à ça. Ça montre que le métier demande autant de patience que de technique, un peu comme trier plutôt que juste réagir."
     ]
   },
   "CTF": {
     "a": [
-      "J'ai réussi mon premier petit défi de cybersécurité hier soir, j'étais trop content !",
+      "J'ai réussi un petit défi de cybersécurité hier soir, j'étais trop content !",
       "Apprendre en s'amusant avec des défis en ligne, c'est ma méthode pour progresser en cyber.",
       "Sur 10 défis tentés ce mois-ci, j'en ai réussi 4 sans aide. Petite victoire mais victoire quand même.",
       "Ce qui m'accroche le plus dans les CTF, c'est pas de gagner, c'est de comprendre après coup pourquoi j'ai bloqué.",
@@ -876,7 +768,7 @@ const TS = {
       "J'ai fait un test OSINT sur un pote (avec son accord). Il ne s'attendait clairement pas à ce que je trouve autant en 15 minutes."
     ],
     "c": [
-      "Je viens de découvrir un truc qui s'appelle l'OSINT et ça m'a un peu surpris.\n\nEn gros c'est chercher des informations sur quelqu'un ou une entreprise juste avec ce qui est déjà public sur Internet : réseaux sociaux, sites web, etc. Pas besoin de pirater quoi que ce soit, l'info est juste là si on sait chercher.\n\nÇa m'a fait réfléchir à ce que moi-même je laisse comme infos en ligne. Du coup j'ai vérifié mes propres réseaux sociaux pour voir ce qu'on pouvait trouver sur moi.\n\nC'est un des trucs les plus accessibles pour débuter en cybersécurité je trouve, pas besoin d'être super technique pour commencer.",
+      "Un truc qui s'appelle l'OSINT m'a pas mal surpris cette semaine.\n\nEn gros c'est chercher des informations sur quelqu'un ou une entreprise juste avec ce qui est déjà public sur Internet : réseaux sociaux, sites web, etc. Pas besoin de pirater quoi que ce soit, l'info est juste là si on sait chercher.\n\nDu coup j'ai vérifié mes propres réseaux sociaux pour voir ce qu'on pouvait trouver sur moi, juste pour voir.\n\nC'est un des trucs les plus accessibles pour débuter en cybersécurité je trouve, pas besoin d'être super technique pour commencer.",
       "Plus je m'entraîne à l'OSINT, plus je me dis qu'il faut faire attention à ce qu'on partage en ligne.\n\nC'est fou ce qu'on peut retrouver juste en croisant des infos publiques : une photo, un nom de ville, un horaire de post... rien d'illégal, juste de la recherche bien faite.\n\nJe trouve ça hyper accessible comme entrée en cybersécurité, comparé à d'autres domaines plus techniques.",
       "L'OSINT, en gros, c'est un peu comme un jeu de piste géant où tous les indices sont déjà publics, il suffit de savoir les relier.\n\nCe qui m'a bluffé en m'entraînant : à partir d'une simple photo, on peut parfois deviner une ville, une date, voire une habitude de quelqu'un.\n\nÇa m'a surtout donné envie de nettoyer mes propres réseaux sociaux.",
       "La vie privée en ligne, je pensais que ça se limitait à \"ne pas mettre son adresse sur Facebook\" — avant de m'intéresser à l'OSINT.\n\nMaintenant je comprends que ce sont surtout les petits détails qui s'additionnent : un horaire régulier de post, un fond d'écran reconnaissable, un tag de localisation oublié.\n\nJe fais beaucoup plus attention depuis.",
@@ -896,7 +788,7 @@ const TS = {
       "Une vidéo expliquant comment marchent les ransomwares (ces virus qui bloquent tous les fichiers d'une entreprise jusqu'à ce qu'elle paie une rançon) m'a bien éclairé sur le sujet.\n\nCe qui m'a surpris c'est que souvent ça commence par un truc tout simple : quelqu'un clique sur un mail piégé, ou un mot de passe trop facile à deviner.\n\nC'est en regardant ce genre de cas que je comprends pourquoi la cybersécurité c'est important, même pour des petites entreprises qui pensent que ça n'arrive qu'aux grandes.",
       "Les ransomwares restent un sujet qui m'intéresse particulièrement : ces attaques qui bloquent tous les fichiers d'une entreprise et demandent une rançon pour les débloquer.\n\nCe qui me marque, c'est que ça peut toucher n'importe qui : hôpitaux, écoles, petites entreprises... pas que les grosses boîtes comme je le pensais au début.\n\nJ'ai appris qu'une protection simple peut déjà faire une vraie différence : faire des sauvegardes régulières et ne pas cliquer n'importe où. Pas besoin d'être expert pour comprendre ça.",
       "Plusieurs cas de ransomware étudiés ces derniers temps, et trois choses qui reviennent tout le temps :\n\n1/ Ça touche autant les petites structures que les grandes, parfois même plus.\n\n2/ Le point d'entrée est souvent humain : un mail, un mot de passe faible.\n\n3/ Les sauvegardes régulières comptent parmi les protections les plus efficaces, avant même les outils compliqués.\n\nDes bases simples, mais visiblement pas si appliquées que ça sur le terrain.",
-      "Certaines entreprises payent la rançon et ne récupèrent même pas tous leurs fichiers. Ça, ça m'a marqué en lisant sur les ransomwares.\n\nAucune garantie, juste un pari risqué. Ça montre bien que prévenir coûte toujours moins cher que guérir, même en informatique.",
+      "Certaines entreprises payent la rançon et ne récupèrent même pas tous leurs fichiers. Ça remet les idées en place sur les ransomwares.\n\nAucune garantie, juste un pari risqué. Ça montre bien que prévenir coûte toujours moins cher que guérir, même en informatique.",
       "En révisant le sujet, une statistique m'a fait tiquer : une bonne partie des entreprises touchées par un ransomware n'ont toujours pas de sauvegarde externe à jour au moment de l'attaque.\n\nLe conseil de base (sauvegarder ailleurs, régulièrement) existe depuis toujours, mais visiblement il est encore trop peu appliqué en vrai.",
       "Question que je me pose en étudiant les ransomwares : pourquoi on continue à sous-estimer un risque qu'on connaît depuis des années ?\n\nJe crois que c'est un peu comme le sport ou l'alimentation : on sait ce qu'il faudrait faire, mais tant que ça n'arrive qu'aux autres, on repousse. En cybersécurité, ce réflexe coûte cher."
     ]
@@ -928,11 +820,11 @@ const TS = {
     ],
     "c": [
       "En lisant des articles sur la cybersécurité, je suis tombé sur le terme \"zero day\". En fait c'est une faille dans un logiciel que même les créateurs ne connaissent pas encore, donc personne ne peut la corriger tout de suite.\n\nÇa fait un peu peur dit comme ça, mais j'ai appris que les entreprises essaient quand même de se protéger en limitant les accès et en surveillant les comportements bizarres sur leurs systèmes.\n\nEncore un truc que je découvre petit à petit dans mon apprentissage de la cybersécurité.",
-      "Je reviens sur les \"zero day\" parce que c'est un concept qui m'a marqué dans mon apprentissage.\n\nEn fait, ça veut dire qu'une faille existe dans un logiciel, mais ni les pirates ni les créateurs ne le savent encore au moment où elle est découverte par quelqu'un de malveillant. Donc personne n'a eu le temps de la corriger.\n\nÇa montre bien pourquoi la cybersécurité doit toujours s'adapter, même quand on pense avoir tout sécurisé.",
+      "Je reviens sur les \"zero day\" parce que c'est un concept qui continue de m'occuper l'esprit.\n\nEn fait, ça veut dire qu'une faille existe dans un logiciel, mais ni les pirates ni les créateurs ne le savent encore au moment où elle est découverte par quelqu'un de malveillant. Donc personne n'a eu le temps de la corriger.\n\nÇa montre bien pourquoi la cybersécurité doit toujours s'adapter, même quand on pense avoir tout sécurisé.",
       "Pour comprendre les zero day, je me suis fait une image simple : c'est comme une serrure avec un défaut de fabrication que même le serrurier ignore.\n\nTant que personne ne le découvre, la porte semble sûre. Le jour où quelqu'un de malveillant le trouve avant les autres, c'est l'urgence.\n\nÇa montre que la sécurité, c'est jamais vraiment \"fini\".",
       "Avant, je pensais qu'une entreprise \"bien sécurisée\" était à l'abri de tout. Les zero day m'ont fait comprendre que c'est plus nuancé que ça.\n\nMême les systèmes les mieux protégés peuvent avoir une faille que littéralement personne ne connaît encore.\n\nCe qui compte alors, c'est la vitesse de réaction une fois la faille découverte.",
       "Une autre image qui m'a aidé à comprendre les zero day : c'est comme une fissure invisible dans un mur, indétectable jusqu'au jour où quelqu'un tape exactement au bon endroit.\n\nLe mur avait l'air solide la veille. C'est ce côté imprévisible qui rend le sujet passionnant et un peu angoissant en même temps.",
-      "J'ai suivi l'actu d'une faille zero day corrigée en urgence sur un logiciel très utilisé. Ce qui m'a marqué : le temps entre la découverte et le correctif était de quelques heures seulement.\n\nÇa montre à quel point la réactivité compte autant que la prévention dans ce métier."
+      "J'ai suivi l'actu d'une faille zero day corrigée en urgence sur un logiciel très utilisé. Le détail qui frappe : le temps entre la découverte et le correctif était de quelques heures seulement.\n\nÇa montre à quel point la réactivité compte autant que la prévention dans ce métier."
     ]
   },
   "SIEM": {
@@ -957,7 +849,7 @@ const TS = {
       "J'ai regardé où sont vraiment stockées mes photos et mes devoirs. Réponse : nulle part chez moi, tout est ailleurs.",
       "Mes fichiers ne sont physiquement nulle part chez moi, et ça m'a pris du temps à vraiment intégrer ce que ça change.",
       "Nos photos, nos mails, nos devoirs : tout ou presque est \"dans le cloud\" maintenant sans qu'on y pense vraiment.",
-      "Protéger mes propres comptes cloud, c'est plus une question d'accès que de mot de passe compliqué.",
+      "Protéger mes propres comptes cloud, j'ai compris que c'est plus une question d'accès que de mot de passe compliqué.",
       "J'avais activé la double authentification sur mon ordinateur, mais pas sur mon compte cloud où sont stockés tous mes fichiers. Corrigé depuis."
     ],
     "c": [
@@ -966,7 +858,7 @@ const TS = {
       "\"Mon ordinateur\" contre \"mes clés\" : c'est le déclic qui m'a aidé à comprendre la sécurité cloud, appliqué à mes propres comptes.\n\nCe n'est plus un appareil à protéger, ce sont des dizaines d'accès (comptes, autorisations d'appli, appareils connectés) qu'il faut surveiller et retirer dès que je n'en ai plus besoin.\n\nUn accès oublié peut suffire à compromettre tout le reste, même sur un compte perso.",
       "\"Le cloud\", pour moi, c'était juste un espace de stockage en ligne — jusqu'à ce que je m'intéresse d'un peu plus près à mes propres comptes.\n\nJ'ai compris que la vraie question, c'est qui a accès à quoi, et depuis où. La plupart des soucis viennent d'un accès mal configuré ou oublié, pas d'un piratage sophistiqué.\n\nJ'ai depuis fait le ménage dans mes autorisations, et je vais probablement recommencer régulièrement.",
       "Double authentification activée sur mon ordinateur... mais pas sur mon compte cloud, là où sont pourtant sauvegardés tous mes devoirs et mes photos. Corrigé depuis.\n\nUn petit oubli comme ça peut suffire à rendre tout le reste inutile, peu importe le reste des précautions prises ailleurs.",
-      "Un truc qui m'a marqué en vérifiant mes propres réglages cloud : une appli que j'avais installée une fois, il y a un an, avait encore un accès complet à tous mes fichiers.\n\nAucun piratage, juste un accès jamais retiré. Le plus grand risque, c'est souvent un oubli comme ça, pas un génie du mal."
+      "Un détail qui saute aux yeux en vérifiant mes propres réglages cloud : une appli que j'avais installée une fois, il y a un an, avait encore un accès complet à tous mes fichiers.\n\nAucun piratage, juste un accès jamais retiré. Le plus grand risque, c'est souvent un oubli comme ça, pas un génie du mal."
     ]
   },
   "Bug Bounty": {
@@ -1005,19 +897,19 @@ const TS = {
   },
   "RGPD": {
     "a": [
-      "J'ai appris que le RGPD c'est pas qu'un truc pour les avocats, ça concerne aussi la cybersécurité.",
+      "Je pensais que le RGPD, c'était surtout un truc pour les avocats. En fait ça concerne aussi directement la cybersécurité.",
       "Je continue à m'intéresser au RGPD, et je trouve que c'est plus lié à la cybersécurité que je ne le pensais.",
       "Le RGPD, ce sigle qu'on voit sur tous les sites sans vraiment savoir ce qu'il protège concrètement.",
-      "Un prof m'a dit un truc qui m'a marqué : le RGPD, c'est de la cybersécurité écrite en langage juridique.",
+      "Un prof a résumé le RGPD en une phrase que je retiens : c'est de la cybersécurité écrite en langage juridique.",
       "J'ai fait une demande d'accès à mes propres données sur une appli, juste pour voir ce que ça donnait. La liste était bien plus longue que ce que j'imaginais."
     ],
     "c": [
       "Je pensais que le RGPD (les règles sur la protection des données personnelles) c'était juste un truc juridique. En fait ça a aussi un vrai lien avec la cybersécurité.\n\nPar exemple les entreprises doivent protéger nos données avec des moyens techniques, et prévenir rapidement si jamais elles sont piratées.\n\nC'est un sujet que je découvre, mais je trouve ça important de comprendre les deux côtés (technique et règles) pour bien faire ce métier plus tard.",
       "En reparlant du RGPD avec un prof, j'ai compris un autre aspect : les entreprises doivent non seulement protéger nos données, mais aussi être capables de prouver qu'elles le font correctement.\n\nÇa veut dire des mesures techniques (comme le chiffrement) mais aussi de l'organisation en interne.\n\nC'est un sujet que je vois trop souvent comme \"juste du juridique\", alors qu'il y a un vrai lien avec la technique. Je continue à apprendre les deux côtés.",
       "Longtemps, le RGPD s'est résumé pour moi à une case à cocher sur les sites internet, rien de plus.\n\nEn creusant, j'ai compris que derrière, il y a de vraies obligations techniques : chiffrer les données sensibles, limiter qui y a accès, prévenir vite en cas de fuite.\n\nLe droit et la technique sont beaucoup plus liés que je ne le pensais.",
-      "Devoir PROUVER qu'on protège des données, pas juste l'affirmer : voilà ce qui m'a le plus marqué en étudiant le RGPD.\n\nÇa concerne autant l'organisation interne d'une entreprise que la technique.\n\nEncore un sujet où le juridique et la cybersécurité se rejoignent plus que je ne le pensais.",
+      "Devoir PROUVER qu'on protège des données, pas juste l'affirmer : voilà le point qui m'a le plus surpris en étudiant le RGPD.\n\nÇa demande une vraie organisation interne, pas seulement des outils techniques.\n\nEncore un sujet où le juridique et la cybersécurité se rejoignent plus que je ne le pensais.",
       "J'ai fait une demande d'accès à mes données sur une appli que j'utilise beaucoup, juste pour voir ce que ça donnait en pratique (c'est un droit garanti par le RGPD). Résultat : une liste bien plus longue que ce que j'imaginais.\n\nÇa m'a donné un aperçu concret de ce que le règlement protège vraiment.",
-      "Une entreprise sanctionnée pour ne pas avoir assez protégé les données de ses utilisateurs : l'actu que je suivais cette semaine. Ce qui m'a marqué : la sanction ne venait pas d'un piratage, mais du simple fait de ne pas avoir mis en place les mesures de protection attendues.\n\nLe RGPD, ce n'est pas juste réagir après coup, c'est anticiper."
+      "Une entreprise sanctionnée pour ne pas avoir assez protégé les données de ses utilisateurs : l'actu que je suivais cette semaine. Le détail intéressant : la sanction ne venait pas d'un piratage, mais du simple fait de ne pas avoir mis en place les mesures de protection attendues.\n\nLe RGPD, ce n'est pas juste réagir après coup, c'est anticiper."
     ]
   },
   "Mots de passe": {
@@ -1050,7 +942,7 @@ const TS = {
       "Je recommande à tout le monde autour de moi d'activer la double authentification, depuis que j'ai compris à quel point ça change la sécurité d'un compte.\n\nC'est juste une étape en plus à la connexion, mais ça empêche une grande partie des piratages de comptes classiques.\n\nC'est le genre de conseil simple que j'aimerais avoir entendu plus tôt.",
       "Avant d'activer la double authentification partout, je pensais que ça allait juste m'embêter à chaque connexion.\n\nEn fait, une fois configurée, on la voit à peine au quotidien, et elle bloque une grande partie des tentatives de piratage classiques.\n\nLe petit effort de départ vaut largement la tranquillité que ça donne après.",
       "Peu de gens le savent : même si votre mot de passe fuite dans une base de données piratée ailleurs, la double authentification garde votre compte protégé sans le second facteur.\n\nC'est littéralement le conseil le plus simple et le plus efficace que je peux donner.",
-      "La preuve par l'exemple : quelqu'un qui a évité un piratage de compte grâce à la 2FA, alors que son mot de passe avait fuité dans une base de données piratée ailleurs. Sans ce deuxième verrou, il perdait direct l'accès.\n\nÇa montre bien pourquoi ce petit réglage change tout le jour où ça compte vraiment.",
+      "La preuve par l'exemple : quelqu'un qui a évité un piratage de compte grâce à la 2FA, alors que son mot de passe avait fuité dans une base de données piratée ailleurs. Sans ce deuxième verrou, il perdait direct l'accès.\n\nÇa montre bien pourquoi ce petit réglage fait toute la différence le jour où ça compte vraiment.",
       "Petit conseil que j'applique depuis peu : privilégier une application d'authentification plutôt que les codes reçus par SMS, plus faciles à intercepter.\n\nÇa prend 2 minutes à configurer pour un niveau de protection nettement meilleur."
     ]
   },
@@ -1059,11 +951,11 @@ const TS = {
       "Mon prof a piraté sa propre boîte mail devant toute la classe, juste en appelant le support et en jouant la comédie. Pas une ligne de code.",
       "Le hacking, c'est pas toujours de la technique pure : parfois c'est juste convaincre quelqu'un de faire une erreur.",
       "On peut avoir le meilleur pare-feu du monde et se faire avoir par un simple coup de fil bien joué.",
-      "En cybersécurité, on peut sécuriser toute la technique et se faire avoir quand même — par quelqu'un qui sait juste bien parler.",
+      "On peut avoir la meilleure technique du monde : si quelqu'un décroche le téléphone et fait confiance à la mauvaise personne, tout tombe.",
       "On m'a appelé en se faisant passer pour le support technique de mon opérateur. J'ai raccroché et rappelé le numéro officiel moi-même. Rien à voir."
     ],
     "c": [
-      "En apprenant les bases de la cybersécurité, j'ai découvert un concept qui m'a marqué : l'ingénierie sociale.\n\nEn gros, plutôt que de pirater un système technique, l'attaquant manipule directement une personne pour qu'elle donne elle-même l'accès (un mot de passe, un clic sur un lien...).\n\nÇa montre bien que la cybersécurité, c'est pas que de la technique, c'est aussi beaucoup de bon sens et de méfiance saine.",
+      "Il y a un concept qui change ma façon de voir la cybersécurité depuis que je le connais : l'ingénierie sociale.\n\nEn gros, plutôt que de pirater un système technique, l'attaquant manipule directement une personne pour qu'elle donne elle-même l'accès (un mot de passe, un clic sur un lien...).\n\nÇa montre bien que la technique seule ne suffit pas : le bon sens et la méfiance saine comptent tout autant.",
       "L'ingénierie sociale me fascine presque plus que le piratage technique en lui-même.\n\nUn attaquant peut se faire passer pour un collègue, un technicien, ou même quelqu'un de la famille, juste pour obtenir une info ou un accès.\n\nÇa me fait réfléchir à mes propres réflexes : est-ce que je vérifierais vraiment l'identité de quelqu'un avant de lui donner une information sensible ?",
       "L'ingénierie sociale, c'est un peu comme un tour de magie : l'attaquant ne force rien, il détourne l'attention pour qu'on lui donne l'info nous-mêmes.\n\nUn faux technicien au téléphone, un mail qui joue sur l'urgence, une fausse demande d'un \"collègue\"... aucune technique compliquée, juste de la manipulation bien préparée.\n\nÇa m'a appris à toujours vérifier avant de faire confiance, même quand ça semble légitime.",
       "Trois cas concrets d'ingénierie sociale étudiés, et le même schéma qui revient :\n\n1/ L'urgence est souvent le premier signal d'alerte.\n\n2/ Un vrai professionnel ne demande jamais un mot de passe par téléphone ou par mail.\n\n3/ Vérifier par un autre canal (rappeler soi-même le numéro officiel) coûte 2 minutes et évite bien des problèmes.\n\nDe la méfiance saine, rien de plus.",
@@ -1073,14 +965,14 @@ const TS = {
   },
   "VPN": {
     "a": [
-      "J'ai testé un VPN pour la première fois, et j'ai voulu comprendre comment ça marche vraiment.",
+      "J'ai testé un VPN ce week-end pour comprendre comment ça marche vraiment, au-delà du nom qu'on entend partout.",
       "Tout le monde parle de VPN mais j'ai mis du temps à comprendre concrètement ce que ça fait.",
       "J'ai regardé ce qu'un inconnu pouvait voir de ma connexion sur un Wi-Fi public. Ça calme direct.",
       "Le VPN, c'est utile, mais ça protège beaucoup moins de choses que ce qu'on croit souvent.",
       "En vacances, j'ai comparé une connexion avec et sans VPN sur le wifi de l'hôtel. Voir la différence en vrai, ça convainc plus qu'un article."
     ],
     "c": [
-      "Premier VPN testé ce week-end, avec l'envie de comprendre ce qu'il se passe vraiment derrière.\n\nEn gros, ça crée un genre de tunnel sécurisé entre mon appareil et Internet, donc personne sur le réseau (même un Wi-Fi public) ne peut facilement voir ce que je fais.\n\nC'est pas magique non plus : ça protège la connexion, mais pas le reste (comme mes mots de passe si je les donne moi-même).",
+      "Test d'un VPN ce week-end, avec l'envie de comprendre ce qu'il se passe vraiment derrière.\n\nEn gros, ça crée un genre de tunnel sécurisé entre mon appareil et Internet, donc personne sur le réseau (même un Wi-Fi public) ne peut facilement voir ce que je fais.\n\nC'est pas magique non plus : ça protège la connexion, mais pas le reste (comme mes mots de passe si je les donne moi-même).",
       "L'utilité d'un VPN devient de plus en plus claire pour moi, notamment pour les connexions sur des Wi-Fi publics (genre dans un café ou en gare).\n\nSur un réseau public, sans protection, certaines infos peuvent être plus facilement interceptées. Le VPN limite ce risque en chiffrant la connexion.\n\nUn petit réflexe en plus à prendre, surtout en déplacement.",
       "Un VPN qui rend \"invisible\" partout sur Internet : c'est ce que je pensais, avant de creuser le sujet.\n\nEn fait, ça protège surtout la connexion (utile sur un Wi-Fi public), mais ça ne protège pas mes mots de passe si je les donne moi-même à un faux site.\n\nUn bon outil, mais pas une solution magique à tout.",
       "Petit test que j'ai fait sur un Wi-Fi public de gare : sans VPN, certaines infos de connexion peuvent être plus facilement interceptées par quelqu'un sur le même réseau.\n\nAvec un VPN activé, ce risque baisse fortement. Un réflexe simple à prendre en déplacement.",
@@ -1125,16 +1017,16 @@ const TS = {
   "Réseaux": {
     "a": [
       "Le modèle OSI et ses 7 couches, j'ai mis du temps à comprendre à quoi ça sert vraiment.",
-      "Premier ping vers un serveur à l'autre bout du monde. Bête comme commande, un peu magique quand même.",
+      "Un ping envoyé vers un serveur à l'autre bout du monde. Bête comme commande, un peu magique quand même.",
       "On me demande pourquoi je m'intéresse aux réseaux en plus de la cybersécurité. En fait l'un ne va pas sans l'autre.",
-      "Configurer mon premier réseau sur Cisco Packet Tracer entre deux exercices de cours. Ça aide vraiment à visualiser.",
+      "Configurer un petit réseau sur Cisco Packet Tracer entre deux exercices de cours. Ça aide vraiment à visualiser.",
       "Adresse IP, masque de sous-réseau, passerelle... du charabia total pour moi il y a encore quelques mois."
     ],
     "c": [
       "Cette semaine en SIN, on a bossé sur les bases des réseaux : adressage IP, DNS, protocoles...\n\nAu début je voyais ça comme une matière à part de la cybersécurité. En fait c'est tout l'inverse : pour comprendre une attaque réseau, il faut d'abord comprendre comment un réseau fonctionne normalement.\n\nJe commence à voir le lien entre ce qu'on fait en cours et ce que j'explore le soir. Ça donne encore plus envie d'approfondir.",
       "Le DNS c'est l'annuaire d'Internet : il traduit un nom de site en adresse IP que les machines comprennent.\n\nJusqu'ici je l'utilisais sans me poser de questions. Depuis que je m'intéresse à la cybersécurité, je réalise que c'est aussi un vecteur d'attaque — on peut le détourner pour rediriger vers un faux site.\n\nComprendre le fonctionnement normal avant les attaques, ça change ma façon d'apprendre.",
       "3 commandes réseau que j'utilise presque tous les jours depuis que je m'entraîne :\n\n1/ ping — vérifier si une machine répond.\n\n2/ traceroute — voir le chemin de mes données.\n\n3/ ipconfig — voir ma propre config réseau.\n\nRien de spectaculaire, mais ça débloque beaucoup de choses pour comprendre ce qui se passe derrière l'écran.",
-      "Premier petit réseau simulé sur Cisco Packet Tracer ce week-end : deux PC, un switch, un routeur.\n\nParaît basique, mais voir les paquets circuler entre les machines m'a aidé à visualiser des trucs que je lisais depuis des semaines sans les comprendre.\n\nEn SIN on utilise cet outil en cours, mais je m'amuse aussi à faire des montages le soir de mon côté.",
+      "Petit réseau simulé sur Cisco Packet Tracer ce week-end : deux PC, un switch, un routeur.\n\nParaît basique, mais voir les paquets circuler entre les machines m'a aidé à visualiser des trucs que je lisais depuis des semaines sans les comprendre.\n\nEn SIN on utilise cet outil en cours, mais je m'amuse aussi à faire des montages le soir de mon côté.",
       "Longtemps j'ai confondu adresse IP publique et adresse IP privée, sans savoir pourquoi il y en avait deux.\n\nEn gros : l'adresse privée sert dans mon réseau local, l'adresse publique c'est celle vue depuis Internet. Ma box fait le lien.\n\nUn détail qui paraît basique, mais qui débloque la compréhension de plein d'autres sujets réseau.",
       "Ce qui me plaît avec les réseaux, c'est que ça rend concret tout ce que j'apprends en cybersécurité.\n\nUne attaque, un pare-feu, un VPN... tout repose sur des bases réseau. Sans les comprendre, j'apprenais des concepts un peu en l'air.\n\nDepuis que je maîtrise un peu mieux les fondamentaux, tout le reste devient plus logique."
     ]
@@ -1145,7 +1037,7 @@ const TS = {
       "Le terminal Linux m'a fait peur au début. Maintenant je préfère souvent taper une commande plutôt que cliquer.",
       "Toutes les machines sur TryHackMe tournent sous Linux. Autant apprendre à l'utiliser sérieusement.",
       "sudo rm -rf, une commande que j'ai appris à respecter avant même de bien la comprendre.",
-      "Ma première ligne de commande Linux tapée sans regarder un tuto à côté. Petite victoire du soir."
+      "Une ligne de commande Linux tapée sans regarder un tuto à côté. Petite victoire du soir."
     ],
     "c": [
       "Ce week-end, install de Linux en double boot sur mon PC à côté de Windows.\n\nJ'appréhendais un peu, peur de tout casser. Au final ça s'est bien passé — et je comprends maintenant pourquoi tout le monde en cybersécurité conseille de s'y mettre tôt : la plupart des outils et des machines qu'on manipule tournent sous Linux.\n\nProchaine étape : arrêter de revenir sur Windows par réflexe dès que je bloque sur une commande.",
@@ -1159,7 +1051,7 @@ const TS = {
   "Sécurité web": {
     "a": [
       "Un simple formulaire mal protégé peut parfois laisser passer bien plus qu'un mot de passe.",
-      "Mon premier XSS réussi sur un site d'entraînement légal. Petite mais vraie satisfaction.",
+      "Une faille XSS réussie sur un site d'entraînement légal. Petite mais vraie satisfaction.",
       "L'injection SQL, j'en avais entendu parler cent fois avant de comprendre vraiment comment ça marche.",
       "Un site qui affiche direct ce qu'on tape dans la recherche sans le filtrer. Terrain de jeu pour un XSS.",
       "Je m'entraîne aussi sur PortSwigger Academy en plus de TryHackMe, pour la partie sécurité web."
@@ -1168,24 +1060,24 @@ const TS = {
       "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe m'entraîne sur PortSwigger Web Security Academy, une plateforme gratuite avec des exercices sur les failles web comme l'injection SQL ou le XSS.\n\nC'est un autre univers que le pentest classique, mais tout aussi passionnant : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie.",
       "L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut glisser du code dans un champ de formulaire pour qu'il exécute autre chose que prévu — genre afficher des infos censées rester privées.\n\nL'avoir fait sur un site d'entraînement légal m'a appris bien plus que dix articles lus avant.",
       "3 choses que je retiens de mes débuts en sécurité web :\n\n1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.\n\nJe suis tout début, mais déjà bluffé.",
-      "Mon premier XSS réussi sur un exercice d'entraînement : faire apparaître une popup en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire vu de l'extérieur, mais pour moi c'est la preuve que je commence à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape : comprendre comment on corrige ce genre de faille.",
+      "Une faille XSS réussie sur un exercice d'entraînement : faire apparaître une popup en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire vu de l'extérieur, mais pour moi c'est la preuve que je commence à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape : comprendre comment on corrige ce genre de faille.",
       "Ce qui me frappe en découvrant la sécurité web : la même erreur revient sans arrêt sur des sites différents — ne pas filtrer ce que l'utilisateur envoie.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site.",
       "Question pour les devs web qui passent par ici : vous êtes formés aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?\n\nJe découvre la sécurité web côté attaque avec PortSwigger Academy, et je me demande comment ça se passe côté développement."
     ]
   },
   "Forensic numérique": {
     "a": [
-      "Il existe un métier qui consiste à enquêter sur un ordinateur après une attaque. Je viens de découvrir ça.",
+      "Il existe un métier qui consiste à enquêter sur un ordinateur après une attaque : la forensic numérique.",
       "Forensic numérique : retracer ce qui s'est passé sur une machine après coup. Un peu comme une scène de crime, version informatique.",
       "Un fichier supprimé n'est presque jamais vraiment effacé tout de suite. Ça change ma vision de la corbeille.",
       "J'ai regardé comment un analyste forensic retrace le chemin d'un pirate après une attaque. Fascinant.",
       "Chaque action sur un ordinateur laisse une trace quelque part. C'est ce qui rend la forensic numérique possible."
     ],
     "c": [
-      "Je viens de découvrir un domaine que je ne connaissais pas : la forensic numérique, ou investigation numérique.\n\nEn gros, c'est analyser un ordinateur ou un réseau après une attaque pour comprendre ce qui s'est passé, comment l'attaquant est entré et ce qu'il a fait.\n\nÇa ressemble à une enquête policière, sauf que les indices sont des fichiers, des connexions et des horodatages.",
+      "Un domaine que je ne connaissais pas du tout jusqu'à récemment : la forensic numérique, ou investigation numérique.\n\nEn gros, c'est analyser un ordinateur ou un réseau après une attaque pour comprendre ce qui s'est passé, comment l'attaquant est entré et ce qu'il a fait.\n\nÇa ressemble à une enquête policière, sauf que les indices sont des fichiers, des connexions et des horodatages.",
       "Ce qui m'a le plus surpris en découvrant la forensic numérique : un fichier supprimé n'est presque jamais vraiment effacé tout de suite.\n\nEn général, seul le pointeur disparaît, mais les données restent sur le disque jusqu'à ce qu'elles soient écrasées. C'est ce qui permet parfois de les récupérer.\n\nÇa change complètement ma vision de ce que veut dire supprimer un fichier.",
       "3 trucs que je retiens de mes premières lectures sur la forensic numérique :\n\n1/ Chaque action laisse une trace — fichiers, logs, horodatages.\n\n2/ L'ordre des opérations compte énormément pour ne pas altérer les preuves en analysant.\n\n3/ C'est un métier qui demande autant de rigueur que de curiosité technique.\n\nUn domaine que je ne connaissais absolument pas avant de m'intéresser à la cybersécurité.",
-      "J'ai regardé une vidéo où un analyste forensic explique comment il a retracé le chemin complet d'un pirate, juste avec des logs et des horodatages.\n\nCe qui m'a marqué, c'est la patience que ça demande : recouper des dizaines de petits indices comme un puzzle pour reconstituer toute l'histoire.\n\nÇa m'a donné une nouvelle idée de métier à creuser pour mon orientation.",
+      "J'ai regardé une vidéo où un analyste forensic explique comment il a retracé le chemin complet d'un pirate, juste avec des logs et des horodatages.\n\nCe qui frappe, c'est la patience que ça demande : recouper des dizaines de petits indices comme un puzzle pour reconstituer toute l'histoire.\n\nÇa m'a donné une nouvelle idée de métier à creuser pour mon orientation.",
       "Avant de m'intéresser à la forensic numérique, je pensais que la cybersécurité c'était surtout de la prévention.\n\nEn fait il y a tout un pan après coup : comprendre ce qui s'est passé une fois l'attaque terminée pour la documenter et éviter qu'elle se reproduise.\n\nLes deux me semblent aussi importants finalement.",
       "Question pour ceux qui bossent dans l'investigation numérique : c'est surtout un métier de patience et de méthode, ou il faut aussi être très fort techniquement au quotidien ?\n\nJe découvre ce domaine depuis peu et j'essaie de me faire une idée avant d'y penser sérieusement pour mon orientation."
     ]
@@ -1202,7 +1094,7 @@ const TS = {
       "J'ai testé Have I Been Pwned, un site qui vérifie si ton adresse mail a été exposée dans une fuite de données connue.\n\nRésultat : mon mail apparaît dans plusieurs fuites, sans que ce soit de ma faute — juste parce que j'étais inscrit sur des sites qui ont été piratés eux-mêmes.\n\nDepuis, j'ai changé les mots de passe concernés et activé la 2FA partout où c'était possible.",
       "Une fuite de données, c'est quand les informations stockées par une entreprise — mails, mots de passe, parfois plus — se retrouvent accessibles publiquement.\n\nCe qui me marque : ce n'est presque jamais la faute de l'utilisateur, juste de l'entreprise qui n'a pas assez protégé ses données.\n\nÇa montre pourquoi il ne faut jamais réutiliser le même mot de passe partout : une seule fuite peut compromettre plusieurs comptes.",
       "3 réflexes que j'ai pris depuis que je m'intéresse aux fuites de données :\n\n1/ Vérifier régulièrement si mes mails sont dans une fuite connue.\n\n2/ Ne jamais réutiliser le même mot de passe sur plusieurs sites.\n\n3/ Changer immédiatement un mot de passe concerné, même si rien de suspect n'est arrivé encore.\n\nDes gestes simples qui limitent beaucoup les dégâts.",
-      "Une fuite de données qui m'a marqué en la lisant : une base de données laissée accessible sur Internet sans aucun mot de passe, par simple erreur de configuration.\n\nPas de piratage sophistiqué, juste un oubli. Ça montre que la sécurité c'est autant une question de rigueur dans les détails que de technique avancée.",
+      "Une fuite de données qui illustre bien un problème fréquent : une base de données laissée accessible sur Internet sans aucun mot de passe, par simple erreur de configuration.\n\nPas de piratage sophistiqué, juste un oubli. Ça montre que la sécurité c'est autant une question de rigueur dans les détails que de technique avancée.",
       "Ce que je ne savais pas avant de creuser le sujet : après une fuite, ce ne sont pas que les mots de passe qui posent problème, mais aussi les infos qu'on ne peut pas changer — date de naissance, numéro de téléphone.\n\nÇa donne un autre regard sur ce qu'on accepte de donner en s'inscrivant sur un site.",
       "Depuis que je suis les fuites de données dans l'actu cyber, j'ai pris l'habitude de vérifier mes comptes après chaque grosse fuite médiatisée.\n\nÇa prend 2 minutes et ça évite de découvrir un piratage des mois plus tard, par hasard.\n\nUn réflexe que je recommande autour de moi maintenant."
     ]
@@ -1230,11 +1122,11 @@ const TS = {
       "CyberQuest avance doucement. L'IA m'aide beaucoup à structurer le code, mais comprendre ce qui se passe reste tout un apprentissage.",
       "J'ai fait tester CyberQuest à deux camarades de classe hier. Leurs retours m'ont donné plus d'idées que prévu.",
       "Un bug sur CyberQuest m'a occupé une bonne partie du week-end. Petite victoire quand j'ai enfin trouvé d'où il venait.",
-      "CyberQuest, mon projet perso, vient de passer une étape : le premier quiz complet est jouable de bout en bout."
+      "CyberQuest, mon projet perso, vient de passer une étape : un quiz complet est enfin jouable de bout en bout."
     ],
     "c": [
       "Je me suis lancé dans un petit projet perso il y a quelques semaines : CyberQuest, une appli où on apprend les bases de la cybersécurité à travers des mini-quiz et des défis simples.\n\nJe m'aide beaucoup de l'IA pour avancer plus vite sur les parties de code que je ne maîtrise pas encore. Mais je prends le temps de comprendre chaque bout avant de l'intégrer, sinon ça n'a pas grand intérêt pour moi.\n\nUn projet loin d'être fini, mais qui m'apprend autant que les cours.",
-      "Petite étape sur CyberQuest cette semaine : j'ai enfin un premier quiz jouable de bout en bout, sur les bases des mots de passe.\n\nCe qui m'a pris le plus de temps, ce n'est pas le code en lui-même, c'est de rendre les questions ni trop faciles ni trop dures pour un vrai débutant.\n\nJ'ai refait les questions plusieurs fois avant d'être satisfait.",
+      "Petite étape sur CyberQuest cette semaine : j'ai enfin un quiz jouable de bout en bout, sur les bases des mots de passe.\n\nCe qui m'a pris le plus de temps, ce n'est pas le code en lui-même, c'est de rendre les questions ni trop faciles ni trop dures pour un vrai débutant.\n\nJ'ai refait les questions plusieurs fois avant d'être satisfait.",
       "J'ai fait tester CyberQuest à deux camarades de classe ce week-end, en vrais bêta-testeurs.\n\nLeurs retours m'ont surpris : certains trucs que je trouvais évidents ne l'étaient pas du tout pour eux, et inversement.\n\nJe garde ça en tête pour la suite : ce n'est pas parce qu'un truc me paraît clair que ça l'est pour tout le monde.",
       "Un bug sur CyberQuest m'a occupé une bonne partie du week-end : le score ne s'enregistrait pas correctement d'un quiz à l'autre.\n\nAprès pas mal de recherches, et l'aide de l'IA pour comprendre certains messages d'erreur, j'ai fini par trouver : une variable réinitialisée au mauvais endroit.\n\nRien de très glorieux, mais une vraie satisfaction une fois résolu.",
       "Ce que je retiens de CyberQuest jusqu'ici, ce n'est pas tant le code que la gestion de projet.\n\nAvoir une idée, c'est facile. La transformer en quelque chose qui fonctionne vraiment, avec des allers-retours et des bugs à corriger, c'est une autre histoire.\n\nJ'apprends autant sur moi-même que sur la technique en le construisant petit à petit.",
@@ -2266,8 +2158,7 @@ function renderH(){
   list.innerHTML=shown.map(h=>{
     const d=new Date(h.publishedAt||h.ts||Date.now());
     const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    const displayText=h.correctedText||h.text;
-    const tags=(displayText.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,3).join(' ');
+    const tags=(h.text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,3).join(' ');
     const ab=h.account==='niko'?'<span style="font-size:9px;color:var(--orange);margin-left:3px">NJ</span>':'<span style="font-size:9px;color:var(--cyan);margin-left:3px">SJ</span>';
     const confBdg=h.confirmed
       ?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.3);margin-left:3px" title="Publication confirmée">✅ Confirmé</span>'
@@ -2276,14 +2167,14 @@ function renderH(){
       <div class="hir">
         <span class="bdg hbdg ${cols[h.type]||'b-bl'}">${h.label}</span>
         ${srcL[h.source]||srcL['copie']}${ab}${confBdg}
-        <span class="htxt">${displayText.substring(0,80)}…</span>
+        <span class="htxt">${h.text.substring(0,80)}…</span>
         <button class="hcp" onclick="event.stopPropagation();toggleConfirmed(${h.id})" title="${h.confirmed?'Repasser en à confirmer':'Confirmer la publication'}">${h.confirmed?'🔄':'✅'}</button>
         <button class="hcp" onclick="event.stopPropagation();cpH(${h.id})">📋</button>
         <button class="hcp" onclick="event.stopPropagation();delH(${h.id})" style="color:rgba(255,23,68,.5)">✕</button>
         ${h.views?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
         <span class="htm">${ts}</span>
       </div>
-      <div class="hex" id="hex-${h.id}">${displayText}${h.correctedText?'<div style="margin-top:8px;font-size:10px;color:var(--green)">✓ Texte contrôlé — original conservé</div>':''}
+      <div class="hex" id="hex-${h.id}">${h.text}
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
           <label style="font-size:11px;color:var(--muted)">👁 Vues/impressions LinkedIn :</label>
           <input type="number" min="0" inputmode="numeric" value="${h.views||''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
