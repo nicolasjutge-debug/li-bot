@@ -566,7 +566,115 @@ let recentFamilies={simon:[],niko:[]};
 let lastPost=null, tmrRun=false, tmrIv=null;
 let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
 
-function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
+/* ════ TEXTES CONTRÔLÉS — posts audités ensemble (Simon) ════
+   L'original reste conservé dans H.text. correctedText est le texte affiché dans l'historique/
+   visibilité après contrôle. Il ne transforme pas l'historique factuel et n'est pas réinjecté
+   automatiquement dans le générateur. */
+const CONTROLLED_HISTORY_CORRECTIONS = [
+  {topic:'Sécurité web',match:"Mon premier XSS réussi sur un exercice d'entraînement",text:`La sécurité web m'intéresse de plus en plus, notamment le principe du XSS (Cross-Site Scripting).
+
+L'idée est qu'un site mal protégé peut parfois interpréter une donnée saisie par l'utilisateur comme du contenu à exécuter.
+
+Je découvre encore ce sujet et je n'ai pas la pratique nécessaire pour prétendre avoir réalisé un test moi-même. Ce qui m'intéresse pour l'instant, c'est de comprendre le mécanisme et surtout les moyens de protection.
+
+C'est un bon exemple de la façon dont une petite erreur dans une application peut avoir des conséquences importantes.
+
+#Découverte #SécuritéWeb #XSS #CyberSécurité`},
+  {topic:'SOC',match:"Un chiffre m'a marqué cette semaine",text:`Le métier d'analyste SOC m'intéresse de plus en plus.
+
+En me renseignant sur ce métier, je comprends mieux le principe : surveiller des événements de sécurité, repérer des comportements inhabituels et chercher à comprendre ce qui se passe derrière une alerte.
+
+Ce qui m'attire surtout, c'est le côté enquête. Il faut faire la différence entre une activité normale et un signal qui mérite d'être étudié.
+
+Je suis encore au stade de la découverte, mais c'est un domaine que j'aimerais approfondir pendant ma formation.
+
+#SOC #CyberDéfense #CyberSécurité #Découverte #Alternance2027`},
+  {topic:'Ingénierie sociale',match:"Le maillon le plus faible en cybersécurité, c'est souvent pas la machine",text:`En cybersécurité, une attaque ne passe pas forcément par une faille technique.
+
+L'ingénierie sociale consiste notamment à manipuler une personne pour obtenir une information, provoquer un clic ou lui faire réaliser une action qu'elle n'aurait normalement pas faite.
+
+L'urgence, l'autorité ou la confiance peuvent être utilisées pour mettre quelqu'un sous pression.
+
+Je découvre encore ce sujet, mais il montre bien que la cybersécurité ne repose pas uniquement sur les outils techniques.
+
+#IngénierieSociale #Phishing #CyberSécurité #Découverte`},
+  {topic:'Authentification 2FA',match:'Petit changement récent : je suis passé des codes 2FA par SMS',text:`La double authentification ajoute une protection supplémentaire à un compte en demandant un second élément en plus du mot de passe.
+
+Par exemple, un code temporaire généré par une application peut être demandé lors de la connexion.
+
+Cela ne rend pas un compte invulnérable, mais cela peut limiter les conséquences d'un mot de passe compromis.
+
+C'est une mesure simple à comprendre et intéressante à connaître quand on commence à s'intéresser à la cybersécurité.
+
+#2FA #CyberSécurité #Découverte #CyberHygiène`},
+  {topic:'Réseaux',match:"Le modèle OSI et ses 7 couches, j'ai mis du temps à comprendre",text:`Le DNS est l'un des mécanismes que j'essaie de mieux comprendre en réseaux.
+
+Son rôle est notamment de traduire un nom de domaine en adresse IP afin que les machines puissent communiquer avec le bon serveur.
+
+En cybersécurité, comprendre le fonctionnement normal d'un service est une bonne base pour comprendre ensuite les risques qui peuvent lui être associés.
+
+Je découvre encore ces notions en STI2D, mais je commence à mieux voir le lien entre réseaux et cybersécurité.
+
+#Réseaux #DNS #STI2D #Découverte`},
+  {topic:'VPN',match:"J'ai regardé ce qu'un inconnu pouvait voir de ma connexion",text:`Un VPN peut protéger une partie des communications entre un appareil et un serveur VPN, notamment lorsqu'on utilise un réseau qui n'est pas de confiance.
+
+Mais ce n'est pas un outil qui rend invisible sur Internet : les sites consultés peuvent toujours avoir leurs propres moyens d'identification et de suivi, et un VPN ne protège pas contre un faux site ou un mot de passe donné volontairement.
+
+Je découvre encore ces différences, mais c'est un bon exemple d'outil dont il faut comprendre les limites avant de parler de sécurité.
+
+#VPN #Réseaux #CyberSécurité #Découverte`},
+  {topic:'Réseaux',match:'Adresse IP, masque de sous-réseau, passerelle... du charabia total',text:`Adresse IP, masque de sous-réseau, passerelle... du charabia total pour moi il y a encore quelques mois.
+
+Longtemps j'ai confondu adresse IP publique et adresse IP privée, sans savoir pourquoi il y en avait deux.
+
+En gros : l'adresse privée sert dans mon réseau local, l'adresse publique c'est celle vue depuis Internet. Ma box fait le lien.
+
+Un détail qui paraît basique, mais qui débloque la compréhension de plein d'autres sujets réseau.
+
+#STI2D #Réseaux #Découverte`},
+  {topic:'CTF',match:"J'ai abandonné un CTF en plein milieu la semaine dernière",text:`Les CTF sont souvent utilisés pour apprendre la cybersécurité à travers des défis et des scénarios à résoudre.
+
+Le principe me paraît intéressant pour comprendre certaines notions de manière concrète : on cherche des indices, on formule des hypothèses et on essaie de comprendre pourquoi une solution fonctionne.
+
+Je n'ai pas encore la pratique nécessaire pour dire que c'est ma méthode d'apprentissage, mais c'est un format que j'aimerais découvrir davantage pendant ma formation.
+
+#CTF #Débutant #CyberSécurité #Découverte`},
+  {topic:'RGPD',match:"Je continue à m'intéresser au RGPD, et je trouve que c'est plus lié",text:`Je continue à m'intéresser au RGPD, et je trouve que c'est plus lié à la cybersécurité que je ne le pensais.
+
+Je pensais que le RGPD (les règles sur la protection des données personnelles) c'était juste un truc juridique. En fait ça a aussi un vrai lien avec la cybersécurité.
+
+Par exemple, les entreprises doivent protéger les données personnelles avec des mesures adaptées, et certaines violations de données doivent être notifiées dans les conditions prévues par le RGPD.
+
+C'est un sujet que je découvre, mais je trouve ça important de comprendre les deux côtés (technique et règles) pour bien faire ce métier plus tard.
+
+#Découverte #DonnéesPersonnelles #RechercheAlternance #Rennes`},
+  {topic:'Sécurité web',match:"Un simple formulaire mal protégé peut parfois laisser passer bien plus qu'un mot de passe",text:`Un simple formulaire mal protégé peut parfois permettre à une injection SQL de modifier la manière dont une requête est interprétée.
+
+L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.
+
+En gros, si une application construit mal ses requêtes avec des données fournies par l'utilisateur, une entrée spécialement conçue peut être interprétée comme une partie de la requête au lieu d'être traitée comme une simple donnée.
+
+Je découvre encore ce sujet et je n'ai pas la pratique nécessaire pour prétendre l'avoir testé moi-même. Comprendre le principe et les moyens de protection est déjà une bonne première étape.
+
+#Découverte #SécuritéWeb #SQLInjection #CyberSécurité`}
+];
+function applyControlledHistoryCorrections(history,a){
+  if(a!=='simon'||!Array.isArray(history))return false;
+  let changed=false;
+  history.forEach(h=>{
+    const c=CONTROLLED_HISTORY_CORRECTIONS.find(x=>h.topic===x.topic && h.text && h.text.includes(x.match));
+    if(!c)return;
+    if(h.correctedText!==c.text){
+      h.correctedText=c.text;
+      h.corrections=Array.isArray(h.corrections)?h.corrections:[];
+      if(!h.corrections.some(x=>x&&x.type==='controle-li-bot-v1'))h.corrections.push({type:'controle-li-bot-v1',date:Date.now(),text:c.text});
+      changed=true;
+    }
+  });
+  return changed;
+}
+
+function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);if(applyControlledHistoryCorrections(H,a))lsS(hk(a),H);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
 function saveAll(){
   lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);lsS(SK.stats,stats);lsS(SK.acc,acc);
   const b=document.getElementById('sv-bdg');b.textContent='💾 Sauvegardé';b.style.color='var(--green)';setTimeout(()=>b.style.color='',1500);
@@ -2158,7 +2266,8 @@ function renderH(){
   list.innerHTML=shown.map(h=>{
     const d=new Date(h.publishedAt||h.ts||Date.now());
     const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    const tags=(h.text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,3).join(' ');
+    const displayText=h.correctedText||h.text;
+    const tags=(displayText.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,3).join(' ');
     const ab=h.account==='niko'?'<span style="font-size:9px;color:var(--orange);margin-left:3px">NJ</span>':'<span style="font-size:9px;color:var(--cyan);margin-left:3px">SJ</span>';
     const confBdg=h.confirmed
       ?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.3);margin-left:3px" title="Publication confirmée">✅ Confirmé</span>'
@@ -2167,14 +2276,14 @@ function renderH(){
       <div class="hir">
         <span class="bdg hbdg ${cols[h.type]||'b-bl'}">${h.label}</span>
         ${srcL[h.source]||srcL['copie']}${ab}${confBdg}
-        <span class="htxt">${h.text.substring(0,80)}…</span>
+        <span class="htxt">${displayText.substring(0,80)}…</span>
         <button class="hcp" onclick="event.stopPropagation();toggleConfirmed(${h.id})" title="${h.confirmed?'Repasser en à confirmer':'Confirmer la publication'}">${h.confirmed?'🔄':'✅'}</button>
         <button class="hcp" onclick="event.stopPropagation();cpH(${h.id})">📋</button>
         <button class="hcp" onclick="event.stopPropagation();delH(${h.id})" style="color:rgba(255,23,68,.5)">✕</button>
         ${h.views?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
         <span class="htm">${ts}</span>
       </div>
-      <div class="hex" id="hex-${h.id}">${h.text}
+      <div class="hex" id="hex-${h.id}">${displayText}${h.correctedText?'<div style="margin-top:8px;font-size:10px;color:var(--green)">✓ Texte contrôlé — original conservé</div>':''}
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
           <label style="font-size:11px;color:var(--muted)">👁 Vues/impressions LinkedIn :</label>
           <input type="number" min="0" inputmode="numeric" value="${h.views||''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
