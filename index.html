@@ -417,7 +417,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     </div>
     <button class="btn btn-p" onclick="genPost()">⚡ Générer le post</button>
     <div class="pw" id="pw">
-      <div class="po" id="po" contenteditable="true" oninput="onPoEdited()"></div>
+      <div class="po" id="po" contenteditable="true" oninput="onPoEdited()" onblur="onPoBlur()"></div>
       <div class="htb" id="htb"></div>
       <div class="pm"><span id="pm"></span><span style="color:var(--muted)">✏️ Texte modifiable · Clic # pour copier</span></div>
       <div class="btn-row">
@@ -427,6 +427,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       </div>
       <div class="btn-row" style="margin-top:6px">
         <button class="btn btn-s" onclick="markAlreadyPublished()" style="font-size:11px;opacity:.85">✔️ Déjà publié sur LinkedIn (ne plus reproposer)</button>
+        <button class="btn btn-s" onclick="restoreLastPost()" style="font-size:11px;opacity:.85">↩️ Restaurer la version générée</button>
       </div>
     </div>
   </div>
@@ -471,6 +472,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     <div class="tps" style="margin:0 0 10px">
       <button class="tp" id="h-filter-btn" onclick="toggleHViewFilter()" title="N'afficher que les posts sans vues renseignées — ces vues alimentent la pondération par popularité de la génération automatique">👁 Sans vues (<span id="h-filter-cnt">0</span>)</button>
       <button class="tp" id="h-confirm-filter-btn" onclick="toggleHConfirmFilter()" title="N'afficher que les posts « à confirmer » — copiés/partagés mais pas encore validés comme réellement publiés sur LinkedIn">🕓 À valider (<span id="h-confirm-filter-cnt">0</span>)</button>
+      <button class="tp" id="h-check-filter-btn" onclick="toggleHCheckFilter()" title="N'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, TryHackMe/Linux non inventés...) — pratique pour dépouiller progressivement les anciens posts">🔎 À vérifier (<span id="h-check-filter-cnt">0</span>)</button>
       <button class="tp" onclick="toggleImportForm()">📥 Importer LinkedIn</button>
     </div>
     <div class="hl" id="h-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div></div>
@@ -567,6 +569,7 @@ let recentFamilies={simon:[],niko:[]};
 let lastPost=null, tmrRun=false, tmrIv=null;
 let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
 let hFilterUnconfirmed=false; // Filtre affichage historique : n'afficher que les posts "à confirmer" (pas encore validés comme réellement publiés)
+let hFilterUnchecked=false; // Filtre affichage historique : n'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, TryHackMe/Linux...) — distinct de "à confirmer" qui porte sur la publication réelle, pas sur le contenu
 
 function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
 function saveAll(){
@@ -1480,11 +1483,31 @@ function cpHt(h){navigator.clipboard.writeText(h).then(()=>toast('Copié : '+h,'
 function onPoEdited(){
   const po=document.getElementById('po');
   const text=po.innerText;
-  if(lastPost)lastPost.text=text;
+  if(lastPost){
+    if(lastPost.originalText===undefined)lastPost.originalText=lastPost.text; // NOUVEAU : capture la version générée avant la 1ère frappe qui la modifie
+    lastPost.text=text;
+  }
   const tags=[...new Set((text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]))];
   const htb=document.getElementById('htb'),pm=document.getElementById('pm');
   htb.innerHTML=tags.length?'<span style="color:var(--muted);font-size:10px;margin-right:4px">TAGS:</span>'+tags.map(h=>`<span class="htag" onclick="cpHt('${h}')">${h}</span>`).join(''):'<span style="color:var(--muted);font-size:11px">Aucun hashtag</span>';
   const len=text.length;pm.textContent=`${len} car. · ${tags.length} hashtags`;pm.parentElement.className='pm'+(len>3000?' over':len>2500?' warn':'');
+}
+// NOUVEAU : si l'aperçu affiche en réalité un post déjà en file (chargé via prvQ, même référence
+// objet que dans Q), on persiste la modification dès qu'on quitte le champ — même garantie que
+// editQText, quel que soit le chemin utilisé pour éditer.
+function onPoBlur(){
+  if(!lastPost)return;
+  if(Q.includes(lastPost)){saveAll();renderQ();}
+}
+// NOUVEAU (non destructif) : revient au texte produit par le générateur avant toute modification
+// manuelle. Si le post affiché est aussi dans la file (même référence), la file est mise à jour.
+function restoreLastPost(){
+  if(!lastPost||lastPost.originalText===undefined)return;
+  if(lastPost.originalText===lastPost.text){toast('Déjà la version générée','in');return;}
+  renderPost(lastPost.originalText);
+  lastPost.text=lastPost.originalText;
+  if(Q.includes(lastPost)){saveAll();renderQ();}
+  toast('Version générée restaurée ✓','in');
 }
 function publishLinkedIn(){
   const text = document.getElementById('po').innerText || '';
@@ -1556,7 +1579,7 @@ function genPost(){
     isDup=usedTexts.has(norm(text));
   }
   renderPost(text);
-  lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc};
+  lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc,originalText:text};
   if(!stats[acc])stats[acc]={total:0,sent:0};
   stats[acc].total++;saveAll();updateStats();
   if(isDup) toast('⚠️ Toutes les variantes de ce thème sont déjà utilisées (texte en double avec un post existant)','er');
@@ -1598,7 +1621,7 @@ function schedPost(){
   // BUGFIX indépendance : la base venait du dernier post TOUS COMPTES confondus.
   const mine=Q.filter(q=>q.account===acc);
   const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
-  Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:acc});
+  Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:acc,originalText:lastPost.originalText!==undefined?lastPost.originalText:lastPost.text});
   saveAll();renderQ();updateStats();toast('Programmé ✓','in');
 }
 // NOUVEAU : pour le cas exact remonté — un post généré correspond à quelque chose que Simon
@@ -1925,7 +1948,7 @@ function renderQ(){
     return `<div class="qi ${i===0?'nxt':''}" id="qi-${q.id}" style="flex-wrap:wrap">
       <div class="qn">${i+1}</div>
       <div class="qb">
-        <div class="qt">${q.label} · ${ab}</div>
+        <div class="qt">${q.label} · ${ab}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}</div>
         <div class="qp">${q.text.substring(0,120)}…</div>
         ${tags.length?`<div class="qts">${tags.map(h=>`<span>${h}</span>`).join('')}</div>`:''}
         <div class="qtm">${ts}</div>
@@ -1940,6 +1963,7 @@ function renderQ(){
       </div>
       <div class="qex" id="qex-${q.id}" style="display:none;width:100%;margin-top:10px" onclick="event.stopPropagation()">
         <textarea onchange="editQText(${q.id},this.value)" style="width:100%;min-height:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${q.text}</textarea>
+        ${q.originalText!==undefined&&q.originalText!==q.text?`<div style="margin-top:8px"><button onclick="restoreQText(${q.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version générée</button></div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1984,8 +2008,17 @@ function editQText(id,val){
   const v=val.trim();
   if(!v){toast('Le texte ne peut pas être vide','er');renderQ();return;}
   if(v===q.text)return;
+  if(q.originalText===undefined)q.originalText=q.text; // NOUVEAU (non destructif) : conserve la version générée avant toute modification
   q.text=v;saveAll();renderQ();updateStats();
-  toast('Post modifié ✓','ok');
+  toast('Post modifié ✓ (version générée conservée)','ok');
+}
+// NOUVEAU (non destructif) : revient au texte produit par le générateur pour ce post de la file,
+// sans rien supprimer ni créer de doublon — même identifiant, même position dans la file.
+function restoreQText(id){
+  const q=Q.find(x=>x.id===id);if(!q||q.originalText===undefined)return;
+  if(q.originalText===q.text){toast('Déjà la version générée','in');return;}
+  q.text=q.originalText;saveAll();renderQ();updateStats();
+  toast('Version générée restaurée ✓','in');
 }
 function cpQ(id){
   const q=Q.find(x=>x.id===id);
@@ -2184,6 +2217,21 @@ function toggleHConfirmFilter(){
   if(btn)btn.classList.toggle('sel',hFilterUnconfirmed);
   renderH();
 }
+// NOUVEAU : filtre "🔎 À vérifier" — isole les posts dont le CONTENU (véracité, niveau,
+// TryHackMe/Linux non inventés, etc.) n'a pas encore été relu par un humain. Sert notamment à
+// dépouiller progressivement le fond des 82 anciens posts sans devoir tout relire d'un coup.
+function toggleHCheckFilter(){
+  hFilterUnchecked=!hFilterUnchecked;
+  const btn=document.getElementById('h-check-filter-btn');
+  if(btn)btn.classList.toggle('sel',hFilterUnchecked);
+  renderH();
+}
+function toggleChecked(id){
+  const h=H.find(x=>x.id===id);if(!h)return;
+  h.checked=!h.checked;
+  saveAll();renderH();
+  toast(h.checked?'Marqué comme contenu vérifié ✓':'Repassé en « à vérifier »','in');
+}
 function renderH(){
   const list=document.getElementById('h-list'),badge=document.getElementById('h-bdg');
   // BUGFIX indépendance : H mélange les deux comptes ; on n'affiche ici que celui actif.
@@ -2195,20 +2243,25 @@ function renderH(){
   const unconfirmed=mineH.filter(h=>!h.confirmed);
   const cntConfEl=document.getElementById('h-confirm-filter-cnt');
   if(cntConfEl)cntConfEl.textContent=unconfirmed.length;
+  const unchecked=mineH.filter(h=>!h.checked);
+  const cntCheckEl=document.getElementById('h-check-filter-cnt');
+  if(cntCheckEl)cntCheckEl.textContent=unchecked.length;
   const scrollPos=list.scrollTop;
   let shown;
-  if(hFilterNoViews||hFilterUnconfirmed){
+  if(hFilterNoViews||hFilterUnconfirmed||hFilterUnchecked){
     shown=mineH;
     if(hFilterNoViews)shown=shown.filter(h=>!h.views);
     if(hFilterUnconfirmed)shown=shown.filter(h=>!h.confirmed);
+    if(hFilterUnchecked)shown=shown.filter(h=>!h.checked);
   }else{
     shown=mineH.slice(0,50);
   }
   if(!shown.length){
-    let msg='Aucun post archivé.';
-    if(hFilterNoViews&&hFilterUnconfirmed)msg='🎉 Aucun post à la fois sans vues ET à confirmer.';
-    else if(hFilterNoViews)msg='🎉 Tous les posts archivés ont leurs vues renseignées.';
-    else if(hFilterUnconfirmed)msg='🎉 Tous les posts archivés sont confirmés.';
+    const active=[];
+    if(hFilterNoViews)active.push('sans vues');
+    if(hFilterUnconfirmed)active.push('à confirmer');
+    if(hFilterUnchecked)active.push('à vérifier');
+    const msg=active.length?`🎉 Aucun post ${active.join(' ET ')} pour l'instant.`:'Aucun post archivé.';
     list.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">${msg}</div>`;
     return;
   }
@@ -2222,10 +2275,14 @@ function renderH(){
     const confBdg=h.confirmed
       ?'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.3);margin-left:3px" title="Publication confirmée">✅ Confirmé</span>'
       :'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,193,7,.12);color:#ffc107;border:1px solid rgba(255,193,7,.3);margin-left:3px" title="Copié/partagé mais pas confirmé publié — n\'entre pas dans les stats de performance">🕓 À confirmer</span>';
+    // NOUVEAU : badge compact, affiché seulement si pas encore vérifié (pour ne pas surcharger la
+    // ligne repliée) — distinct de confBdg qui porte sur la publication, pas sur le contenu.
+    const checkBdg=h.checked?'':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.12);color:var(--orange);border:1px solid rgba(255,109,0,.3);margin-left:3px" title="Contenu pas encore relu/vérifié (véracité, niveau, TryHackMe/Linux...)">🔎 À vérifier</span>';
+    const modMark=(h.originalText!==undefined&&h.originalText!==h.text)?'<span title="Modifié depuis la version générée/publiée initialement" style="font-size:11px">✏️</span>':'';
     return `<div class="hi" onclick="tgH(${h.id})">
       <div class="hir">
         <span class="bdg hbdg ${cols[h.type]||'b-bl'}">${h.label}</span>
-        ${srcL[h.source]||srcL['copie']}${ab}${confBdg}
+        ${srcL[h.source]||srcL['copie']}${ab}${confBdg}${checkBdg}${modMark}
         <span class="htxt">${h.text.substring(0,80)}…</span>
         <button class="hcp" onclick="event.stopPropagation();toggleConfirmed(${h.id})" title="${h.confirmed?'Repasser en à confirmer':'Confirmer la publication'}">${h.confirmed?'🔄':'✅'}</button>
         <button class="hcp" onclick="event.stopPropagation();cpH(${h.id})">📋</button>
@@ -2240,6 +2297,10 @@ function renderH(){
           <input type="datetime-local" value="${toLocalInputValue(h.publishedAt||h.ts)}" style="background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="editHDate(${h.id},this.value)">
           <label style="font-size:11px;color:var(--muted);margin-left:6px">👁 Vues/impressions LinkedIn :</label>
           <input type="number" min="0" inputmode="numeric" value="${h.views||''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
+        </div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
+          <button onclick="toggleChecked(${h.id})" style="background:${h.checked?'rgba(0,230,118,.1)':'rgba(255,109,0,.1)'};color:${h.checked?'var(--green)':'var(--orange)'};border:1px solid ${h.checked?'rgba(0,230,118,.25)':'rgba(255,109,0,.25)'};border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">${h.checked?'🔎 Contenu vérifié':'🔎 Marquer comme vérifié'}</button>
+          ${h.originalText!==undefined&&h.originalText!==h.text?`<button onclick="restoreHText(${h.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version d'origine</button>`:''}
         </div>
       </div>
       ${tags?`<div class="htgs">${tags}</div>`:''}
@@ -2372,8 +2433,17 @@ function editHText(id,val){
   const v=val.trim();
   if(!v){toast('Le texte ne peut pas être vide','er');renderH();return;}
   if(v===h.text)return;
+  if(h.originalText===undefined)h.originalText=h.text; // NOUVEAU (non destructif) : conserve le texte généré/publié avant correction
   h.text=v;saveAll();renderH();
-  toast('Texte du post archivé mis à jour ✓','ok');
+  toast('Texte du post archivé mis à jour ✓ (version d\'origine conservée)','ok');
+}
+// NOUVEAU (non destructif) : revient au texte généré/publié à l'origine pour ce post archivé,
+// sans le supprimer ni créer une nouvelle entrée — même identifiant conservé dans l'historique.
+function restoreHText(id){
+  const h=H.find(x=>x.id===id);if(!h||h.originalText===undefined)return;
+  if(h.originalText===h.text){toast('Déjà la version d\'origine','in');return;}
+  h.text=h.originalText;saveAll();renderH();
+  toast('Version d\'origine restaurée ✓','in');
 }
 function editHDate(id,val){
   const h=H.find(x=>x.id===id);if(!h)return;
@@ -2418,7 +2488,7 @@ function delCf(id){CF=CF.filter(x=>x.id!==id);saveAll();renderCF();}
 function genCf(id){
   const c=CF.find(x=>x.id===id);if(!c)return;
   const text=genTxt({type:'congrats',who:c.name,occ:c.occ,note:c.note,ctx:c.note});
-  renderPost(text);lastPost={id:Date.now(),text,type:'congrats',topic:c.name,label:'🎉 Félicitations',ts:Date.now(),account:acc};
+  renderPost(text);lastPost={id:Date.now(),text,type:'congrats',topic:c.name,label:'🎉 Félicitations',ts:Date.now(),account:acc,originalText:text};
   if(!stats[acc])stats[acc]={total:0,sent:0};stats[acc].total++;saveAll();updateStats();
   toast('Post pour '+c.name+' ✓','ok');document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
