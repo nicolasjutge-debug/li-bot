@@ -417,9 +417,9 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     </div>
     <button class="btn btn-p" onclick="genPost()">⚡ Générer le post</button>
     <div class="pw" id="pw">
-      <div class="po" id="po"></div>
+      <div class="po" id="po" contenteditable="true" oninput="onPoEdited()"></div>
       <div class="htb" id="htb"></div>
-      <div class="pm"><span id="pm"></span><span style="color:var(--muted)">💡 Clic # pour copier</span></div>
+      <div class="pm"><span id="pm"></span><span style="color:var(--muted)">✏️ Texte modifiable · Clic # pour copier</span></div>
       <div class="btn-row">
         <button class="btn btn-c" onclick="copyPost()">📋 Copier</button>
         <button class="btn btn-s" onclick="schedPost()">⏰ Programmer</button>
@@ -470,6 +470,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     </div>
     <div class="tps" style="margin:0 0 10px">
       <button class="tp" id="h-filter-btn" onclick="toggleHViewFilter()" title="N'afficher que les posts sans vues renseignées — ces vues alimentent la pondération par popularité de la génération automatique">👁 Sans vues (<span id="h-filter-cnt">0</span>)</button>
+      <button class="tp" id="h-confirm-filter-btn" onclick="toggleHConfirmFilter()" title="N'afficher que les posts « à confirmer » — copiés/partagés mais pas encore validés comme réellement publiés sur LinkedIn">🕓 À valider (<span id="h-confirm-filter-cnt">0</span>)</button>
       <button class="tp" onclick="toggleImportForm()">📥 Importer LinkedIn</button>
     </div>
     <div class="hl" id="h-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div></div>
@@ -565,6 +566,7 @@ let recentShown={simon:[],niko:[]};
 let recentFamilies={simon:[],niko:[]};
 let lastPost=null, tmrRun=false, tmrIv=null;
 let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
+let hFilterUnconfirmed=false; // Filtre affichage historique : n'afficher que les posts "à confirmer" (pas encore validés comme réellement publiés)
 
 function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
 function saveAll(){
@@ -1470,6 +1472,20 @@ function renderPost(text){
   const len=text.length;pm.textContent=`${len} car. · ${tags.length} hashtags`;pm.parentElement.className='pm'+(len>3000?' over':len>2500?' warn':'');
 }
 function cpHt(h){navigator.clipboard.writeText(h).then(()=>toast('Copié : '+h,'in'));}
+// NOUVEAU : le post juste généré (#po) est modifiable avant publication. copyPost/publishLinkedIn
+// lisent déjà le texte affiché en direct dans le DOM (po.innerText), donc ils profitent
+// automatiquement de la correction. schedPost/markAlreadyPublished/archive, eux, lisent
+// lastPost.text — on le tient donc à jour à chaque frappe, et on recalcule compteur + hashtags
+// exactement comme le fait renderPost().
+function onPoEdited(){
+  const po=document.getElementById('po');
+  const text=po.innerText;
+  if(lastPost)lastPost.text=text;
+  const tags=[...new Set((text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]))];
+  const htb=document.getElementById('htb'),pm=document.getElementById('pm');
+  htb.innerHTML=tags.length?'<span style="color:var(--muted);font-size:10px;margin-right:4px">TAGS:</span>'+tags.map(h=>`<span class="htag" onclick="cpHt('${h}')">${h}</span>`).join(''):'<span style="color:var(--muted);font-size:11px">Aucun hashtag</span>';
+  const len=text.length;pm.textContent=`${len} car. · ${tags.length} hashtags`;pm.parentElement.className='pm'+(len>3000?' over':len>2500?' warn':'');
+}
 function publishLinkedIn(){
   const text = document.getElementById('po').innerText || '';
   if(!text){ toast('Génère d\'abord un post','er'); return; }
@@ -1906,7 +1922,7 @@ function renderQ(){
     const diff=q.scheduledAt-Date.now(),ts=diff>0?'Dans '+fmtD(diff):'⚡ À publier';
     const tags=(q.text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).slice(0,4);
     const ab=q.account==='niko'?'<span style="color:var(--orange)">NJ</span>':'<span style="color:var(--cyan)">SJ</span>';
-    return `<div class="qi ${i===0?'nxt':''}" id="qi-${q.id}">
+    return `<div class="qi ${i===0?'nxt':''}" id="qi-${q.id}" style="flex-wrap:wrap">
       <div class="qn">${i+1}</div>
       <div class="qb">
         <div class="qt">${q.label} · ${ab}</div>
@@ -1915,11 +1931,15 @@ function renderQ(){
         <div class="qtm">${ts}</div>
       </div>
       <div class="qa">
+        <button class="qbtn" onclick="tgQ(${q.id})" style="color:var(--white)" title="Modifier le texte avant publication">✏️</button>
         <button class="qbtn" onclick="cpQ(${q.id})" style="color:var(--cyan)" title="Copier">📋</button>
         <button class="qbtn" onclick="pubLiQ(${q.id})" style="color:#0a66c2" title="Publier sur LinkedIn">🚀</button>
         <button class="qbtn" onclick="prvQ(${q.id})" style="color:var(--muted)" title="Aperçu">👁</button>
         <button class="qbtn" onclick="markPubQ(${q.id})" style="color:var(--muted)" title="Marquer comme déjà publié sur LinkedIn (sans partager maintenant)">✔️</button>
         <button class="qbtn" onclick="delQ(${q.id})" style="color:var(--muted)" title="Supprimer">✕</button>
+      </div>
+      <div class="qex" id="qex-${q.id}" style="display:none;width:100%;margin-top:10px" onclick="event.stopPropagation()">
+        <textarea onchange="editQText(${q.id},this.value)" style="width:100%;min-height:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${q.text}</textarea>
       </div>
     </div>`;
   }).join('');
@@ -1952,6 +1972,20 @@ function pubLiQ(id){
     toast('Post copié + LinkedIn ouvert','ok');
   }
   autoRefill(true);
+}
+// NOUVEAU : déplie/replie la zone d'édition d'un post encore en file (pas publié) — même
+// mécanique que tgH pour l'historique.
+function tgQ(id){const el=document.getElementById('qex-'+id);if(el)el.style.display=(el.style.display==='none'||!el.style.display)?'block':'none';}
+// NOUVEAU : corrige le texte d'un post généré tant qu'il est encore dans la file, donc avant
+// toute publication (copie, partage LinkedIn ou marquage "déjà publié" utiliseront ce texte
+// corrigé, puisqu'ils lisent tous q.text au moment de l'action).
+function editQText(id,val){
+  const q=Q.find(x=>x.id===id);if(!q)return;
+  const v=val.trim();
+  if(!v){toast('Le texte ne peut pas être vide','er');renderQ();return;}
+  if(v===q.text)return;
+  q.text=v;saveAll();renderQ();updateStats();
+  toast('Post modifié ✓','ok');
 }
 function cpQ(id){
   const q=Q.find(x=>x.id===id);
@@ -2141,6 +2175,15 @@ function toggleHViewFilter(){
   if(btn)btn.classList.toggle('sel',hFilterNoViews);
   renderH();
 }
+// NOUVEAU : permet d'isoler d'un clic les posts "à confirmer" (copiés/partagés mais pas encore
+// validés comme réellement publiés) pour les trier/valider un par un, plutôt que de les chercher
+// au milieu de tout l'historique. Même mécanique que le filtre "Sans vues" ci-dessus, cumulable avec lui.
+function toggleHConfirmFilter(){
+  hFilterUnconfirmed=!hFilterUnconfirmed;
+  const btn=document.getElementById('h-confirm-filter-btn');
+  if(btn)btn.classList.toggle('sel',hFilterUnconfirmed);
+  renderH();
+}
 function renderH(){
   const list=document.getElementById('h-list'),badge=document.getElementById('h-bdg');
   // BUGFIX indépendance : H mélange les deux comptes ; on n'affiche ici que celui actif.
@@ -2149,10 +2192,24 @@ function renderH(){
   const missing=mineH.filter(h=>!h.views);
   const cntEl=document.getElementById('h-filter-cnt');
   if(cntEl)cntEl.textContent=missing.length;
+  const unconfirmed=mineH.filter(h=>!h.confirmed);
+  const cntConfEl=document.getElementById('h-confirm-filter-cnt');
+  if(cntConfEl)cntConfEl.textContent=unconfirmed.length;
   const scrollPos=list.scrollTop;
-  const shown=hFilterNoViews?missing:mineH.slice(0,50);
+  let shown;
+  if(hFilterNoViews||hFilterUnconfirmed){
+    shown=mineH;
+    if(hFilterNoViews)shown=shown.filter(h=>!h.views);
+    if(hFilterUnconfirmed)shown=shown.filter(h=>!h.confirmed);
+  }else{
+    shown=mineH.slice(0,50);
+  }
   if(!shown.length){
-    list.innerHTML=hFilterNoViews?'<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">🎉 Tous les posts archivés ont leurs vues renseignées.</div>':'<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div>';
+    let msg='Aucun post archivé.';
+    if(hFilterNoViews&&hFilterUnconfirmed)msg='🎉 Aucun post à la fois sans vues ET à confirmer.';
+    else if(hFilterNoViews)msg='🎉 Tous les posts archivés ont leurs vues renseignées.';
+    else if(hFilterUnconfirmed)msg='🎉 Tous les posts archivés sont confirmés.';
+    list.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">${msg}</div>`;
     return;
   }
   const cols={original:'b-bl',repost:'b-or',congrats:'b-gr'};
