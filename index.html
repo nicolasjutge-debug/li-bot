@@ -573,6 +573,8 @@ function saveAll(){
   queueSync();
 }
 function pad(n){return String(n).padStart(2,'0');}
+// Formate un timestamp ms en valeur compatible <input type="datetime-local"> (heure locale)
+function toLocalInputValue(ts){const d=new Date(ts||Date.now());return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
 function fmtD(ms){if(ms<=0)return'maintenant';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return h>0?h+'h '+m+'m':m+'m';}
 function pick(a){return a[Math.floor(Math.random()*a.length)];}
 function toast(m,t='in'){const c=document.getElementById('tc'),el=document.createElement('div');el.className='ti '+(t==='ok'?'ok':t==='er'?'er':'in');el.textContent=(t==='ok'?'✓ ':t==='er'?'✕ ':'ℹ ')+m;c.appendChild(el);setTimeout(()=>el.remove(),3500);}
@@ -1033,19 +1035,19 @@ const TS = {
   },
   "Linux": {
     "a": [
-      "J'ai installé Linux en double boot ce week-end à côté de Windows. Petit stress avant de lancer l'install.",
-      "Le terminal Linux m'a fait peur au début. Maintenant je préfère souvent taper une commande plutôt que cliquer.",
+      "Le double boot Linux/Windows, j'en entends parler partout en cybersécurité. Je commence à comprendre pourquoi c'est si recommandé pour débuter.",
+      "Le terminal Linux, ça m'a longtemps semblé intimidant : un écran noir, du texte, aucun bouton. En creusant un peu, je commence à comprendre la logique derrière.",
       "Beaucoup d'outils utilisés en cybersécurité tournent sous Linux plutôt que sous Windows. Autant apprendre à l'utiliser sérieusement.",
-      "sudo rm -rf, une commande que j'ai appris à respecter avant même de bien la comprendre.",
-      "Une ligne de commande Linux tapée sans regarder un tuto à côté. Petite victoire du soir."
+      "sudo rm -rf : une commande que je connais surtout par sa réputation redoutée, avant même d'en comprendre tous les détails.",
+      "Plus je lis sur le fonctionnement des commandes Linux, plus je comprends pourquoi ceux qui les maîtrisent gagnent un temps fou par rapport à une interface graphique."
     ],
     "c": [
-      "Ce week-end, install de Linux en double boot sur mon PC à côté de Windows.\n\nJ'appréhendais un peu, peur de tout casser. Au final ça s'est bien passé — et je comprends maintenant pourquoi tout le monde en cybersécurité conseille de s'y mettre tôt : la plupart des outils et des machines qu'on manipule tournent sous Linux.\n\nProchaine étape : arrêter de revenir sur Windows par réflexe dès que je bloque sur une commande.",
-      "Le terminal Linux m'a clairement fait peur les premières semaines. Un écran noir, du texte, aucun bouton.\n\nEn m'entraînant, je réalise que c'est plus rapide et plus précis qu'une interface graphique une fois qu'on connaît les bonnes commandes.\n\nJe suis loin de tout maîtriser, mais je commence à me sentir à l'aise sur les bases.",
-      "5 commandes Linux que j'utilise presque tous les jours depuis que je m'entraîne :\n\n1/ ls — voir ce qu'il y a dans un dossier.\n\n2/ cd — se déplacer.\n\n3/ cat — lire un fichier dans le terminal.\n\n4/ grep — chercher un mot dans un fichier.\n\n5/ chmod — gérer les permissions.\n\nRien d'impressionnant, mais ça couvre l'essentiel pour débuter.",
-      "J'ai mis du temps à comprendre pourquoi tout le monde en cybersécurité utilise une distrib Linux comme Kali plutôt que Windows.\n\nElle vient avec plein d'outils de sécurité déjà installés, et le terminal permet d'enchaîner des actions bien plus vite qu'en cliquant partout.\n\nJe m'entraîne dessus dans une VM pour l'instant, le temps de me sentir à l'aise.",
-      "Petite frayeur cette semaine : j'ai tapé une commande Linux trouvée sur un forum sans comprendre ce qu'elle faisait. Rien de grave au final, mais leçon retenue.\n\nDepuis, je prends toujours 30 secondes pour comprendre une commande avant de l'exécuter, surtout avec les droits admin.\n\nUn réflexe tout bête qui évite pas mal de bêtises.",
-      "Ce que j'aime avec Linux, c'est de comprendre enfin ce qui se passe derrière l'ordinateur, plutôt que juste cliquer sur des icônes.\n\nChaque commande apprise débloque un peu plus ma compréhension globale de l'informatique, pas juste de la cybersécurité.\n\nUn passage obligé pour continuer sérieusement dans ce domaine."
+      "Le double boot Linux/Windows, j'en entends parler dans presque toutes les vidéos et articles sur la cybersécurité pour débutants.\n\nEn me renseignant, je comprends mieux pourquoi : la plupart des outils et des machines qu'on manipule dans ce domaine tournent sous Linux, pas Windows.\n\nÇa me donne envie de m'y mettre sérieusement, même si pour l'instant j'en suis encore à comprendre le principe avant de me lancer.",
+      "Le terminal Linux, ça m'a clairement intimidé la première fois que j'en ai vu un utilisé : un écran noir, du texte, aucun bouton.\n\nEn découvrant comment ça fonctionne, je commence à comprendre pourquoi les commandes peuvent être plus utiles qu'une interface graphique pour travailler directement avec un système.\n\nEncore beaucoup à découvrir, mais la logique derrière commence à devenir plus claire.",
+      "5 commandes Linux dont je découvre l'utilité en ce moment :\n\n1/ ls — afficher ce qu'il y a dans un dossier.\n\n2/ cd — se déplacer entre les dossiers.\n\n3/ cat — afficher le contenu d'un fichier.\n\n4/ grep — chercher un mot dans un fichier.\n\n5/ chmod — gérer qui a le droit de faire quoi sur un fichier.\n\nRien d'impressionnant, mais comprendre à quoi ça sert, c'est déjà une bonne base avant de m'y mettre pour de vrai.",
+      "J'ai mis du temps à comprendre pourquoi autant de gens en cybersécurité utilisent une distribution comme Kali Linux plutôt que Windows.\n\nEn me renseignant, j'ai découvert qu'elle vient avec plein d'outils de sécurité déjà installés, et que le terminal permet d'enchaîner des actions bien plus vite qu'en cliquant partout.\n\nÇa me donne clairement envie de l'installer un jour dans une machine virtuelle pour voir ça de plus près.",
+      "Une chose qui revient souvent dans ce que je lis sur Linux : ne jamais lancer une commande trouvée sur un forum sans comprendre ce qu'elle fait, surtout avec les droits admin.\n\nDes commandes comme sudo rm -rf peuvent littéralement tout supprimer si on ne fait pas attention.\n\nUn réflexe simple à retenir avant même de vraiment commencer à pratiquer : comprendre d'abord, exécuter ensuite.",
+      "Ce que j'aime avec l'idée de Linux, c'est de pouvoir comprendre un jour ce qui se passe derrière l'ordinateur, plutôt que juste cliquer sur des icônes.\n\nChaque notion découverte débloque un peu plus ma compréhension globale de l'informatique, pas seulement de la cybersécurité.\n\nUn passage que j'imagine obligé pour continuer sérieusement dans ce domaine."
     ]
   },
   "Sécurité web": {
@@ -2174,9 +2176,12 @@ function renderH(){
         ${h.views?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
         <span class="htm">${ts}</span>
       </div>
-      <div class="hex" id="hex-${h.id}">${h.text}
-        <div style="margin-top:10px;display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
-          <label style="font-size:11px;color:var(--muted)">👁 Vues/impressions LinkedIn :</label>
+      <div class="hex" id="hex-${h.id}">
+        <textarea onclick="event.stopPropagation()" onchange="editHText(${h.id},this.value)" style="width:100%;min-height:80px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${h.text}</textarea>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
+          <label style="font-size:11px;color:var(--muted)">📅 Publié le :</label>
+          <input type="datetime-local" value="${toLocalInputValue(h.publishedAt||h.ts)}" style="background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="editHDate(${h.id},this.value)">
+          <label style="font-size:11px;color:var(--muted);margin-left:6px">👁 Vues/impressions LinkedIn :</label>
           <input type="number" min="0" inputmode="numeric" value="${h.views||''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
         </div>
       </div>
@@ -2301,6 +2306,26 @@ function setViews(id,val){
   const stBody=document.getElementById('st-pf-body');
   if(stBody&&stBody.classList.contains('open'))renderStatsPanel();
   toast(n?'👁 '+n+' vues enregistrées':'Vues réinitialisées','ok');
+}
+// NOUVEAU (règle 11 du prompt maître) : un post archivé peut être réécrit après coup, et dans ce
+// cas l'ancienne date ne doit pas être considérée comme définitive — ces deux fonctions permettent
+// de corriger directement le texte et/ou la date de publication d'un post déjà dans l'historique.
+function editHText(id,val){
+  const h=H.find(x=>x.id===id);if(!h)return;
+  const v=val.trim();
+  if(!v){toast('Le texte ne peut pas être vide','er');renderH();return;}
+  if(v===h.text)return;
+  h.text=v;saveAll();renderH();
+  toast('Texte du post archivé mis à jour ✓','ok');
+}
+function editHDate(id,val){
+  const h=H.find(x=>x.id===id);if(!h)return;
+  const t=new Date(val).getTime();
+  if(!val||isNaN(t)){toast('Date invalide','er');renderH();return;}
+  h.publishedAt=t;saveAll();renderH();
+  const stBody=document.getElementById('st-pf-body');
+  if(stBody&&stBody.classList.contains('open'))renderStatsPanel();
+  toast('Date de publication mise à jour ✓','ok');
 }
 function cpH(id){const h=H.find(x=>x.id===id);if(h)navigator.clipboard.writeText(h.text).then(()=>toast('Copié ✓','ok'));}
 function delH(id){
