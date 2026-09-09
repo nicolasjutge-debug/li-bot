@@ -363,7 +363,8 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <button class="tp" onclick="selTp(this)">Sécurité mobile</button>
         <button class="tp" onclick="selTp(this)">Réseaux</button>
         <button class="tp" onclick="selTp(this)">Linux</button>
-        <button class="tp" onclick="selTp(this)">Sécurité web</button>
+        <button class="tp" onclick="selTp(this)">XSS</button>
+        <button class="tp" onclick="selTp(this)">Injection SQL</button>
         <button class="tp" onclick="selTp(this)">Forensic numérique</button>
         <button class="tp" onclick="selTp(this)">Fuites de données</button>
         <button class="tp" onclick="selTp(this)">Sécurité réseaux sociaux</button>
@@ -1064,21 +1065,36 @@ const TS = {
       "Ce que j'aime avec l'idée de Linux, c'est de pouvoir comprendre un jour ce qui se passe derrière l'ordinateur, plutôt que juste cliquer sur des icônes.\n\nChaque notion découverte débloque un peu plus ma compréhension globale de l'informatique, pas seulement de la cybersécurité.\n\nUn passage que j'imagine obligé pour continuer sérieusement dans ce domaine."
     ]
   },
-  "Sécurité web": {
+  "XSS": {
     "a": [
-      "Un simple formulaire mal protégé peut parfois laisser passer bien plus qu'un mot de passe.",
       "Une faille XSS réussie sur un site d'entraînement légal. Petite mais vraie satisfaction.",
-      "L'injection SQL, j'en avais entendu parler cent fois avant de comprendre vraiment comment ça marche.",
       "Un site qui affiche direct ce qu'on tape dans la recherche sans le filtrer. Terrain de jeu pour un XSS.",
-      "Je m'entraîne sur PortSwigger Academy pour la partie sécurité web."
+      "Je m'entraîne sur PortSwigger Academy pour la partie XSS.",
+      "Le XSS, avant je pensais que c'était juste \"afficher une popup\". En creusant, je réalise que ça peut aussi voler la session de quelqu'un d'autre.",
+      "Ce qui m'a étonné avec le XSS : la faille vient presque toujours du même problème — un site qui fait confiance à ce qu'on lui envoie."
     ],
     "c": [
-      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe m'entraîne sur PortSwigger Web Security Academy, une plateforme gratuite avec des exercices sur les failles web comme l'injection SQL ou le XSS.\n\nC'est un autre univers que le pentest classique, mais tout aussi passionnant : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie.",
-      "L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut glisser du code dans un champ de formulaire pour qu'il exécute autre chose que prévu — genre afficher des infos censées rester privées.\n\nL'avoir fait sur un site d'entraînement légal m'a appris bien plus que dix articles lus avant.",
+      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe m'entraîne sur PortSwigger Web Security Academy, une plateforme gratuite, en commençant par les failles XSS — injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\nC'est un autre univers que le pentest classique : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie, plutôt que dans sa configuration.",
       "3 choses que je retiens de mes débuts en sécurité web :\n\n1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.\n\nJe suis tout début, mais déjà bluffé.",
       "Une faille XSS réussie sur un exercice d'entraînement : faire apparaître une popup en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire vu de l'extérieur, mais pour moi c'est la preuve que je commence à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape : comprendre comment on corrige ce genre de faille.",
       "Ce qui me frappe en découvrant la sécurité web : la même erreur revient sans arrêt sur des sites différents — ne pas filtrer ce que l'utilisateur envoie.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site.",
       "Question pour les devs web qui passent par ici : vous êtes formés aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?\n\nJe découvre la sécurité web côté attaque avec PortSwigger Academy, et je me demande comment ça se passe côté développement."
+    ]
+  },
+  "Injection SQL": {
+    "a": [
+      "Un simple formulaire mal protégé peut parfois laisser passer bien plus qu'un mot de passe.",
+      "L'injection SQL, j'en avais entendu parler cent fois avant de comprendre vraiment comment ça marche.",
+      "Je m'entraîne aussi sur PortSwigger Academy pour la partie injection SQL.",
+      "L'injection SQL, ça m'a pris du temps à vraiment visualiser : on ne \"pirate\" rien à proprement parler, on fait juste dire au site autre chose que ce qu'il devait dire.",
+      "Ce qui surprend avec l'injection SQL : une simple apostrophe mal gérée dans un champ de recherche peut suffire à tout faire dérailler."
+    ],
+    "c": [
+      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe m'entraîne sur PortSwigger Web Security Academy, une plateforme gratuite, en ce moment surtout sur l'injection SQL — glisser du code dans un champ de formulaire pour qu'un site exécute autre chose que prévu.\n\nC'est un autre univers que le pentest classique : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie, plutôt que dans sa configuration.",
+      "L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut glisser du code dans un champ de formulaire pour qu'il exécute autre chose que prévu — genre afficher des infos censées rester privées.\n\nL'avoir fait sur un site d'entraînement légal m'a appris bien plus que dix articles lus avant.",
+      "Ce qui me frappe avec l'injection SQL : la faille vient presque toujours du même oubli — ne jamais faire confiance à ce qu'un utilisateur tape dans un champ.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site avec une base de données derrière.",
+      "3 choses que je retiens de mes débuts sur l'injection SQL :\n\n1/ Une requête mal construite peut laisser quelqu'un de mal intentionné dicter sa propre commande à la base de données.\n\n2/ Ne jamais faire confiance à ce qu'on reçoit d'un formulaire, même le plus anodin.\n\n3/ La plupart des protections sont simples une fois qu'on les connaît — le plus dur est de penser à les appliquer partout.\n\nJe suis tout début, mais déjà bluffé par la simplicité du principe.",
+      "Question pour les devs qui passent par ici : les requêtes préparées, c'est un réflexe dès le début pour vous, ou un truc qu'on apprend après une mauvaise surprise ?\n\nJe découvre l'injection SQL côté attaque avec PortSwigger Academy, et ça me fait me demander comment ça se passe côté développement."
     ]
   },
   "Forensic numérique": {
@@ -1388,7 +1404,8 @@ const HT={
     'Sécurité mobile':['#SécuritéMobile','#Smartphone'],
     'Réseaux':['#Réseaux','#TCPIP','#SIN','#Cisco'],
     'Linux':['#Linux','#Terminal','#Kali','#LearningByDoing'],
-    'Sécurité web':['#SécuritéWeb','#XSS','#SQLInjection','#PortSwigger'],
+    'XSS':['#XSS','#SécuritéWeb','#PortSwigger','#EthicalHacking'],
+    'Injection SQL':['#SQLInjection','#SécuritéWeb','#PortSwigger','#WebSecurity'],
     'Forensic numérique':['#Forensic','#InvestigationNumérique'],
     'Fuites de données':['#FuiteDeDonnées','#DataBreach'],
     'Sécurité réseaux sociaux':['#RéseauxSociaux','#Discord','#Instagram'],
@@ -1577,11 +1594,11 @@ function genPost(){
     const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
     if(freshNewIntro.length) fresh=freshNewIntro;
     // NOUVEAU (base de règles apprises des corrections) : écarte les combinaisons qui reprennent
-    // une formulation explicitement rejetée par l'utilisateur — seulement si ça laisse encore au
+    // une formulation explicitement rejetée par l'utilisateur — même reformulée avec d'autres mots
+    // (tooSimilarToAvoided), pas seulement recopiée mot pour mot. Seulement si ça laisse encore au
     // moins une option, même logique défensive que les filtres ci-dessus.
     if(GR.avoidedFormulations.length){
-      const avoided=GR.avoidedFormulations.map(f=>norm(f.phrase)).filter(Boolean);
-      const notAvoided=fresh.filter(c=>!avoided.some(a=>norm(c.text).includes(a)));
+      const notAvoided=fresh.filter(c=>!tooSimilarToAvoided(c.text));
       if(notAvoided.length) fresh=notAvoided;
     }
     // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
@@ -1703,7 +1720,8 @@ const AF={
   "Sécurité mobile":["experience","observation","observation","observation","observation"],
   "Réseaux":["difficulte","experience","question","cours","difficulte"],
   "Linux":["experience","difficulte","observation","decouverte","experience"],
-  "Sécurité web":["observation","experience","pensee_avant","observation","experience"],
+  "XSS":["experience","observation","experience","pensee_avant","decouverte"],
+  "Injection SQL":["observation","pensee_avant","experience","difficulte","decouverte"],
   "Forensic numérique":["decouverte","observation","decouverte","ressource","observation"],
   "Fuites de données":["experience","observation","experience","observation","observation"],
   "Sécurité réseaux sociaux":["anecdote_tiers","observation","anecdote_tiers","anecdote_tiers","observation"],
@@ -2066,6 +2084,28 @@ function flagAvoidedFormulation(originalText,meta){
   saveAll();
   toast('🧠 Règle de génération mise à jour — cette accroche sera évitée','ok');
 }
+// NOUVEAU (comparaison souple, pas seulement une correspondance exacte) : reformuler une
+// accroche rejetée avec d'autres mots ne doit pas suffire à la faire ressortir. On compare le
+// jeu de mots significatifs (>2 lettres, ponctuation retirée) de l'accroche du candidat avec
+// celui de chaque formulation évitée ; au-delà d'~55% de recouvrement, on considère que c'est
+// trop proche, même si le texte exact diffère.
+function textSimilarity(a,b){
+  const toks=s=>new Set(norm(s).replace(/[.,;:!?«»"'()—-]/g,' ').split(/\s+/).filter(w=>w.length>2));
+  const wa=toks(a),wb=toks(b);
+  if(!wa.size||!wb.size)return 0;
+  let common=0;
+  wa.forEach(w=>{if(wb.has(w))common++;});
+  return common/Math.min(wa.size,wb.size);
+}
+function tooSimilarToAvoided(candidateText){
+  if(!GR.avoidedFormulations.length)return false;
+  const candFirst=candidateText.split(/\n\n/)[0];
+  return GR.avoidedFormulations.some(f=>{
+    if(!f.phrase)return false;
+    if(norm(candidateText).includes(norm(f.phrase)))return true; // reprise exacte, où qu'elle soit dans le texte
+    return textSimilarity(candFirst,f.phrase)>=0.55; // reformulation trop proche de l'accroche rejetée
+  });
+}
 function flagAvoidedFormulationQ(id){const q=Q.find(x=>x.id===id);if(q)flagAvoidedFormulation(q.originalText,{topic:q.topic});}
 function flagAvoidedFormulationH(id){const h=H.find(x=>x.id===id);if(h)flagAvoidedFormulation(h.originalText,{topic:h.topic});}
 // NOUVEAU (section 10) : reroule UNIQUEMENT ce post de la file (même id, même règle de non
@@ -2081,8 +2121,7 @@ function regenQ(id){
   d.a.forEach(ai=>d.c.forEach(ci=>combos.push((ai+'\n\n'+ci).trim())));
   let fresh=combos.filter(c=>!usedTexts.has(norm(c))&&norm(c)!==norm(q.text));
   if(GR.avoidedFormulations.length){
-    const avoided=GR.avoidedFormulations.map(f=>norm(f.phrase)).filter(Boolean);
-    const notAvoided=fresh.filter(c=>!avoided.some(a=>norm(c).includes(a)));
+    const notAvoided=fresh.filter(c=>!tooSimilarToAvoided(c));
     if(notAvoided.length)fresh=notAvoided;
   }
   if(!fresh.length){toast('Plus aucune formulation fraîche pour ce thème','er');return;}
