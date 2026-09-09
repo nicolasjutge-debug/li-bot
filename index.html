@@ -473,6 +473,8 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       <button class="tp" id="h-filter-btn" onclick="toggleHViewFilter()" title="N'afficher que les posts sans vues renseignées — ces vues alimentent la pondération par popularité de la génération automatique">👁 Sans vues (<span id="h-filter-cnt">0</span>)</button>
       <button class="tp" id="h-confirm-filter-btn" onclick="toggleHConfirmFilter()" title="N'afficher que les posts « à confirmer » — copiés/partagés mais pas encore validés comme réellement publiés sur LinkedIn">🕓 À valider (<span id="h-confirm-filter-cnt">0</span>)</button>
       <button class="tp" id="h-check-filter-btn" onclick="toggleHCheckFilter()" title="N'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, TryHackMe/Linux non inventés...) — pratique pour dépouiller progressivement les anciens posts">🔎 À vérifier (<span id="h-check-filter-cnt">0</span>)</button>
+      <button class="tp" id="h-archive-btn" onclick="toggleArchiveView()" title="Les posts archivés sortent de la base active (compteurs, filtres, Performance) sans être supprimés — reste consultable ici">📦 Archive (<span id="h-archive-cnt">0</span>)</button>
+      <button class="tp" onclick="scanHForViolations()" title="Relit tout l'historique réel à la recherche de TryHackMe/Linux présentés comme une pratique personnelle, et repasse les posts concernés en « à vérifier »">🔍 Scanner TryHackMe/Linux</button>
       <button class="tp" onclick="toggleImportForm()">📥 Importer LinkedIn</button>
     </div>
     <div class="hl" id="h-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div></div>
@@ -570,6 +572,7 @@ let lastPost=null, tmrRun=false, tmrIv=null;
 let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
 let hFilterUnconfirmed=false; // Filtre affichage historique : n'afficher que les posts "à confirmer" (pas encore validés comme réellement publiés)
 let hFilterUnchecked=false; // Filtre affichage historique : n'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, TryHackMe/Linux...) — distinct de "à confirmer" qui porte sur la publication réelle, pas sur le contenu
+let hShowArchive=false; // NOUVEAU : bascule "base active" (défaut) / "archive" — un post archivé ne compte plus dans les compteurs ni la Performance de la base active
 
 function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
 function saveAll(){
@@ -1948,7 +1951,7 @@ function renderQ(){
     return `<div class="qi ${i===0?'nxt':''}" id="qi-${q.id}" style="flex-wrap:wrap">
       <div class="qn">${i+1}</div>
       <div class="qb">
-        <div class="qt">${q.label} · ${ab}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}</div>
+        <div class="qt">${q.label} · ${ab}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}${q.variantOf?' <span title="Variante d\'un autre post de la file — les deux existent indépendamment, supprime celui que tu ne gardes pas" style="font-size:11px">🔗 Variante</span>':''}</div>
         <div class="qp">${q.text.substring(0,120)}…</div>
         ${tags.length?`<div class="qts">${tags.map(h=>`<span>${h}</span>`).join('')}</div>`:''}
         <div class="qtm">${ts}</div>
@@ -1963,7 +1966,10 @@ function renderQ(){
       </div>
       <div class="qex" id="qex-${q.id}" style="display:none;width:100%;margin-top:10px" onclick="event.stopPropagation()">
         <textarea onchange="editQText(${q.id},this.value)" style="width:100%;min-height:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${q.text}</textarea>
-        ${q.originalText!==undefined&&q.originalText!==q.text?`<div style="margin-top:8px"><button onclick="restoreQText(${q.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version générée</button></div>`:''}
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          ${q.originalText!==undefined&&q.originalText!==q.text?`<button onclick="restoreQText(${q.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version générée</button>`:''}
+          <button onclick="createVariantQ(${q.id})" style="background:rgba(0,178,255,.1);color:var(--cyan);border:1px solid rgba(0,178,255,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">➕ Créer une nouvelle variante</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -2019,6 +2025,17 @@ function restoreQText(id){
   if(q.originalText===q.text){toast('Déjà la version générée','in');return;}
   q.text=q.originalText;saveAll();renderQ();updateStats();
   toast('Version générée restaurée ✓','in');
+}
+// NOUVEAU (nouvelle variante, section 22) : fourche le post en un second, totalement indépendant,
+// SANS toucher à l'original — nouvel id, variantOf pointe vers l'id d'origine. Les deux coexistent
+// dans la file ; il suffit de supprimer (✕) celui qui n'est finalement pas gardé.
+function createVariantQ(id){
+  const q=Q.find(x=>x.id===id);if(!q)return;
+  const variant={...q,id:Date.now()+Math.random()*1000,variantOf:q.id,originalText:q.text};
+  const idx=Q.indexOf(q);
+  Q.splice(idx+1,0,variant);
+  saveAll();renderQ();
+  toast('Nouvelle variante créée juste après — modifie-la avec ✏️ pour l\'écrire différemment','ok');
 }
 function cpQ(id){
   const q=Q.find(x=>x.id===id);
@@ -2169,7 +2186,7 @@ function importLinkedInCSV(raw){
     const key=norm(it.text);
     if(existing.has(key)){skipped++;return;}
     existing.add(key);
-    H.push({id:Date.now()+i,text:it.text,type:'original',topic:'',label:TL.original,account:acc,publishedAt:it.publishedAt,source:'linkedin-import',views:0,confirmed:true});
+    H.push({id:Date.now()+i,text:it.text,type:'original',topic:'',label:TL.original,account:acc,publishedAt:it.publishedAt,source:'linkedin-import',views:0,viewsKnown:false,confirmed:true});
     added++;
   });
   if(added){
@@ -2229,15 +2246,66 @@ function toggleHCheckFilter(){
 function toggleChecked(id){
   const h=H.find(x=>x.id===id);if(!h)return;
   h.checked=!h.checked;
+  if(h.checked)delete h.flagReason; // motif du scan résolu une fois le contenu vérifié par un humain
   saveAll();renderH();
   toast(h.checked?'Marqué comme contenu vérifié ✓':'Repassé en « à vérifier »','in');
+}
+// NOUVEAU : "redémarrage sur une base saine" sans rien effacer — un post archivé sort de la base
+// active (compteur, filtres, Performance) mais reste consultable via 📦 Archive, et ses vues
+// passées restent visibles/analysables séparément si besoin. Rien n'est jamais supprimé ici.
+function toggleArchiveView(){
+  hShowArchive=!hShowArchive;
+  const btn=document.getElementById('h-archive-btn');
+  if(btn)btn.classList.toggle('sel',hShowArchive);
+  renderH();
+}
+function archiveH(id){
+  const h=H.find(x=>x.id===id);if(!h)return;
+  h.archived=true;saveAll();renderH();
+  toast('Post archivé — sorti de la base active (toujours consultable dans 📦 Archive)','in');
+}
+function unarchiveH(id){
+  const h=H.find(x=>x.id===id);if(!h)return;
+  h.archived=false;saveAll();renderH();
+  toast('Post remis dans la base active ✓','ok');
+}
+// NOUVEAU : réinterprétation faisable de la "régénération partielle" du prompt maître — cette app
+// n'appelle aucune IA en direct (le pool est écrit à la main), donc on ne peut pas "régénérer"
+// automatiquement un post existant. Ce qu'on PEUT faire honnêtement : scanner le texte réel des
+// posts déjà publiés pour repérer ceux qui contreviennent aux règles actuelles (TryHackMe/Linux
+// revendiqués comme pratique) et les repasser en file "à vérifier" pour un contrôle humain —
+// jamais de suppression ni de réécriture automatique.
+function scanHForViolations(){
+  const mine=H.filter(h=>h.account===acc);
+  const thPattern=/tryhackme/i;
+  const linuxNamePattern=/\blinux\b/i;
+  const linuxVerbPattern=/(je\s+pratique|m'entra[iî]ne|je\s+ma[iî]trise|je\s+configure|à l'aise avec|utilise\s+r[ée]guli[èe]rement)/i;
+  let flagged=0;
+  mine.forEach(h=>{
+    const reasons=[];
+    if(thPattern.test(h.text))reasons.push('TryHackMe cité comme expérience personnelle');
+    if(linuxNamePattern.test(h.text)&&linuxVerbPattern.test(h.text))reasons.push('Linux présenté comme pratique acquise');
+    if(reasons.length){h.checked=false;h.flagReason=reasons.join(' · ');flagged++;}
+  });
+  if(flagged){
+    saveAll();
+    hFilterUnchecked=true;
+    const btn=document.getElementById('h-check-filter-btn');if(btn)btn.classList.add('sel');
+  }
+  renderH();
+  toast(flagged?`🔍 ${flagged} post(s) repassé(s) en « à vérifier »`:'🔍 Aucune violation détectée sur TryHackMe/Linux','in');
 }
 function renderH(){
   const list=document.getElementById('h-list'),badge=document.getElementById('h-bdg');
   // BUGFIX indépendance : H mélange les deux comptes ; on n'affiche ici que celui actif.
-  const mineH=H.filter(h=>h.account===acc);
+  const mineHAll=H.filter(h=>h.account===acc);
+  // NOUVEAU : base active vs archive — un post archivé sort de la base active (compteur, "sans
+  // vues", "à confirmer", "à vérifier", Performance) mais reste consultable via le bouton Archive.
+  const mineH=hShowArchive?mineHAll.filter(h=>h.archived):mineHAll.filter(h=>!h.archived);
   badge.textContent=mineH.length;
-  const missing=mineH.filter(h=>!h.views);
+  const archCntEl=document.getElementById('h-archive-cnt');
+  if(archCntEl)archCntEl.textContent=mineHAll.filter(h=>h.archived).length;
+  const missing=mineH.filter(h=>!viewsAreKnown(h));
   const cntEl=document.getElementById('h-filter-cnt');
   if(cntEl)cntEl.textContent=missing.length;
   const unconfirmed=mineH.filter(h=>!h.confirmed);
@@ -2250,7 +2318,7 @@ function renderH(){
   let shown;
   if(hFilterNoViews||hFilterUnconfirmed||hFilterUnchecked){
     shown=mineH;
-    if(hFilterNoViews)shown=shown.filter(h=>!h.views);
+    if(hFilterNoViews)shown=shown.filter(h=>!viewsAreKnown(h));
     if(hFilterUnconfirmed)shown=shown.filter(h=>!h.confirmed);
     if(hFilterUnchecked)shown=shown.filter(h=>!h.checked);
   }else{
@@ -2277,7 +2345,7 @@ function renderH(){
       :'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,193,7,.12);color:#ffc107;border:1px solid rgba(255,193,7,.3);margin-left:3px" title="Copié/partagé mais pas confirmé publié — n\'entre pas dans les stats de performance">🕓 À confirmer</span>';
     // NOUVEAU : badge compact, affiché seulement si pas encore vérifié (pour ne pas surcharger la
     // ligne repliée) — distinct de confBdg qui porte sur la publication, pas sur le contenu.
-    const checkBdg=h.checked?'':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.12);color:var(--orange);border:1px solid rgba(255,109,0,.3);margin-left:3px" title="Contenu pas encore relu/vérifié (véracité, niveau, TryHackMe/Linux...)">🔎 À vérifier</span>';
+    const checkBdg=h.checked?'':`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.12);color:var(--orange);border:1px solid rgba(255,109,0,.3);margin-left:3px" title="Contenu pas encore relu/vérifié${h.flagReason?' — '+h.flagReason:''}">🔎 À vérifier</span>`;
     const modMark=(h.originalText!==undefined&&h.originalText!==h.text)?'<span title="Modifié depuis la version générée/publiée initialement" style="font-size:11px">✏️</span>':'';
     return `<div class="hi" onclick="tgH(${h.id})">
       <div class="hir">
@@ -2287,20 +2355,22 @@ function renderH(){
         <button class="hcp" onclick="event.stopPropagation();toggleConfirmed(${h.id})" title="${h.confirmed?'Repasser en à confirmer':'Confirmer la publication'}">${h.confirmed?'🔄':'✅'}</button>
         <button class="hcp" onclick="event.stopPropagation();cpH(${h.id})">📋</button>
         <button class="hcp" onclick="event.stopPropagation();delH(${h.id})" style="color:rgba(255,23,68,.5)">✕</button>
-        ${h.views?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
+        ${viewsAreKnown(h)?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
         <span class="htm">${ts}</span>
       </div>
       <div class="hex" id="hex-${h.id}">
+        ${h.flagReason?`<div style="font-size:11px;color:var(--orange);margin-bottom:8px">⚠️ Signalé par le scan : ${h.flagReason}</div>`:''}
         <textarea onclick="event.stopPropagation()" onchange="editHText(${h.id},this.value)" style="width:100%;min-height:80px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${h.text}</textarea>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
           <label style="font-size:11px;color:var(--muted)">📅 Publié le :</label>
           <input type="datetime-local" value="${toLocalInputValue(h.publishedAt||h.ts)}" style="background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="editHDate(${h.id},this.value)">
           <label style="font-size:11px;color:var(--muted);margin-left:6px">👁 Vues/impressions LinkedIn :</label>
-          <input type="number" min="0" inputmode="numeric" value="${h.views||''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
+          <input type="number" min="0" inputmode="numeric" value="${viewsAreKnown(h)?h.views:''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
         </div>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
           <button onclick="toggleChecked(${h.id})" style="background:${h.checked?'rgba(0,230,118,.1)':'rgba(255,109,0,.1)'};color:${h.checked?'var(--green)':'var(--orange)'};border:1px solid ${h.checked?'rgba(0,230,118,.25)':'rgba(255,109,0,.25)'};border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">${h.checked?'🔎 Contenu vérifié':'🔎 Marquer comme vérifié'}</button>
           ${h.originalText!==undefined&&h.originalText!==h.text?`<button onclick="restoreHText(${h.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version d'origine</button>`:''}
+          <button onclick="${h.archived?'unarchiveH':'archiveH'}(${h.id})" style="background:rgba(120,130,145,.12);color:var(--muted);border:1px solid rgba(120,130,145,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">${h.archived?'↩️ Sortir de l\'archive':'📦 Archiver (retirer de la base active)'}</button>
         </div>
       </div>
       ${tags?`<div class="htgs">${tags}</div>`:''}
@@ -2419,12 +2489,26 @@ function delAllRJ(){
 }
 function setViews(id,val){
   const h=H.find(x=>x.id===id);if(!h)return;
-  const n=Math.max(0,parseInt(val,10)||0);
-  h.views=n;saveAll();renderH();
+  const trimmed=(val===null||val===undefined)?'':String(val).trim();
   const stBody=document.getElementById('st-pf-body');
+  if(trimmed===''){
+    // NOUVEAU : champ vidé volontairement -> on repasse en "vues inconnues", à ne pas confondre
+    // avec "0 vue réellement constatée" (cf. viewsAreKnown()).
+    h.views=0;h.viewsKnown=false;saveAll();renderH();
+    if(stBody&&stBody.classList.contains('open'))renderStatsPanel();
+    toast('Vues réinitialisées (inconnu)','in');
+    return;
+  }
+  const n=Math.max(0,parseInt(trimmed,10)||0);
+  h.views=n;h.viewsKnown=true; // NOUVEAU : distingue "0 vue observée" de "jamais renseigné"
+  saveAll();renderH();
   if(stBody&&stBody.classList.contains('open'))renderStatsPanel();
-  toast(n?'👁 '+n+' vues enregistrées':'Vues réinitialisées','ok');
+  toast(n?'👁 '+n+' vues enregistrées':'👁 0 vue enregistrée (valeur réelle, pas "inconnu")','ok');
 }
+// NOUVEAU : une entrée créée avant ce champ n'a pas viewsKnown -> on déduit son statut comme avant
+// (views>0) pour ne rien casser sur les données déjà existantes. Toute nouvelle saisie via
+// setViews() renseigne désormais viewsKnown explicitement, y compris pour une vraie valeur 0.
+function viewsAreKnown(h){return h.viewsKnown!==undefined?h.viewsKnown:!!h.views;}
 // NOUVEAU (règle 11 du prompt maître) : un post archivé peut être réécrit après coup, et dans ce
 // cas l'ancienne date ne doit pas être considérée comme définitive — ces deux fonctions permettent
 // de corriger directement le texte et/ou la date de publication d'un post déjà dans l'historique.
