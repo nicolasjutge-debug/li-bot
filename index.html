@@ -549,12 +549,18 @@ try{
 }catch(e){
   LS_AVAILABLE = false;
 }
-const qk=a=>'sj5_q_'+a, hk=a=>'sj5_h_'+a, cfk=a=>'sj5_cf_'+a, rjk=a=>'sj5_rj_'+a;
+const qk=a=>'sj5_q_'+a, hk=a=>'sj5_h_'+a, cfk=a=>'sj5_cf_'+a, rjk=a=>'sj5_rj_'+a, grk=a=>'sj5_gr_'+a;
 const GK={tok:'sj5_gh_tok',gid:'sj5_gh_gid',ts:'sj5_sync_ts'};
 
 /* ════ STATE ════ */
 let acc='simon', typ='original', topic='Pentest';
 let Q=[], H=[], CF=[], RJ=[];
+// NOUVEAU : base de règles apprises des corrections manuelles (par compte). Pas d'IA connectée
+// ici — ce sont des listes locales simples, consultées par genPost() pour éviter de repicker une
+// formulation explicitement rejetée. defGR() donne toujours une structure complète (même après
+// import d'une sauvegarde plus ancienne qui ne connaît pas encore ce champ).
+const defGR=()=>({preferredFormulations:[],avoidedFormulations:[],preferredAngles:[],avoidedAngles:[],experienceRules:[],structuralPatterns:[]});
+let GR=defGR();
 let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
 // BUGFIX "toujours les mêmes thèmes" (round 3, suite) : fairnessWeights se base sur Q+H, qui
 // restent VIDES tant qu'on ne fait que cliquer "⚡ Générer le post" sans jamais valider
@@ -574,9 +580,9 @@ let hFilterUnconfirmed=false; // Filtre affichage historique : n'afficher que le
 let hFilterUnchecked=false; // Filtre affichage historique : n'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, TryHackMe/Linux...) — distinct de "à confirmer" qui porte sur la publication réelle, pas sur le contenu
 let hShowArchive=false; // NOUVEAU : bascule "base active" (défaut) / "archive" — un post archivé ne compte plus dans les compteurs ni la Performance de la base active
 
-function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);}
+function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);GR=Object.assign(defGR(),lsL(grk(a),{}));}
 function saveAll(){
-  lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);lsS(SK.stats,stats);lsS(SK.acc,acc);
+  lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);lsS(grk(acc),GR);lsS(SK.stats,stats);lsS(SK.acc,acc);
   const b=document.getElementById('sv-bdg');b.textContent='💾 Sauvegardé';b.style.color='var(--green)';setTimeout(()=>b.style.color='',1500);
   queueSync();
 }
@@ -1288,11 +1294,11 @@ const TN = {
       "La prospection en assurance a complètement changé en 28 ans.",
       "On me demande souvent comment je trouve encore de nouveaux clients après 28 ans. Ma réponse surprend toujours.",
       "Le meilleur prospect, c'est rarement celui qu'on est allé chercher.",
-      "En 1997, je faisais du porte-à-porte. En 2025, ce sont mes clients qui font la prospection à ma place.",
+      "En 1997, je faisais du porte-à-porte. En 2026, ce sont mes clients qui font la prospection à ma place.",
       "Un contact LinkedIn m'a écrit juste pour me remercier d'un post qui l'avait aidé à comprendre sa RC Pro. Six mois plus tard, il m'a recommandé à un collègue."
     ],
     "c": [
-      "La prospection en assurance en 2025, c'est plus du tout ce que c'était en 1997 quand j'ai commencé.\n\nÀ l'époque : porte-à-porte, phoning intensif. Aujourd'hui : recommandations, LinkedIn, contenu utile, réseau.\n\nCe qui fonctionne dans mon activité :\n→ Les recommandations clients (80% de mes nouveaux clients)\n→ La présence LinkedIn avec du contenu à valeur\n→ Les partenariats avec des professionnels complémentaires\n→ Les événements réseau à Rennes et en Bretagne\n\nLa clé c'est la confiance avant la vente.",
+      "La prospection en assurance en 2026, c'est plus du tout ce que c'était en 1997 quand j'ai commencé.\n\nÀ l'époque : porte-à-porte, phoning intensif. Aujourd'hui : recommandations, LinkedIn, contenu utile, réseau.\n\nCe qui fonctionne dans mon activité :\n→ Les recommandations clients (80% de mes nouveaux clients)\n→ La présence LinkedIn avec du contenu à valeur\n→ Les partenariats avec des professionnels complémentaires\n→ Les événements réseau à Rennes et en Bretagne\n\nLa clé c'est la confiance avant la vente.",
       "Comment un conseiller avec 28 ans de métier trouve-t-il encore de nouveaux clients ? C'est la question qu'on me pose souvent. La réponse est simple : je n'en cherche presque plus, ce sont eux qui viennent.\n\nCe qui fonctionne dans la durée, ce n'est pas la technique de prospection, c'est ce qui se passe APRÈS la vente :\n→ Un sinistre bien géré génère plus de recommandations qu'une belle offre commerciale\n→ Un client qui comprend vraiment son contrat en parle autour de lui\n→ Rester disponible même quand il n'y a rien à vendre construit la confiance sur la durée\n\nLa meilleure prospection, c'est souvent de bien s'occuper des clients qu'on a déjà.",
       "On imagine souvent la prospection comme une course permanente à trouver de nouveaux clients. Dans mon expérience, c'est l'inverse qui fonctionne le mieux.\n\nLa majorité de mes nouveaux clients viennent de recommandations, pas de démarchage. Et une recommandation ne se force pas, elle se mérite dans la façon de traiter les clients existants.\n\nLa meilleure prospection reste souvent invisible.",
       "Ce qui génère le plus de nouveaux clients dans mon activité, dans l'ordre :\n\n1/ Les recommandations de clients satisfaits, de loin le canal le plus fiable.\n\n2/ La présence régulière sur LinkedIn avec du contenu utile, pas juste commercial.\n\n3/ Les partenariats avec d'autres professionnels du secteur.\n\nAucune de ces trois sources ne demande de courir après les prospects.",
@@ -1309,7 +1315,7 @@ const TN = {
       "Question que je pose désormais à chaque professionnel : si votre logiciel de facturation était bloqué demain matin, combien de temps tiendriez-vous avant que ça devienne un problème de trésorerie ?"
     ],
     "c": [
-      "Mon fils Simon se forme en cybersécurité. Et dans mon métier, je vois de plus en plus de sinistres cyber chez mes clients professionnels.\n\nLa réalité de 2025 : les PME et indépendants sont des cibles de choix — moins bien protégés que les grandes entreprises.\n\nCe que couvre une assurance cyber pro :\n→ Les pertes d'exploitation suite à une attaque\n→ Les frais de remise en état des systèmes\n→ La responsabilité en cas de fuite de données\n→ L'assistance juridique\n\nUn ransomware qui bloque votre activité 2 semaines, c'est souvent la fin pour un indépendant. On en parle ?",
+      "Mon fils Simon se forme en cybersécurité. Et dans mon métier, je vois de plus en plus de sinistres cyber chez mes clients professionnels.\n\nLa réalité de 2026 : les PME et indépendants sont des cibles de choix — moins bien protégés que les grandes entreprises.\n\nCe que couvre une assurance cyber pro :\n→ Les pertes d'exploitation suite à une attaque\n→ Les frais de remise en état des systèmes\n→ La responsabilité en cas de fuite de données\n→ L'assistance juridique\n\nUn ransomware qui bloque votre activité 2 semaines, c'est souvent la fin pour un indépendant. On en parle ?",
       "\"C'est un problème de grande entreprise, pas pour moi\" — c'est ce qu'un client artisan me disait encore récemment à propos du piratage informatique.\n\nQuelques mois plus tard, son logiciel de facturation était bloqué par un rançongiciel. Deux semaines sans pouvoir émettre une seule facture.\n\nCe que je vois de plus en plus chez les indépendants et petites structures :\n→ Les attaques ciblent justement les structures les moins protégées\n→ Une cyberassurance couvre la perte d'exploitation, pas seulement la remise en état technique\n→ L'accompagnement juridique et la communication de crise font souvent la différence\n\nCe n'est plus une question de taille d'entreprise, c'est une question de dépendance au numérique. Et aujourd'hui, tout le monde en dépend.",
       "Une TPE de 6 salariés a subi une intrusion sur son logiciel de gestion commerciale. Trois jours sans pouvoir facturer, ni consulter l'historique client.\n\nLe dirigeant pensait que sa taille le mettait à l'abri. C'est même souvent l'inverse : moins de protections en place, donc une cible plus simple.\n\nLa cyberassurance n'a pas empêché l'attaque, mais elle a limité les dégâts financiers et accompagné la remise en route.",
       "Trois questions que je pose désormais à chaque client professionnel, quelle que soit sa taille :\n\n1/ Que se passe-t-il concrètement si vos outils numériques sont bloqués une semaine ?\n\n2/ Vos données clients sont-elles sauvegardées ailleurs que sur l'ordinateur principal ?\n\n3/ Savez-vous qui contacter en cas d'incident, avant même qu'il n'arrive ?\n\nLa cyberassurance ne remplace pas ces réflexes, elle les complète.",
@@ -1445,10 +1451,10 @@ function stripTags(t){return (t||'').replace(/\n\n#[^\n]*$/,'').trim();}
 function norm(t){return stripTags(t).replace(/\s+/g,' ').trim().toLowerCase();}
 
 /* ════ FEED CONSOLE ════ */
-const AS=[{src:'CERT-FR',titre:'Campagne phishing active PME françaises',detail:'Spear-phishing avec deepfakes vocaux.'},{src:'ANSSI',titre:'Ransomwares +30% en France 2025',detail:'PME et collectivités restent les principales cibles.'},{src:'TryHackMe',titre:'Nouveaux parcours SOC analyst',detail:'Parcours certifiant avec entreprises françaises.'},{src:'Google',titre:'0-day Chrome corrigé en urgence',detail:'Faille V8 permettant échappée sandbox.'},{src:'HackTheBox',titre:'Top 10 techniques priv esc Linux 2025',detail:'Vecteurs les plus exploités en pentest et CTF.'},{src:'ZATAZ',titre:'2M comptes français exposés',detail:'Base de données mal configurée.'}];
-const AN=[{src:'FFSA',titre:'Réforme assurance emprunteur bilan 2025',detail:'1,2M de ménages ont changé d\'assurance.'},{src:'CNIL',titre:'Protection données clients assurance',detail:'Chiffrement obligatoire pour données de santé.'},{src:'L\'Argus',titre:'Mutuelles +6% en moyenne 2025',detail:'Inflation médicale et vieillissement.'},{src:'France Assureurs',titre:'Sinistres climatiques record 2024',detail:'4,3 milliards d\'euros de dommages assurés.'},{src:'MoneyVox',titre:'PER dépasse 100 milliards',detail:'Le PER s\'impose comme produit phare épargne long terme.'},{src:'Argus',titre:'Cyber assurance PME : marché x2',detail:'Nombre de contrats doublé en 2 ans.'}];
+const AS=[{src:'CERT-FR',titre:'Campagne phishing active PME françaises',detail:'Spear-phishing avec deepfakes vocaux.'},{src:'ANSSI',titre:'Ransomwares +30% en France 2026',detail:'PME et collectivités restent les principales cibles.'},{src:'TryHackMe',titre:'Nouveaux parcours SOC analyst',detail:'Parcours certifiant avec entreprises françaises.'},{src:'Google',titre:'0-day Chrome corrigé en urgence',detail:'Faille V8 permettant échappée sandbox.'},{src:'HackTheBox',titre:'Top 10 techniques priv esc Linux 2026',detail:'Vecteurs les plus exploités en pentest et CTF.'},{src:'ZATAZ',titre:'2M comptes français exposés',detail:'Base de données mal configurée.'}];
+const AN=[{src:'FFSA',titre:'Réforme assurance emprunteur bilan 2026',detail:'1,2M de ménages ont changé d\'assurance.'},{src:'CNIL',titre:'Protection données clients assurance',detail:'Chiffrement obligatoire pour données de santé.'},{src:'L\'Argus',titre:'Mutuelles +6% en moyenne 2026',detail:'Inflation médicale et vieillissement.'},{src:'France Assureurs',titre:'Sinistres climatiques record 2024',detail:'4,3 milliards d\'euros de dommages assurés.'},{src:'MoneyVox',titre:'PER dépasse 100 milliards',detail:'Le PER s\'impose comme produit phare épargne long terme.'},{src:'Argus',titre:'Cyber assurance PME : marché x2',detail:'Nombre de contrats doublé en 2 ans.'}];
 const FD=[{name:'Sophie Martin',event:'Certification CEH obtenue',occ:'certification',detail:'6 mois de préparation.'},{name:'Lucas Bernard',event:'Analyste SOC — Orange Cyberdefense',occ:'promotion',detail:'Premier poste après BTS SIO.'},{name:'Emma Rousseau',event:'Bachelor Cybersécurité Rennes',occ:'diplome',detail:'Major de promotion.'},{name:'Théo Lefebvre',event:'Alternance Pentesteur — Capgemini',occ:'alternance',detail:'BTS SIO SISR.'}];
-const RD=[{name:'Florian Rault',titre:'Pourquoi chaque dev devrait apprendre le pentest',preview:'3 ans à coder sans comprendre comment mes apps pouvaient être attaquées...',likes:'847'},{name:'ANSSI France',titre:'Guide hygiène informatique 2025',preview:'Notre guide référence mis à jour avec 8 nouvelles recommandations...',likes:'3.4k'}];
+const RD=[{name:'Florian Rault',titre:'Pourquoi chaque dev devrait apprendre le pentest',preview:'3 ans à coder sans comprendre comment mes apps pouvaient être attaquées...',likes:'847'},{name:'ANSSI France',titre:'Guide hygiène informatique 2026',preview:'Notre guide référence mis à jour avec 8 nouvelles recommandations...',likes:'3.4k'}];
 
 /* ════ GÉNÉRATION ════ */
 function genTxt(opts={}){
@@ -1570,6 +1576,14 @@ function genPost(){
     let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
     const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
     if(freshNewIntro.length) fresh=freshNewIntro;
+    // NOUVEAU (base de règles apprises des corrections) : écarte les combinaisons qui reprennent
+    // une formulation explicitement rejetée par l'utilisateur — seulement si ça laisse encore au
+    // moins une option, même logique défensive que les filtres ci-dessus.
+    if(GR.avoidedFormulations.length){
+      const avoided=GR.avoidedFormulations.map(f=>norm(f.phrase)).filter(Boolean);
+      const notAvoided=fresh.filter(c=>!avoided.some(a=>norm(c.text).includes(a)));
+      if(notAvoided.length) fresh=notAvoided;
+    }
     // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
     fresh=applyFamilyDiversity(fresh,topic,acc);
     let narrative,pickedAIdx;
@@ -1761,14 +1775,14 @@ function genOnePost(extraAvoid=[]){
   // parce qu'il est un thème encore frais dans le calcul d'équité.
   const plansSimon=[
     {type:'congrats',who:'la communauté cyber',occ:'certification'},
-    {type:'repost',content:'actualité cyber 2025'},
+    {type:'repost',content:'actualité cyber 2026'},
     {type:'congrats',who:'mon réseau',occ:'alternance'},
     {type:'congrats',who:'un contact du réseau',occ:'diplome'},
     ...Object.keys(TS).filter(t=>t!=='CyberQuest').map(topic=>({type:'original',topic}))
   ];
   const plansNiko=[
     {type:'congrats',who:'un client fidèle',occ:'anniversaire'},
-    {type:'repost',content:'réforme assurance 2025'},
+    {type:'repost',content:'réforme assurance 2026'},
     {type:'congrats',who:'mon réseau assurance',occ:'promotion'},
     ...Object.keys(TN).map(topic=>({type:'original',topic}))
   ];
@@ -1968,6 +1982,8 @@ function renderQ(){
         <textarea onchange="editQText(${q.id},this.value)" style="width:100%;min-height:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${q.text}</textarea>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
           ${q.originalText!==undefined&&q.originalText!==q.text?`<button onclick="restoreQText(${q.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version générée</button>`:''}
+          ${q.originalText!==undefined&&q.originalText!==q.text?`<button onclick="flagAvoidedFormulationQ(${q.id})" style="background:rgba(255,23,68,.08);color:var(--red);border:1px solid rgba(255,23,68,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🚫 Éviter cette ancienne formulation</button>`:''}
+          <button onclick="regenQ(${q.id})" style="background:rgba(0,230,118,.08);color:var(--green);border:1px solid rgba(0,230,118,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🔄 Régénérer ce post</button>
           <button onclick="createVariantQ(${q.id})" style="background:rgba(0,178,255,.1);color:var(--cyan);border:1px solid rgba(0,178,255,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">➕ Créer une nouvelle variante</button>
         </div>
       </div>
@@ -2036,6 +2052,45 @@ function createVariantQ(id){
   Q.splice(idx+1,0,variant);
   saveAll();renderQ();
   toast('Nouvelle variante créée juste après — modifie-la avec ✏️ pour l\'écrire différemment','ok');
+}
+// NOUVEAU : la correction devient une règle réutilisable — on retient la formulation D'ORIGINE
+// (celle qu'on vient de remplacer), pas la nouvelle, pour que les prochaines générations
+// l'évitent. On ne retient que la 1re phrase/accroche : c'est elle qui se recombine et se répète
+// d'un post à l'autre, pas le corps entier du texte. Pas d'IA connectée : c'est une règle locale
+// simple (substring), pas un apprentissage — voir genPost() pour son utilisation réelle.
+function flagAvoidedFormulation(originalText,meta){
+  if(!originalText)return;
+  const phrase=originalText.split(/\n\n/)[0].trim();
+  if(!phrase||GR.avoidedFormulations.some(f=>f.phrase===phrase)){toast('Déjà enregistrée','in');return;}
+  GR.avoidedFormulations.push({phrase,topic:(meta&&meta.topic)||'',flaggedAt:Date.now()});
+  saveAll();
+  toast('🧠 Règle de génération mise à jour — cette accroche sera évitée','ok');
+}
+function flagAvoidedFormulationQ(id){const q=Q.find(x=>x.id===id);if(q)flagAvoidedFormulation(q.originalText,{topic:q.topic});}
+function flagAvoidedFormulationH(id){const h=H.find(x=>x.id===id);if(h)flagAvoidedFormulation(h.originalText,{topic:h.topic});}
+// NOUVEAU (section 10) : reroule UNIQUEMENT ce post de la file (même id, même règle de non
+// destruction que editQText — la toute première version reste dans originalText). Ne pique que
+// dans le thème déjà associé à ce post, pour rester cohérent avec ce qui a été programmé.
+function regenQ(id){
+  const q=Q.find(x=>x.id===id);if(!q)return;
+  if(q.type!=='original'||!q.topic){toast('Régénération non disponible pour ce type de post','er');return;}
+  const themes=q.account==='niko'?TN:TS;
+  const d=themes[q.topic];if(!d){toast('Thème introuvable','er');return;}
+  const usedTexts=new Set([...Q.filter(x=>x.account===q.account).map(x=>x.text),...H.filter(x=>x.account===q.account).map(x=>x.text),...RJ.filter(x=>x.account===q.account).map(x=>x.text)].map(norm));
+  const combos=[];
+  d.a.forEach(ai=>d.c.forEach(ci=>combos.push((ai+'\n\n'+ci).trim())));
+  let fresh=combos.filter(c=>!usedTexts.has(norm(c))&&norm(c)!==norm(q.text));
+  if(GR.avoidedFormulations.length){
+    const avoided=GR.avoidedFormulations.map(f=>norm(f.phrase)).filter(Boolean);
+    const notAvoided=fresh.filter(c=>!avoided.some(a=>norm(c).includes(a)));
+    if(notAvoided.length)fresh=notAvoided;
+  }
+  if(!fresh.length){toast('Plus aucune formulation fraîche pour ce thème','er');return;}
+  const narrative=pick(fresh);
+  if(q.originalText===undefined)q.originalText=q.text;
+  q.text=(narrative+'\n\n'+pickHashtags(q.topic,q.account)).trim();
+  saveAll();renderQ();updateStats();
+  toast('🔄 Post régénéré (même emplacement dans la file)','ok');
 }
 function cpQ(id){
   const q=Q.find(x=>x.id===id);
@@ -2370,6 +2425,7 @@ function renderH(){
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
           <button onclick="toggleChecked(${h.id})" style="background:${h.checked?'rgba(0,230,118,.1)':'rgba(255,109,0,.1)'};color:${h.checked?'var(--green)':'var(--orange)'};border:1px solid ${h.checked?'rgba(0,230,118,.25)':'rgba(255,109,0,.25)'};border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">${h.checked?'🔎 Contenu vérifié':'🔎 Marquer comme vérifié'}</button>
           ${h.originalText!==undefined&&h.originalText!==h.text?`<button onclick="restoreHText(${h.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version d'origine</button>`:''}
+          ${h.originalText!==undefined&&h.originalText!==h.text?`<button onclick="flagAvoidedFormulationH(${h.id})" style="background:rgba(255,23,68,.08);color:var(--red);border:1px solid rgba(255,23,68,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🚫 Éviter cette ancienne formulation</button>`:''}
           <button onclick="${h.archived?'unarchiveH':'archiveH'}(${h.id})" style="background:rgba(120,130,145,.12);color:var(--muted);border:1px solid rgba(120,130,145,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">${h.archived?'↩️ Sortir de l\'archive':'📦 Archiver (retirer de la base active)'}</button>
         </div>
       </div>
@@ -2661,7 +2717,7 @@ function buildSyncPayload(){
   return payload;
 }
 function applySyncPayload(p){
-  ['simon','niko'].forEach(a=>{if(p[a]){lsS(qk(a),p[a].Q||[]);lsS(hk(a),p[a].H||[]);lsS(cfk(a),p[a].CF||[]);lsS(rjk(a),p[a].RJ||[]);}});
+  ['simon','niko'].forEach(a=>{if(p[a]){lsS(qk(a),p[a].Q||[]);lsS(hk(a),p[a].H||[]);lsS(cfk(a),p[a].CF||[]);lsS(rjk(a),p[a].RJ||[]);lsS(grk(a),Object.assign(defGR(),p[a].GR||{}));}});
   if(p.stats){stats=p.stats;lsS(SK.stats,stats);}
   loadAcc(acc);updateStats();renderQ();renderH();renderCF();renderRJ();
   lsS(GK.ts,p.updatedAt);
@@ -2702,8 +2758,8 @@ async function pushSync(){
 }
 function buildFullBackup(){
   const payload={updatedAt:Date.now(),stats:stats,app:'BotLik',exportedAt:Date.now()};
-  ['simon','niko'].forEach(a=>{payload[a]={Q:lsL(qk(a),[]),H:lsL(hk(a),[]),CF:lsL(cfk(a),[]),RJ:lsL(rjk(a),[])};});
-  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ}; // s'assure que le compte actif en mémoire est bien à jour
+  ['simon','niko'].forEach(a=>{payload[a]={Q:lsL(qk(a),[]),H:lsL(hk(a),[]),CF:lsL(cfk(a),[]),RJ:lsL(rjk(a),[]),GR:Object.assign(defGR(),lsL(grk(a),{}))};});
+  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ,GR:GR}; // s'assure que le compte actif en mémoire est bien à jour
   return payload;
 }
 function downloadBackup(){
