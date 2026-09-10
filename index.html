@@ -1809,17 +1809,17 @@ function genOnePost(extraAvoid=[]){
   // par l'algorithme — seulement quand l'utilisateur le sélectionne lui-même via la pastille,
   // pour une vraie actualité du projet. Sinon il finirait mentionné "artificiellement" juste
   // parce qu'il est un thème encore frais dans le calcul d'équité.
+  // EXCLUSION EXPLICITE ET PERMANENTE (les félicitations ne doivent jamais être générées
+  // automatiquement — uniquement via le bouton dédié "🎉 Féliciter") : ces plans ne contiennent
+  // plus aucune entrée type:'congrats'. Avant cette correction, 3 des ~29 entrées de plansSimon
+  // (et 2 des ~15 de plansNiko) étaient des félicitations, ce qui pouvait en faire apparaître
+  // dans la file sans qu'aucun bouton "Féliciter" n'ait jamais été cliqué.
   const plansSimon=[
-    {type:'congrats',who:'la communauté cyber',occ:'certification'},
     {type:'repost',content:'actualité cyber 2026'},
-    {type:'congrats',who:'mon réseau',occ:'alternance'},
-    {type:'congrats',who:'un contact du réseau',occ:'diplome'},
     ...Object.keys(TS).filter(t=>t!=='CyberQuest').map(topic=>({type:'original',topic}))
   ];
   const plansNiko=[
-    {type:'congrats',who:'un client fidèle',occ:'anniversaire'},
     {type:'repost',content:'réforme assurance 2026'},
-    {type:'congrats',who:'mon réseau assurance',occ:'promotion'},
     ...Object.keys(TN).map(topic=>({type:'original',topic}))
   ];
   const plans = acc==='simon' ? plansSimon : plansNiko;
@@ -2001,7 +2001,7 @@ function renderQ(){
     return `<div class="qi ${i===0?'nxt':''}" id="qi-${q.id}" style="flex-wrap:wrap">
       <div class="qn">${i+1}</div>
       <div class="qb">
-        <div class="qt">${q.label} · ${ab}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}${q.variantOf?' <span title="Variante d\'un autre post de la file — les deux existent indépendamment, supprime celui que tu ne gardes pas" style="font-size:11px">🔗 Variante</span>':''}</div>
+        <div class="qt">${q.label} · ${ab}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}${q.variantOf?' <span title="Variante d\'un autre post de la file — les deux existent indépendamment, supprime celui que tu ne gardes pas" style="font-size:11px">🔗 Variante</span>':''}${q.scheduledAt<=Date.now()?' <span title="L\'heure prévue est passée — reste en file tant que tu ne l\'as pas traité toi-même" style="font-size:11px;color:var(--orange)">⏰ En retard</span>':''}</div>
         <div class="qp">${q.text.substring(0,120)}…</div>
         ${tags.length?`<div class="qts">${tags.map(h=>`<span>${h}</span>`).join('')}</div>`:''}
         <div class="qtm">${ts}</div>
@@ -2236,14 +2236,17 @@ function rfTmr(){
   document.getElementById('t-nt').textContent=Q[0]?.label||'—';
 }
 function refreshTmr(){rfTmr();}
+// NOUVEAU (§1/§5 : aucune sauvegarde historique sans action explicite) : un post en retard
+// n'est plus jamais archivé tout seul. Il reste dans la file, visible avec un badge "en retard",
+// et attend une action explicite de l'utilisateur (📋/🚀/✔️/✕) — exactement comme n'importe quel
+// autre post. overdueNotified évite de re-notifier en boucle à chaque tick du minuteur.
 function chkMissed(){
   if(!lsL(SK.timer,false))return;
-  const now=Date.now(),missed=Q.filter(q=>q.scheduledAt<=now);
+  const now=Date.now(),missed=Q.filter(q=>q.scheduledAt<=now&&!q.overdueNotified);
   if(!missed.length)return;
-  missed.forEach(q=>archive({...q},'publie'));Q=Q.filter(q=>q.scheduledAt>now);
-  saveAll();renderQ();renderH();updateStats();
-  toast(`⚡ ${missed.length} post${missed.length>1?'s':''} publié${missed.length>1?'s':''} pendant ton absence — voir l'historique`,'ok');
-  autoRefill(true);
+  missed.forEach(q=>{q.overdueNotified=true;});
+  saveAll();renderQ();
+  toast(`⏰ ${missed.length} post${missed.length>1?'s':''} arrivé${missed.length>1?'s':''} à échéance — à toi de le${missed.length>1?'s':''} publier/copier/traiter depuis la file`,'in');
 }
 
 /* ════ HISTORIQUE ════ */
