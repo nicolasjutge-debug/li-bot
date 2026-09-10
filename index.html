@@ -226,7 +226,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     <p id="hdr-s">Cybersécurité · Auto-publication 48h · 100% gratuit</p>
   </div>
   <div class="hdr-right">
-    <span class="svbdg" id="sv-bdg">💾 Sauvegardé</span>
+    <span class="svbdg" id="sv-bdg">💾 Base corrigée — source de référence</span>
     <div class="dot-st"><div class="dot g"></div><span id="st-txt">Prêt</span></div>
   </div>
 </div>
@@ -318,6 +318,22 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 </div>
 
 <div class="lic">
+  <div class="lih" onclick="toggleW()">
+    <div class="lilo" style="background:var(--orange)">🔎</div>
+    <h2>À classer / en attente <span id="w-count" style="font-size:11px;color:var(--muted)">(0)</span></h2>
+    <span id="w-bdg" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
+  </div>
+  <div class="lib" id="w-body">
+    <div class="liinf">🗂️ Base de travail temporaire. Ces anciens posts ont été retirés de l'historique actif pour repartir sur une base propre. Ils restent disponibles ici pour contrôle manuel. <b>Ils ne sont pas comptés dans les performances et ne bloquent pas l'affichage de la nouvelle base active.</b></div>
+    <div class="btn-row">
+      <button class="btn btn-c" onclick="classifyAllW()">✓ Marquer tout comme contrôlé</button>
+      <button class="btn btn-s" onclick="delAllW()">🗑️ Supprimer définitivement</button>
+    </div>
+    <div class="fl" id="w-list"></div>
+  </div>
+</div>
+
+<div class="lic">
   <div class="lih" onclick="toggleStatsPanel()">
     <div class="lilo" style="background:var(--green)">📊</div>
     <h2>Performance</h2>
@@ -363,8 +379,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <button class="tp" onclick="selTp(this)">Sécurité mobile</button>
         <button class="tp" onclick="selTp(this)">Réseaux</button>
         <button class="tp" onclick="selTp(this)">Linux</button>
-        <button class="tp" onclick="selTp(this)">XSS</button>
-        <button class="tp" onclick="selTp(this)">Injection SQL</button>
+        <button class="tp" onclick="selTp(this)">Sécurité web</button>
         <button class="tp" onclick="selTp(this)">Forensic numérique</button>
         <button class="tp" onclick="selTp(this)">Fuites de données</button>
         <button class="tp" onclick="selTp(this)">Sécurité réseaux sociaux</button>
@@ -473,9 +488,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     <div class="tps" style="margin:0 0 10px">
       <button class="tp" id="h-filter-btn" onclick="toggleHViewFilter()" title="N'afficher que les posts sans vues renseignées — ces vues alimentent la pondération par popularité de la génération automatique">👁 Sans vues (<span id="h-filter-cnt">0</span>)</button>
       <button class="tp" id="h-confirm-filter-btn" onclick="toggleHConfirmFilter()" title="N'afficher que les posts « à confirmer » — copiés/partagés mais pas encore validés comme réellement publiés sur LinkedIn">🕓 À valider (<span id="h-confirm-filter-cnt">0</span>)</button>
-      <button class="tp" id="h-check-filter-btn" onclick="toggleHCheckFilter()" title="N'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, TryHackMe/Linux non inventés...) — pratique pour dépouiller progressivement les anciens posts">🔎 À vérifier (<span id="h-check-filter-cnt">0</span>)</button>
-      <button class="tp" id="h-archive-btn" onclick="toggleArchiveView()" title="Les posts archivés sortent de la base active (compteurs, filtres, Performance) sans être supprimés — reste consultable ici">📦 Archive (<span id="h-archive-cnt">0</span>)</button>
-      <button class="tp" onclick="scanHForViolations()" title="Relit tout l'historique réel à la recherche de TryHackMe/Linux/PortSwigger présentés comme une pratique personnelle, et repasse les posts concernés en « à vérifier »">🔍 Scanner expériences non validées</button>
+      <button class="tp" id="h-check-filter-btn" onclick="toggleHCheckFilter()" title="N'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, plateformes ou pratiques non réalisées non inventés...) — pratique pour dépouiller progressivement les anciens posts">🔎 À vérifier (<span id="h-check-filter-cnt">0</span>)</button>
       <button class="tp" onclick="toggleImportForm()">📥 Importer LinkedIn</button>
     </div>
     <div class="hl" id="h-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div></div>
@@ -550,18 +563,16 @@ try{
 }catch(e){
   LS_AVAILABLE = false;
 }
-const qk=a=>'sj5_q_'+a, hk=a=>'sj5_h_'+a, cfk=a=>'sj5_cf_'+a, rjk=a=>'sj5_rj_'+a, grk=a=>'sj5_gr_'+a;
+// SOURCE DE RÉFÉRENCE DES CORRECTIONS : conversation partagée ChatGPT
+const CORRECTIONS_REFERENCE_URL='https://chatgpt.com/share/6a9fde0d-3eec-83ed-aaf9-4c168ef59174?ogimg=plain';
+const CORRECTIONS_REFERENCE_TITLE='Correction des publications LinkedIn';
+const qk=a=>'sj5_q_'+a, hk=a=>'sj5_h_'+a, cfk=a=>'sj5_cf_'+a, rjk=a=>'sj5_rj_'+a, wk=a=>'sj5_w_'+a, grk=a=>'sj5_gr_'+a;
 const GK={tok:'sj5_gh_tok',gid:'sj5_gh_gid',ts:'sj5_sync_ts'};
 
 /* ════ STATE ════ */
 let acc='simon', typ='original', topic='Pentest';
-let Q=[], H=[], CF=[], RJ=[];
-// NOUVEAU : base de règles apprises des corrections manuelles (par compte). Pas d'IA connectée
-// ici — ce sont des listes locales simples, consultées par genPost() pour éviter de repicker une
-// formulation explicitement rejetée. defGR() donne toujours une structure complète (même après
-// import d'une sauvegarde plus ancienne qui ne connaît pas encore ce champ).
-const defGR=()=>({preferredFormulations:[],avoidedFormulations:[],preferredAngles:[],avoidedAngles:[],experienceRules:[],structuralPatterns:[],avoidedHashtags:[]});
-let GR=defGR();
+let Q=[], H=[], CF=[], RJ=[], W=[];
+let generationRules=lsL(grk('simon'),{avoidedFormulations:[],avoidedExperiences:[],avoidedAngles:[],avoidedHashtags:[],preferredFormulations:[],preferredStructures:[]});
 let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
 // BUGFIX "toujours les mêmes thèmes" (round 3, suite) : fairnessWeights se base sur Q+H, qui
 // restent VIDES tant qu'on ne fait que cliquer "⚡ Générer le post" sans jamais valider
@@ -578,12 +589,12 @@ let recentFamilies={simon:[],niko:[]};
 let lastPost=null, tmrRun=false, tmrIv=null;
 let hFilterNoViews=false; // Filtre affichage historique : n'afficher que les posts sans vues renseignées
 let hFilterUnconfirmed=false; // Filtre affichage historique : n'afficher que les posts "à confirmer" (pas encore validés comme réellement publiés)
-let hFilterUnchecked=false; // Filtre affichage historique : n'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, TryHackMe/Linux...) — distinct de "à confirmer" qui porte sur la publication réelle, pas sur le contenu
-let hShowArchive=false; // NOUVEAU : bascule "base active" (défaut) / "archive" — un post archivé ne compte plus dans les compteurs ni la Performance de la base active
+let hFilterUnchecked=false; // Filtre affichage historique : n'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié.
+let wFilter=false; // Vue des anciens posts retirés de la base active, à classer/contrôler
 
-function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);GR=Object.assign(defGR(),lsL(grk(a),{}));}
+function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);W=lsL(wk(a),[]);}
 function saveAll(){
-  lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);lsS(grk(acc),GR);lsS(SK.stats,stats);lsS(SK.acc,acc);
+  lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);lsS(wk(acc),W);lsS(grk(acc),generationRules);lsS(SK.stats,stats);lsS(SK.acc,acc);
   const b=document.getElementById('sv-bdg');b.textContent='💾 Sauvegardé';b.style.color='var(--green)';setTimeout(()=>b.style.color='',1500);
   queueSync();
 }
@@ -1065,36 +1076,21 @@ const TS = {
       "Ce que j'aime avec l'idée de Linux, c'est de pouvoir comprendre un jour ce qui se passe derrière l'ordinateur, plutôt que juste cliquer sur des icônes.\n\nChaque notion découverte débloque un peu plus ma compréhension globale de l'informatique, pas seulement de la cybersécurité.\n\nUn passage que j'imagine obligé pour continuer sérieusement dans ce domaine."
     ]
   },
-  "XSS": {
-    "a": [
-      "Une faille XSS réussie sur un site d'entraînement légal. Petite mais vraie satisfaction.",
-      "Un site qui affiche direct ce qu'on tape dans la recherche sans le filtrer. Terrain de jeu pour un XSS.",
-      "Je me renseigne sur PortSwigger Academy pour comprendre les failles XSS.",
-      "Le XSS, avant je pensais que c'était juste \"afficher une popup\". En creusant, je réalise que ça peut aussi voler la session de quelqu'un d'autre.",
-      "Ce qui m'a étonné avec le XSS : la faille vient presque toujours du même problème — un site qui fait confiance à ce qu'on lui envoie."
-    ],
-    "c": [
-      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe me renseigne notamment sur PortSwigger Web Security Academy, une plateforme gratuite avec plein de ressources sur les failles XSS — injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\nC'est un autre univers que le pentest classique : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie, plutôt que dans sa configuration.",
-      "Ce que je retiens de mes lectures sur la sécurité web :\n\n1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.\n\nJe suis tout début, mais déjà bluffé.",
-      "Un exemple de faille XSS qui revient souvent dans les writeups que je lis : faire apparaître une popup juste en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire à lire, mais ça aide à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape pour moi : comprendre comment on corrige ce genre de faille.",
-      "Ce qui me frappe en découvrant la sécurité web : la même erreur revient sans arrêt sur des sites différents — ne pas filtrer ce que l'utilisateur envoie.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site.",
-      "Question pour les devs web qui passent par ici : vous êtes formés aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?\n\nJe me renseigne sur la sécurité web côté attaque en lisant les ressources de PortSwigger Academy, et ça me fait me demander comment ça se passe côté développement."
-    ]
-  },
-  "Injection SQL": {
+  "Sécurité web": {
     "a": [
       "Un simple formulaire mal protégé peut parfois laisser passer bien plus qu'un mot de passe.",
+      "Une faille XSS réussie sur un site d'entraînement légal. Petite mais vraie satisfaction.",
       "L'injection SQL, j'en avais entendu parler cent fois avant de comprendre vraiment comment ça marche.",
-      "Je me renseigne aussi sur PortSwigger Academy pour la partie injection SQL.",
-      "L'injection SQL, ça m'a pris du temps à vraiment visualiser : on ne \"pirate\" rien à proprement parler, on fait juste dire au site autre chose que ce qu'il devait dire.",
-      "Ce qui surprend avec l'injection SQL : une simple apostrophe mal gérée dans un champ de recherche peut suffire à tout faire dérailler."
+      "Un site qui affiche direct ce qu'on tape dans la recherche sans le filtrer. Terrain de jeu pour un XSS.",
+      "Je me renseigne sur PortSwigger Academy pour mieux comprendre la sécurité web."
     ],
     "c": [
-      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe me renseigne notamment sur PortSwigger Web Security Academy, une plateforme gratuite avec plein de ressources, en ce moment surtout sur l'injection SQL — glisser du code dans un champ de formulaire pour qu'un site exécute autre chose que prévu.\n\nC'est un autre univers que le pentest classique : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie, plutôt que dans sa configuration.",
-      "L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut glisser du code dans un champ de formulaire pour qu'il exécute autre chose que prévu — genre afficher des infos censées rester privées.\n\nCe qui m'aide le plus à comprendre, c'est de lire comment d'autres expliquent une injection réussie étape par étape, bien plus que dix définitions théoriques lues avant.",
-      "Ce qui me frappe avec l'injection SQL : la faille vient presque toujours du même oubli — ne jamais faire confiance à ce qu'un utilisateur tape dans un champ.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site avec une base de données derrière.",
-      "Ce que je retiens de mes lectures sur l'injection SQL :\n\n1/ Une requête mal construite peut laisser quelqu'un de mal intentionné dicter sa propre commande à la base de données.\n\n2/ Ne jamais faire confiance à ce qu'on reçoit d'un formulaire, même le plus anodin.\n\n3/ La plupart des protections sont simples une fois qu'on les connaît — le plus dur est de penser à les appliquer partout.\n\nJe suis tout début, mais déjà bluffé par la simplicité du principe.",
-      "Question pour les devs qui passent par ici : les requêtes préparées, c'est un réflexe dès le début pour vous, ou un truc qu'on apprend après une mauvaise surprise ?\n\nJe me renseigne sur l'injection SQL côté attaque en lisant les ressources de PortSwigger Academy, et ça me fait me demander comment ça se passe côté développement."
+      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe me renseigne sur PortSwigger Web Security Academy, une plateforme gratuite avec des exercices sur les failles web comme l'injection SQL ou le XSS.\n\nC'est un autre univers que le pentest classique, mais tout aussi passionnant : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie.",
+      "L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut glisser du code dans un champ de formulaire pour qu'il exécute autre chose que prévu — genre afficher des infos censées rester privées.\n\nL'avoir fait sur un site d'entraînement légal m'a appris bien plus que dix articles lus avant.",
+      "3 choses que je retiens de mes débuts en sécurité web :\n\n1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.\n\nJe suis tout début, mais déjà bluffé.",
+      "Une faille XSS réussie sur un exercice d'entraînement : faire apparaître une popup en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire vu de l'extérieur, mais pour moi c'est la preuve que je commence à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape : comprendre comment on corrige ce genre de faille.",
+      "Ce qui me frappe en découvrant la sécurité web : la même erreur revient sans arrêt sur des sites différents — ne pas filtrer ce que l'utilisateur envoie.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site.",
+      "Question pour les devs web qui passent par ici : vous êtes formés aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?\n\nJe découvre la sécurité web en me renseignant sur PortSwigger Academy, et je me demande comment ça se passe côté développement."
     ]
   },
   "Forensic numérique": {
@@ -1310,11 +1306,11 @@ const TN = {
       "La prospection en assurance a complètement changé en 28 ans.",
       "On me demande souvent comment je trouve encore de nouveaux clients après 28 ans. Ma réponse surprend toujours.",
       "Le meilleur prospect, c'est rarement celui qu'on est allé chercher.",
-      "En 1997, je faisais du porte-à-porte. En 2026, ce sont mes clients qui font la prospection à ma place.",
+      "En 1997, je faisais du porte-à-porte. En 2025, ce sont mes clients qui font la prospection à ma place.",
       "Un contact LinkedIn m'a écrit juste pour me remercier d'un post qui l'avait aidé à comprendre sa RC Pro. Six mois plus tard, il m'a recommandé à un collègue."
     ],
     "c": [
-      "La prospection en assurance en 2026, c'est plus du tout ce que c'était en 1997 quand j'ai commencé.\n\nÀ l'époque : porte-à-porte, phoning intensif. Aujourd'hui : recommandations, LinkedIn, contenu utile, réseau.\n\nCe qui fonctionne dans mon activité :\n→ Les recommandations clients (80% de mes nouveaux clients)\n→ La présence LinkedIn avec du contenu à valeur\n→ Les partenariats avec des professionnels complémentaires\n→ Les événements réseau à Rennes et en Bretagne\n\nLa clé c'est la confiance avant la vente.",
+      "La prospection en assurance en 2025, c'est plus du tout ce que c'était en 1997 quand j'ai commencé.\n\nÀ l'époque : porte-à-porte, phoning intensif. Aujourd'hui : recommandations, LinkedIn, contenu utile, réseau.\n\nCe qui fonctionne dans mon activité :\n→ Les recommandations clients (80% de mes nouveaux clients)\n→ La présence LinkedIn avec du contenu à valeur\n→ Les partenariats avec des professionnels complémentaires\n→ Les événements réseau à Rennes et en Bretagne\n\nLa clé c'est la confiance avant la vente.",
       "Comment un conseiller avec 28 ans de métier trouve-t-il encore de nouveaux clients ? C'est la question qu'on me pose souvent. La réponse est simple : je n'en cherche presque plus, ce sont eux qui viennent.\n\nCe qui fonctionne dans la durée, ce n'est pas la technique de prospection, c'est ce qui se passe APRÈS la vente :\n→ Un sinistre bien géré génère plus de recommandations qu'une belle offre commerciale\n→ Un client qui comprend vraiment son contrat en parle autour de lui\n→ Rester disponible même quand il n'y a rien à vendre construit la confiance sur la durée\n\nLa meilleure prospection, c'est souvent de bien s'occuper des clients qu'on a déjà.",
       "On imagine souvent la prospection comme une course permanente à trouver de nouveaux clients. Dans mon expérience, c'est l'inverse qui fonctionne le mieux.\n\nLa majorité de mes nouveaux clients viennent de recommandations, pas de démarchage. Et une recommandation ne se force pas, elle se mérite dans la façon de traiter les clients existants.\n\nLa meilleure prospection reste souvent invisible.",
       "Ce qui génère le plus de nouveaux clients dans mon activité, dans l'ordre :\n\n1/ Les recommandations de clients satisfaits, de loin le canal le plus fiable.\n\n2/ La présence régulière sur LinkedIn avec du contenu utile, pas juste commercial.\n\n3/ Les partenariats avec d'autres professionnels du secteur.\n\nAucune de ces trois sources ne demande de courir après les prospects.",
@@ -1331,7 +1327,7 @@ const TN = {
       "Question que je pose désormais à chaque professionnel : si votre logiciel de facturation était bloqué demain matin, combien de temps tiendriez-vous avant que ça devienne un problème de trésorerie ?"
     ],
     "c": [
-      "Mon fils Simon se forme en cybersécurité. Et dans mon métier, je vois de plus en plus de sinistres cyber chez mes clients professionnels.\n\nLa réalité de 2026 : les PME et indépendants sont des cibles de choix — moins bien protégés que les grandes entreprises.\n\nCe que couvre une assurance cyber pro :\n→ Les pertes d'exploitation suite à une attaque\n→ Les frais de remise en état des systèmes\n→ La responsabilité en cas de fuite de données\n→ L'assistance juridique\n\nUn ransomware qui bloque votre activité 2 semaines, c'est souvent la fin pour un indépendant. On en parle ?",
+      "Mon fils Simon se forme en cybersécurité. Et dans mon métier, je vois de plus en plus de sinistres cyber chez mes clients professionnels.\n\nLa réalité de 2025 : les PME et indépendants sont des cibles de choix — moins bien protégés que les grandes entreprises.\n\nCe que couvre une assurance cyber pro :\n→ Les pertes d'exploitation suite à une attaque\n→ Les frais de remise en état des systèmes\n→ La responsabilité en cas de fuite de données\n→ L'assistance juridique\n\nUn ransomware qui bloque votre activité 2 semaines, c'est souvent la fin pour un indépendant. On en parle ?",
       "\"C'est un problème de grande entreprise, pas pour moi\" — c'est ce qu'un client artisan me disait encore récemment à propos du piratage informatique.\n\nQuelques mois plus tard, son logiciel de facturation était bloqué par un rançongiciel. Deux semaines sans pouvoir émettre une seule facture.\n\nCe que je vois de plus en plus chez les indépendants et petites structures :\n→ Les attaques ciblent justement les structures les moins protégées\n→ Une cyberassurance couvre la perte d'exploitation, pas seulement la remise en état technique\n→ L'accompagnement juridique et la communication de crise font souvent la différence\n\nCe n'est plus une question de taille d'entreprise, c'est une question de dépendance au numérique. Et aujourd'hui, tout le monde en dépend.",
       "Une TPE de 6 salariés a subi une intrusion sur son logiciel de gestion commerciale. Trois jours sans pouvoir facturer, ni consulter l'historique client.\n\nLe dirigeant pensait que sa taille le mettait à l'abri. C'est même souvent l'inverse : moins de protections en place, donc une cible plus simple.\n\nLa cyberassurance n'a pas empêché l'attaque, mais elle a limité les dégâts financiers et accompagné la remise en route.",
       "Trois questions que je pose désormais à chaque client professionnel, quelle que soit sa taille :\n\n1/ Que se passe-t-il concrètement si vos outils numériques sont bloqués une semaine ?\n\n2/ Vos données clients sont-elles sauvegardées ailleurs que sur l'ordinateur principal ?\n\n3/ Savez-vous qui contacter en cas d'incident, avant même qu'il n'arrive ?\n\nLa cyberassurance ne remplace pas ces réflexes, elle les complète.",
@@ -1383,7 +1379,7 @@ const HT={
     // Pool générique enrichi avec les hashtags RÉELLEMENT utilisés par Simon (export LinkedIn
     // Shares.csv du 21/08/2026, 81 posts) — #Découverte notamment était complètement absent
     // alors que c'est son 3e hashtag le plus fréquent (25 occurrences).
-    generic:['#CyberSécurité','#Alternance2027','#STI2D','#Découverte','#Rennes','#RechercheAlternance'],
+    generic:['#CyberSécurité','#Alternance2027','#STI2D','#Découverte','#Rennes','#RechercheAlternance','#OpenToWork'],
     'Pentest':['#Pentest','#EthicalHacking','#Débutant','#RedTeam'],
     'SOC':['#SOC','#Analyste','#Cyberdéfense','#BlueTeam'],
     'CTF':['#CTF','#HackTheBox','#Débutant'],
@@ -1404,8 +1400,7 @@ const HT={
     'Sécurité mobile':['#SécuritéMobile','#Smartphone'],
     'Réseaux':['#Réseaux','#TCPIP','#SIN','#Cisco'],
     'Linux':['#Linux','#Terminal','#Kali','#LearningByDoing'],
-    'XSS':['#XSS','#SécuritéWeb','#EthicalHacking','#Débutant'],
-    'Injection SQL':['#SQLInjection','#SécuritéWeb','#WebSecurity','#Débutant'],
+    'Sécurité web':['#SécuritéWeb','#XSS','#SQLInjection'],
     'Forensic numérique':['#Forensic','#InvestigationNumérique'],
     'Fuites de données':['#FuiteDeDonnées','#DataBreach'],
     'Sécurité réseaux sociaux':['#RéseauxSociaux','#Discord','#Instagram'],
@@ -1443,37 +1438,24 @@ const HT={
 /* Choisit entre 2 et 4 hashtags : mélange de tags spécifiques au thème/occasion
    et de tags génériques du compte, tirés aléatoirement à chaque génération pour
    éviter que les posts se terminent toujours par le même bloc. */
-// NOUVEAU (section 25) : un hashtag n'est jamais neutre — il affirme une association, même quand
-// le texte du post reste correctement formulé en découverte. Liste figée (jamais débloquable, même
-// par une future correction) pour les 2 plateformes déjà confirmées non validées pour Simon, en
-// plus de GR.avoidedHashtags (appris des corrections, lui modifiable). Vérification AVANT
-// sélection, pas de correction après coup — voir section 25.8.
-const BLOCKED_EXPERIENCE_HASHTAGS=new Set(['#TryHackMe','#PortSwigger']);
 function pickHashtags(key,a){
   const pool=(a==='simon'?HT.simon:HT.niko)||{};
-  const avoided=new Set([...BLOCKED_EXPERIENCE_HASHTAGS,...(GR.avoidedHashtags||[])]);
-  const specific=(pool[key]||[]).filter(t=>!avoided.has(t));
-  const all=[...new Set([...specific,...(pool.generic||[]).filter(t=>!avoided.has(t))])];
+  const specific=pool[key]||[];
+  const all=[...new Set([...specific,...pool.generic])].filter(h=>{
+    if(a!=='simon')return true;
+    if(UNVALIDATED_HASHTAGS.some(x=>x.toLowerCase()===String(h).toLowerCase()))return false;
+    if((generationRules.avoidedHashtags||[]).some(x=>String(x).toLowerCase()===String(h).toLowerCase()))return false;
+    return true;
+  });
   if(!all.length)return '';
   const n=Math.min(all.length,3+Math.floor(Math.random()*3));
   const shuffled=[...all].sort(()=>Math.random()-0.5);
   let chosen=shuffled.slice(0,n);
   if(specific.length && !chosen.some(t=>specific.includes(t))){
-    chosen[0]=pick(specific);
-    chosen=[...new Set(chosen)];
+    const allowedSpecific=specific.filter(h=>all.includes(h));
+    if(allowedSpecific.length){chosen[0]=pick(allowedSpecific);chosen=[...new Set(chosen)];}
   }
   return chosen.join(' ');
-}
-// NOUVEAU (section 25.9) : si une correction fait disparaître un hashtag qui était présent avant,
-// on le retient — les prochaines sélections de pickHashtags() ne le repropose plus. Détection
-// automatique (pas de bouton dédié), au même titre que originalText est capturé automatiquement.
-function extractHashtags(t){return (t||'').match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[];}
-function recordRemovedHashtags(oldText,newText){
-  const before=new Set(extractHashtags(oldText));
-  const after=new Set(extractHashtags(newText));
-  let added=false;
-  before.forEach(h=>{if(!after.has(h)&&!GR.avoidedHashtags.includes(h)){GR.avoidedHashtags.push(h);added=true;}});
-  return added;
 }
 /* Retire un éventuel bloc hashtag final avant comparaison anti-doublon, pour que
    les textes archivés avant cette mise à jour (hashtags encore intégrés au texte)
@@ -1486,12 +1468,53 @@ function stripTags(t){return (t||'').replace(/\n\n#[^\n]*$/,'').trim();}
 function norm(t){return stripTags(t).replace(/\s+/g,' ').trim().toLowerCase();}
 
 /* ════ FEED CONSOLE ════ */
-const AS=[{src:'CERT-FR',titre:'Campagne phishing active PME françaises',detail:'Spear-phishing avec deepfakes vocaux.'},{src:'ANSSI',titre:'Ransomwares +30% en France 2026',detail:'PME et collectivités restent les principales cibles.'},{src:'TryHackMe',titre:'Nouveaux parcours SOC analyst',detail:'Parcours certifiant avec entreprises françaises.'},{src:'Google',titre:'0-day Chrome corrigé en urgence',detail:'Faille V8 permettant échappée sandbox.'},{src:'HackTheBox',titre:'Top 10 techniques priv esc Linux 2026',detail:'Vecteurs les plus exploités en pentest et CTF.'},{src:'ZATAZ',titre:'2M comptes français exposés',detail:'Base de données mal configurée.'}];
+const AS=[{src:'CERT-FR',titre:'Campagne phishing active PME françaises',detail:'Spear-phishing avec deepfakes vocaux.'},{src:'ANSSI',titre:'Ransomwares +30% en France 2026',detail:'PME et collectivités restent les principales cibles.'},{src:'plateforme externe',titre:'Nouveaux parcours SOC analyst',detail:'Parcours certifiant avec entreprises françaises.'},{src:'Google',titre:'0-day Chrome corrigé en urgence',detail:'Faille V8 permettant échappée sandbox.'},{src:'HackTheBox',titre:'Top 10 techniques priv esc Linux 2026',detail:'Vecteurs les plus exploités en pentest et CTF.'},{src:'ZATAZ',titre:'2M comptes français exposés',detail:'Base de données mal configurée.'}];
 const AN=[{src:'FFSA',titre:'Réforme assurance emprunteur bilan 2026',detail:'1,2M de ménages ont changé d\'assurance.'},{src:'CNIL',titre:'Protection données clients assurance',detail:'Chiffrement obligatoire pour données de santé.'},{src:'L\'Argus',titre:'Mutuelles +6% en moyenne 2026',detail:'Inflation médicale et vieillissement.'},{src:'France Assureurs',titre:'Sinistres climatiques record 2024',detail:'4,3 milliards d\'euros de dommages assurés.'},{src:'MoneyVox',titre:'PER dépasse 100 milliards',detail:'Le PER s\'impose comme produit phare épargne long terme.'},{src:'Argus',titre:'Cyber assurance PME : marché x2',detail:'Nombre de contrats doublé en 2 ans.'}];
 const FD=[{name:'Sophie Martin',event:'Certification CEH obtenue',occ:'certification',detail:'6 mois de préparation.'},{name:'Lucas Bernard',event:'Analyste SOC — Orange Cyberdefense',occ:'promotion',detail:'Premier poste après BTS SIO.'},{name:'Emma Rousseau',event:'Bachelor Cybersécurité Rennes',occ:'diplome',detail:'Major de promotion.'},{name:'Théo Lefebvre',event:'Alternance Pentesteur — Capgemini',occ:'alternance',detail:'BTS SIO SISR.'}];
 const RD=[{name:'Florian Rault',titre:'Pourquoi chaque dev devrait apprendre le pentest',preview:'3 ans à coder sans comprendre comment mes apps pouvaient être attaquées...',likes:'847'},{name:'ANSSI France',titre:'Guide hygiène informatique 2026',preview:'Notre guide référence mis à jour avec 8 nouvelles recommandations...',likes:'3.4k'}];
 
 /* ════ GÉNÉRATION ════ */
+/* ════ VALIDATION PRÉ-ÉCRITURE ════ */
+const UNVALIDATED_EXPERIENCE_PATTERNS=[
+  /(?:portswigger|web security academy)[\s\S]{0,90}(?:j['’]?(?:ai|a)\s+|je\s+)(?:test|réalis|realiz|réuss|reuss|m['’]entra[iî]ne|utilis|exploit|pratiqu|fais|fait|effectu|lab|exerc)/i,
+  /(?:j['’]?(?:ai|a)\s+|je\s+)(?:m['’]entra[iî]ne|teste|testé|réalis|réussi|utilis|pratique|exploite|fais|fait|effectue)[\s\S]{0,90}(?:portswigger|web security academy)/i,
+  /(?:tryhackme|try\s*hack\s*me)/i,
+  /(?:j['’]?(?:ai|a)\s+|je\s+)(?:pratique|pratiqu|utilis|configure|configur|installe|install|travaille|m['’]entra[iî]ne|m['’]exerce|ma[iî]trise)[\s\S]{0,70}(?:linux|terminal|kali)/i
+];
+const UNVALIDATED_HASHTAGS=['#PortSwigger','#TryHackMe'];
+function validateGeneratedPost(post){
+  const text=String(post?.text||'').trim();
+  const errors=[];
+  if(!text) errors.push('texte vide');
+  if(acc==='simon'){
+    if(UNVALIDATED_EXPERIENCE_PATTERNS.some(r=>r.test(text))) errors.push('expérience non validée');
+    if(/#(?:PortSwigger|TryHackMe)\b/i.test(text)) errors.push('hashtag lié à une expérience non validée');
+    const low=text.toLowerCase();
+    if(generationRules.avoidedFormulations?.some(f=>f&&low.includes(String(f).toLowerCase()))) errors.push('formulation rejetée');
+    if(generationRules.avoidedHashtags?.some(h=>h&&new RegExp(String(h).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(text))) errors.push('hashtag rejeté');
+  }
+  return {ok:errors.length===0,errors};
+}
+function validateHashtags(text){
+  const tags=[...new Set((text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]))];
+  if(tags.some(t=>UNVALIDATED_HASHTAGS.some(x=>x.toLowerCase()===t.toLowerCase()))) return {ok:false,tags,errors:['hashtag non autorisé']};
+  if(generationRules.avoidedHashtags?.some(h=>tags.some(t=>t.toLowerCase()===String(h).toLowerCase()))) return {ok:false,tags,errors:['hashtag rejeté']};
+  return {ok:true,tags,errors:[]};
+}
+function learnCorrection(original, corrected){
+  if(acc!=='simon'||!original||!corrected||original===corrected)return;
+  generationRules=generationRules||{};
+  for(const k of ['avoidedFormulations','avoidedExperiences','avoidedAngles','avoidedHashtags','preferredFormulations','preferredStructures']) if(!Array.isArray(generationRules[k]))generationRules[k]=[];
+  const removed=(original.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).filter(h=>!(corrected.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).some(x=>x.toLowerCase()===h.toLowerCase()));
+  for(const h of removed) if(!generationRules.avoidedHashtags.includes(h)) generationRules.avoidedHashtags.push(h);
+  if(/(?:portswigger|web security academy)/i.test(original) && !/(?:portswigger|web security academy)/i.test(corrected)) generationRules.avoidedExperiences.push('PortSwigger');
+  if(/(?:tryhackme|try\s*hack\s*me)/i.test(original)) generationRules.avoidedExperiences.push('TryHackMe');
+  if(/(?:linux|terminal|kali)/i.test(original) && /(?:pratique|m['’]entra[iî]ne|configure|utilise|travaille)/i.test(original) && !/(?:pratique|m['’]entra[iî]ne|configure|utilise|travaille)/i.test(corrected)) generationRules.avoidedExperiences.push('Linux pratique');
+  generationRules.avoidedExperiences=[...new Set(generationRules.avoidedExperiences)];
+  generationRules.avoidedHashtags=[...new Set(generationRules.avoidedHashtags)];
+  lsS(grk(acc),generationRules);
+}
+
 function genTxt(opts={}){
   const a=acc,t=opts.type||typ,tp=opts.topic||topic;
   const ctx=opts.ctx||document.getElementById('ctx-inp')?.value||'';
@@ -1541,7 +1564,18 @@ function onPoEdited(){
 // editQText, quel que soit le chemin utilisé pour éditer.
 function onPoBlur(){
   if(!lastPost)return;
-  if(Q.includes(lastPost)){saveAll();renderQ();}
+  if(Q.includes(lastPost)){return;}
+  const current=(document.getElementById('po').innerText||'').trim();
+  if(!current)return;
+  if(current===lastPost.originalText)return;
+  const validation=validateGeneratedPost({text:current}), hashtags=validateHashtags(current);
+  if(!validation.ok||!hashtags.ok){renderPost(lastPost.originalText);lastPost.text=lastPost.originalText;toast('⚠️ Correction refusée : retour à la version générée','er');return;}
+  const original=lastPost.originalText;
+  learnCorrection(original,current);
+  lastPost.previousVersions=[...(lastPost.previousVersions||[]),{text:original,source:'generated',corrected:true}];
+  lastPost.text=current;
+  archive(lastPost,'user-correction');
+  clearGenerator();
 }
 // NOUVEAU (non destructif) : revient au texte produit par le générateur avant toute modification
 // manuelle. Si le post affiché est aussi dans la file (même référence), la file est mise à jour.
@@ -1590,59 +1624,50 @@ function clearGenerator(){
 function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');if(lastPost)archive(lastPost,'copie');});}
 
 function genPost(){
-  // BUGFIX indépendance des comptes : usedTexts incluait Q/H/RJ des DEUX comptes mélangés.
-  // Un post déjà publié côté Nicolas ne doit jamais empêcher une formulation côté Simon
-  // (et inversement) — chaque profil a son propre historique, sa propre file.
   const usedTexts=new Set([...Q.filter(x=>x.account===acc).map(q=>q.text),...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text)].map(norm));
-  let text, isDup=false;
-  if(typ==='original'){
-    const themes=acc==='simon'?TS:TN;
-    const d=themes[topic]||Object.values(themes)[0];
-    const ctx=document.getElementById('ctx-inp')?.value||'';
-    const finalize=(intro,corps)=>(intro+'\n\n'+corps+(ctx?'\n\n'+ctx:'')).trim();
-    // Toutes les combinaisons possibles pour CE thème précis (choisi par l'utilisateur, pas changé)
-    // Les hashtags sont désormais gérés à part (pickHashtags) : ce ne sont que les combinaisons
-    // narratives (accroche + corps + contexte) qui comptent pour la fraîcheur/anti-doublon.
-    // Même correctif que genOnePost : on évite de réutiliser une accroche déjà visible dans la
-    // file pour ce thème, pour ne jamais avoir deux posts avec la même accroche dans l'aperçu.
-    const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===topic&&q.account===acc).map(q=>q.text);
-    const combos=[];
-    d.a.forEach((ai,aIdx)=>d.c.forEach(ci=>combos.push({ai,aIdx,text:finalize(ai,ci)})));
-    let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
-    const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
-    if(freshNewIntro.length) fresh=freshNewIntro;
-    // NOUVEAU (base de règles apprises des corrections) : écarte les combinaisons qui reprennent
-    // une formulation explicitement rejetée par l'utilisateur — même reformulée avec d'autres mots
-    // (tooSimilarToAvoided), pas seulement recopiée mot pour mot. Seulement si ça laisse encore au
-    // moins une option, même logique défensive que les filtres ci-dessus.
-    if(GR.avoidedFormulations.length){
-      const notAvoided=fresh.filter(c=>!tooSimilarToAvoided(c.text));
-      if(notAvoided.length) fresh=notAvoided;
+  const maxAttempts=10;
+  let text='', isDup=false, validation=null;
+  for(let attempt=0;attempt<maxAttempts;attempt++){
+    let candidate='', dup=false;
+    if(typ==='original'){
+      const themes=acc==='simon'?TS:TN;
+      const d=themes[topic]||Object.values(themes)[0];
+      const ctx=document.getElementById('ctx-inp')?.value||'';
+      const finalize=(intro,corps)=>(intro+'\n\n'+corps+(ctx?'\n\n'+ctx:'')).trim();
+      const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===topic&&q.account===acc).map(q=>q.text);
+      const combos=[];
+      d.a.forEach((ai,aIdx)=>d.c.forEach(ci=>combos.push({ai,aIdx,text:finalize(ai,ci)})));
+      let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
+      const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
+      if(freshNewIntro.length)fresh=freshNewIntro;
+      fresh=applyFamilyDiversity(fresh,topic,acc);
+      const chosen=fresh.length?pick(fresh):pick(combos); candidate=chosen.text; dup=!fresh.length;
+      recordFamily(topic,chosen.aIdx,acc);
+      candidate=(candidate+'\n\n'+pickHashtags(topic,acc)).trim();
+    }else{
+      candidate=genTxt();
+      dup=usedTexts.has(norm(candidate));
     }
-    // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
-    fresh=applyFamilyDiversity(fresh,topic,acc);
-    let narrative,pickedAIdx;
-    if(fresh.length){const chosen=pick(fresh);narrative=chosen.text;pickedAIdx=chosen.aIdx;}
-    else{const chosen=pick(combos);narrative=chosen.text;pickedAIdx=chosen.aIdx;isDup=true;}
-    recordFamily(topic,pickedAIdx,acc);
-    text=(narrative+'\n\n'+pickHashtags(topic,acc)).trim();
-  }else{
-    text=genTxt();
-    isDup=usedTexts.has(norm(text));
+    const vh=validateHashtags(candidate);
+    validation=validateGeneratedPost({text:candidate});
+    if(!vh.ok||!validation.ok){
+      continue;
+    }
+    if(dup && attempt<maxAttempts-1){
+      // For a non-original source, retry; for an exhausted original theme, allow only after all attempts.
+      if(typ!=='original')continue;
+    }
+    text=candidate;isDup=dup;break;
   }
+  if(!text||!validation?.ok){toast('⚠️ Génération refusée : contenu ou hashtag non conforme aux règles','er');return;}
   renderPost(text);
-  lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc,originalText:text};
+  lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc,originalText:text,previousVersions:[]};
   if(!stats[acc])stats[acc]={total:0,sent:0};
   stats[acc].total++;saveAll();updateStats();
-  if(isDup) toast('⚠️ Toutes les variantes de ce thème sont déjà utilisées (texte en double avec un post existant)','er');
+  if(isDup)toast('⚠️ Toutes les variantes de ce thème sont déjà utilisées (texte en double avec un post existant)','er');
   else toast('Post généré ✓','ok');
-  // Fait tourner automatiquement la pastille de thème pour le prochain clic (voir pickFreshTopic)
-  if(typ==='original'){
-    topic=pickFreshTopic(acc);
-    syncTopicPill(acc,topic);
-  }
+  if(typ==='original'){topic=pickFreshTopic(acc);syncTopicPill(acc,topic);}
 }
-
 function archive(post,src='copie'){
   if(H.find(x=>x.id===post.id))return;
   // NOUVEAU (consigne statuts BROUILLON/PRÊT/PUBLIÉ) : copier ou ouvrir le partage LinkedIn ne
@@ -1652,7 +1677,7 @@ function archive(post,src='copie'){
   // LinkedIn) comptent par défaut comme publication confirmée. Les autres (copie, partage
   // ouvert) restent "à confirmer" tant que l'utilisateur ne le fait pas via toggleConfirmed().
   const confirmed = (src==='publie'||src==='linkedin-import');
-  H.unshift({...post,publishedAt:Date.now(),source:src,confirmed});
+  H.unshift({...post,publishedAt:Date.now(),source:src,confirmed,previousVersions:post.previousVersions||[]});
   if(!stats[acc])stats[acc]={total:0,sent:0};
   stats[acc].sent++;saveAll();renderH();updateStats();
 }
@@ -1738,8 +1763,7 @@ const AF={
   "Sécurité mobile":["experience","observation","observation","observation","observation"],
   "Réseaux":["difficulte","experience","question","cours","difficulte"],
   "Linux":["experience","difficulte","observation","decouverte","experience"],
-  "XSS":["experience","observation","experience","pensee_avant","decouverte"],
-  "Injection SQL":["observation","pensee_avant","experience","difficulte","decouverte"],
+  "Sécurité web":["observation","experience","pensee_avant","observation","experience"],
   "Forensic numérique":["decouverte","observation","decouverte","ressource","observation"],
   "Fuites de données":["experience","observation","experience","observation","observation"],
   "Sécurité réseaux sociaux":["anecdote_tiers","observation","anecdote_tiers","anecdote_tiers","observation"],
@@ -1809,17 +1833,17 @@ function genOnePost(extraAvoid=[]){
   // par l'algorithme — seulement quand l'utilisateur le sélectionne lui-même via la pastille,
   // pour une vraie actualité du projet. Sinon il finirait mentionné "artificiellement" juste
   // parce qu'il est un thème encore frais dans le calcul d'équité.
-  // EXCLUSION EXPLICITE ET PERMANENTE (les félicitations ne doivent jamais être générées
-  // automatiquement — uniquement via le bouton dédié "🎉 Féliciter") : ces plans ne contiennent
-  // plus aucune entrée type:'congrats'. Avant cette correction, 3 des ~29 entrées de plansSimon
-  // (et 2 des ~15 de plansNiko) étaient des félicitations, ce qui pouvait en faire apparaître
-  // dans la file sans qu'aucun bouton "Féliciter" n'ait jamais été cliqué.
   const plansSimon=[
+    {type:'congrats',who:'la communauté cyber',occ:'certification'},
     {type:'repost',content:'actualité cyber 2026'},
+    {type:'congrats',who:'mon réseau',occ:'alternance'},
+    {type:'congrats',who:'un contact du réseau',occ:'diplome'},
     ...Object.keys(TS).filter(t=>t!=='CyberQuest').map(topic=>({type:'original',topic}))
   ];
   const plansNiko=[
+    {type:'congrats',who:'un client fidèle',occ:'anniversaire'},
     {type:'repost',content:'réforme assurance 2026'},
+    {type:'congrats',who:'mon réseau assurance',occ:'promotion'},
     ...Object.keys(TN).map(topic=>({type:'original',topic}))
   ];
   const plans = acc==='simon' ? plansSimon : plansNiko;
@@ -2001,13 +2025,13 @@ function renderQ(){
     return `<div class="qi ${i===0?'nxt':''}" id="qi-${q.id}" style="flex-wrap:wrap">
       <div class="qn">${i+1}</div>
       <div class="qb">
-        <div class="qt">${q.label} · ${ab}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}${q.variantOf?' <span title="Variante d\'un autre post de la file — les deux existent indépendamment, supprime celui que tu ne gardes pas" style="font-size:11px">🔗 Variante</span>':''}${q.scheduledAt<=Date.now()?' <span title="L\'heure prévue est passée — reste en file tant que tu ne l\'as pas traité toi-même" style="font-size:11px;color:var(--orange)">⏰ En retard</span>':''}</div>
+        <div class="qt">${q.label} · ${ab}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}</div>
         <div class="qp">${q.text.substring(0,120)}…</div>
         ${tags.length?`<div class="qts">${tags.map(h=>`<span>${h}</span>`).join('')}</div>`:''}
         <div class="qtm">${ts}</div>
       </div>
       <div class="qa">
-        <button class="qbtn" onclick="tgQ(${q.id})" style="color:var(--white)" title="Modifier le texte avant publication">✏️</button>
+        <button class="qbtn" onclick="tgQ(${q.id})" style="color:var(--white)" title="Modifier puis valider automatiquement">✏️</button>
         <button class="qbtn" onclick="cpQ(${q.id})" style="color:var(--cyan)" title="Copier">📋</button>
         <button class="qbtn" onclick="pubLiQ(${q.id})" style="color:#0a66c2" title="Publier sur LinkedIn">🚀</button>
         <button class="qbtn" onclick="prvQ(${q.id})" style="color:var(--muted)" title="Aperçu">👁</button>
@@ -2016,12 +2040,7 @@ function renderQ(){
       </div>
       <div class="qex" id="qex-${q.id}" style="display:none;width:100%;margin-top:10px" onclick="event.stopPropagation()">
         <textarea onchange="editQText(${q.id},this.value)" style="width:100%;min-height:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${q.text}</textarea>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          ${q.originalText!==undefined&&q.originalText!==q.text?`<button onclick="restoreQText(${q.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version générée</button>`:''}
-          ${q.originalText!==undefined&&q.originalText!==q.text?`<button onclick="flagAvoidedFormulationQ(${q.id})" style="background:rgba(255,23,68,.08);color:var(--red);border:1px solid rgba(255,23,68,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🚫 Éviter cette ancienne formulation</button>`:''}
-          <button onclick="regenQ(${q.id})" style="background:rgba(0,230,118,.08);color:var(--green);border:1px solid rgba(0,230,118,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🔄 Régénérer ce post</button>
-          <button onclick="createVariantQ(${q.id})" style="background:rgba(0,178,255,.1);color:var(--cyan);border:1px solid rgba(0,178,255,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">➕ Créer une nouvelle variante</button>
-        </div>
+        ${q.originalText!==undefined&&q.originalText!==q.text?`<div style="margin-top:8px"><button onclick="restoreQText(${q.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version générée</button></div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -2066,10 +2085,20 @@ function editQText(id,val){
   const v=val.trim();
   if(!v){toast('Le texte ne peut pas être vide','er');renderQ();return;}
   if(v===q.text)return;
-  if(q.originalText===undefined)q.originalText=q.text; // NOUVEAU (non destructif) : conserve la version générée avant toute modification
-  const hashtagRetiré=recordRemovedHashtags(q.text,v); // NOUVEAU (section 25.9)
-  q.text=v;saveAll();renderQ();updateStats();
-  toast(hashtagRetiré?'Post modifié ✓ — hashtag retiré mémorisé pour les prochaines générations':'Post modifié ✓ (version générée conservée)','ok');
+  const validation=validateGeneratedPost({text:v});
+  const hashtags=validateHashtags(v);
+  if(!validation.ok||!hashtags.ok){toast('⚠️ Correction refusée : expérience ou hashtag non validé','er');renderQ();return;}
+  const original=q.originalText!==undefined?q.originalText:q.text;
+  const history={...q,text:v,publishedAt:Date.now(),source:'user-correction',confirmed:true,previousVersions:[...(q.previousVersions||[]),{text:original,source:'generated',corrected:true}]};
+  learnCorrection(original,v);
+  H=H.filter(x=>x.id!==q.id);
+  H.unshift(history);
+  Q=Q.filter(x=>x.id!==q.id);
+  if(!stats[acc])stats[acc]={total:0,sent:0};
+  stats[acc].sent++;
+  saveAll();renderQ();renderH();updateStats();rfTmr();
+  toast('Post corrigé et validé ✓ — déplacé dans Historique','ok');
+  autoRefill(true);
 }
 // NOUVEAU (non destructif) : revient au texte produit par le générateur pour ce post de la file,
 // sans rien supprimer ni créer de doublon — même identifiant, même position dans la file.
@@ -2078,77 +2107,6 @@ function restoreQText(id){
   if(q.originalText===q.text){toast('Déjà la version générée','in');return;}
   q.text=q.originalText;saveAll();renderQ();updateStats();
   toast('Version générée restaurée ✓','in');
-}
-// NOUVEAU (nouvelle variante, section 22) : fourche le post en un second, totalement indépendant,
-// SANS toucher à l'original — nouvel id, variantOf pointe vers l'id d'origine. Les deux coexistent
-// dans la file ; il suffit de supprimer (✕) celui qui n'est finalement pas gardé.
-function createVariantQ(id){
-  const q=Q.find(x=>x.id===id);if(!q)return;
-  const variant={...q,id:Date.now()+Math.random()*1000,variantOf:q.id,originalText:q.text};
-  const idx=Q.indexOf(q);
-  Q.splice(idx+1,0,variant);
-  saveAll();renderQ();
-  toast('Nouvelle variante créée juste après — modifie-la avec ✏️ pour l\'écrire différemment','ok');
-}
-// NOUVEAU : la correction devient une règle réutilisable — on retient la formulation D'ORIGINE
-// (celle qu'on vient de remplacer), pas la nouvelle, pour que les prochaines générations
-// l'évitent. On ne retient que la 1re phrase/accroche : c'est elle qui se recombine et se répète
-// d'un post à l'autre, pas le corps entier du texte. Pas d'IA connectée : c'est une règle locale
-// simple (substring), pas un apprentissage — voir genPost() pour son utilisation réelle.
-function flagAvoidedFormulation(originalText,meta){
-  if(!originalText)return;
-  const phrase=originalText.split(/\n\n/)[0].trim();
-  if(!phrase||GR.avoidedFormulations.some(f=>f.phrase===phrase)){toast('Déjà enregistrée','in');return;}
-  GR.avoidedFormulations.push({phrase,topic:(meta&&meta.topic)||'',flaggedAt:Date.now()});
-  saveAll();
-  toast('🧠 Règle de génération mise à jour — cette accroche sera évitée','ok');
-}
-// NOUVEAU (comparaison souple, pas seulement une correspondance exacte) : reformuler une
-// accroche rejetée avec d'autres mots ne doit pas suffire à la faire ressortir. On compare le
-// jeu de mots significatifs (>2 lettres, ponctuation retirée) de l'accroche du candidat avec
-// celui de chaque formulation évitée ; au-delà d'~55% de recouvrement, on considère que c'est
-// trop proche, même si le texte exact diffère.
-function textSimilarity(a,b){
-  const toks=s=>new Set(norm(s).replace(/[.,;:!?«»"'()—-]/g,' ').split(/\s+/).filter(w=>w.length>2));
-  const wa=toks(a),wb=toks(b);
-  if(!wa.size||!wb.size)return 0;
-  let common=0;
-  wa.forEach(w=>{if(wb.has(w))common++;});
-  return common/Math.min(wa.size,wb.size);
-}
-function tooSimilarToAvoided(candidateText){
-  if(!GR.avoidedFormulations.length)return false;
-  const candFirst=candidateText.split(/\n\n/)[0];
-  return GR.avoidedFormulations.some(f=>{
-    if(!f.phrase)return false;
-    if(norm(candidateText).includes(norm(f.phrase)))return true; // reprise exacte, où qu'elle soit dans le texte
-    return textSimilarity(candFirst,f.phrase)>=0.55; // reformulation trop proche de l'accroche rejetée
-  });
-}
-function flagAvoidedFormulationQ(id){const q=Q.find(x=>x.id===id);if(q)flagAvoidedFormulation(q.originalText,{topic:q.topic});}
-function flagAvoidedFormulationH(id){const h=H.find(x=>x.id===id);if(h)flagAvoidedFormulation(h.originalText,{topic:h.topic});}
-// NOUVEAU (section 10) : reroule UNIQUEMENT ce post de la file (même id, même règle de non
-// destruction que editQText — la toute première version reste dans originalText). Ne pique que
-// dans le thème déjà associé à ce post, pour rester cohérent avec ce qui a été programmé.
-function regenQ(id){
-  const q=Q.find(x=>x.id===id);if(!q)return;
-  if(q.type!=='original'||!q.topic){toast('Régénération non disponible pour ce type de post','er');return;}
-  const themes=q.account==='niko'?TN:TS;
-  const d=themes[q.topic];if(!d){toast('Thème introuvable','er');return;}
-  const usedTexts=new Set([...Q.filter(x=>x.account===q.account).map(x=>x.text),...H.filter(x=>x.account===q.account).map(x=>x.text),...RJ.filter(x=>x.account===q.account).map(x=>x.text)].map(norm));
-  const combos=[];
-  d.a.forEach(ai=>d.c.forEach(ci=>combos.push((ai+'\n\n'+ci).trim())));
-  let fresh=combos.filter(c=>!usedTexts.has(norm(c))&&norm(c)!==norm(q.text));
-  if(GR.avoidedFormulations.length){
-    const notAvoided=fresh.filter(c=>!tooSimilarToAvoided(c));
-    if(notAvoided.length)fresh=notAvoided;
-  }
-  if(!fresh.length){toast('Plus aucune formulation fraîche pour ce thème','er');return;}
-  const narrative=pick(fresh);
-  if(q.originalText===undefined)q.originalText=q.text;
-  q.text=(narrative+'\n\n'+pickHashtags(q.topic,q.account)).trim();
-  saveAll();renderQ();updateStats();
-  toast('🔄 Post régénéré (même emplacement dans la file)','ok');
 }
 function cpQ(id){
   const q=Q.find(x=>x.id===id);
@@ -2236,17 +2194,14 @@ function rfTmr(){
   document.getElementById('t-nt').textContent=Q[0]?.label||'—';
 }
 function refreshTmr(){rfTmr();}
-// NOUVEAU (§1/§5 : aucune sauvegarde historique sans action explicite) : un post en retard
-// n'est plus jamais archivé tout seul. Il reste dans la file, visible avec un badge "en retard",
-// et attend une action explicite de l'utilisateur (📋/🚀/✔️/✕) — exactement comme n'importe quel
-// autre post. overdueNotified évite de re-notifier en boucle à chaque tick du minuteur.
 function chkMissed(){
   if(!lsL(SK.timer,false))return;
-  const now=Date.now(),missed=Q.filter(q=>q.scheduledAt<=now&&!q.overdueNotified);
+  const now=Date.now(),missed=Q.filter(q=>q.scheduledAt<=now);
   if(!missed.length)return;
-  missed.forEach(q=>{q.overdueNotified=true;});
-  saveAll();renderQ();
-  toast(`⏰ ${missed.length} post${missed.length>1?'s':''} arrivé${missed.length>1?'s':''} à échéance — à toi de le${missed.length>1?'s':''} publier/copier/traiter depuis la file`,'in');
+  missed.forEach(q=>archive({...q},'publie'));Q=Q.filter(q=>q.scheduledAt>now);
+  saveAll();renderQ();renderH();updateStats();
+  toast(`⚡ ${missed.length} post${missed.length>1?'s':''} publié${missed.length>1?'s':''} pendant ton absence — voir l'historique`,'ok');
+  autoRefill(true);
 }
 
 /* ════ HISTORIQUE ════ */
@@ -2302,7 +2257,7 @@ function importLinkedInCSV(raw){
     const key=norm(it.text);
     if(existing.has(key)){skipped++;return;}
     existing.add(key);
-    H.push({id:Date.now()+i,text:it.text,type:'original',topic:'',label:TL.original,account:acc,publishedAt:it.publishedAt,source:'linkedin-import',views:0,viewsKnown:false,confirmed:true});
+    H.push({id:Date.now()+i,text:it.text,type:'original',topic:'',label:TL.original,account:acc,publishedAt:it.publishedAt,source:'linkedin-import',views:0,confirmed:true});
     added++;
   });
   if(added){
@@ -2351,7 +2306,7 @@ function toggleHConfirmFilter(){
   renderH();
 }
 // NOUVEAU : filtre "🔎 À vérifier" — isole les posts dont le CONTENU (véracité, niveau,
-// TryHackMe/Linux non inventés, etc.) n'a pas encore été relu par un humain. Sert notamment à
+// plateformes ou pratiques non réalisées non inventés, etc.) n'a pas encore été relu par un humain. Sert notamment à
 // dépouiller progressivement le fond des 82 anciens posts sans devoir tout relire d'un coup.
 function toggleHCheckFilter(){
   hFilterUnchecked=!hFilterUnchecked;
@@ -2362,74 +2317,15 @@ function toggleHCheckFilter(){
 function toggleChecked(id){
   const h=H.find(x=>x.id===id);if(!h)return;
   h.checked=!h.checked;
-  if(h.checked)delete h.flagReason; // motif du scan résolu une fois le contenu vérifié par un humain
   saveAll();renderH();
   toast(h.checked?'Marqué comme contenu vérifié ✓':'Repassé en « à vérifier »','in');
-}
-// NOUVEAU : "redémarrage sur une base saine" sans rien effacer — un post archivé sort de la base
-// active (compteur, filtres, Performance) mais reste consultable via 📦 Archive, et ses vues
-// passées restent visibles/analysables séparément si besoin. Rien n'est jamais supprimé ici.
-function toggleArchiveView(){
-  hShowArchive=!hShowArchive;
-  const btn=document.getElementById('h-archive-btn');
-  if(btn)btn.classList.toggle('sel',hShowArchive);
-  renderH();
-}
-function archiveH(id){
-  const h=H.find(x=>x.id===id);if(!h)return;
-  h.archived=true;saveAll();renderH();
-  toast('Post archivé — sorti de la base active (toujours consultable dans 📦 Archive)','in');
-}
-function unarchiveH(id){
-  const h=H.find(x=>x.id===id);if(!h)return;
-  h.archived=false;saveAll();renderH();
-  toast('Post remis dans la base active ✓','ok');
-}
-// NOUVEAU : réinterprétation faisable de la "régénération partielle" du prompt maître — cette app
-// n'appelle aucune IA en direct (le pool est écrit à la main), donc on ne peut pas "régénérer"
-// automatiquement un post existant. Ce qu'on PEUT faire honnêtement : scanner le texte réel des
-// posts déjà publiés pour repérer ceux qui contreviennent aux règles actuelles (TryHackMe/Linux
-// revendiqués comme pratique) et les repasser en file "à vérifier" pour un contrôle humain —
-// jamais de suppression ni de réécriture automatique.
-function scanHForViolations(){
-  const mine=H.filter(h=>h.account===acc);
-  const thPattern=/tryhackme/i;
-  const linuxNamePattern=/\blinux\b/i;
-  const practiceVerbPattern=/(je\s+pratique|m'entra[iî]ne|je\s+ma[iî]trise|je\s+configure|à l'aise avec|utilise\s+r[ée]guli[èe]rement|j'ai\s+r[ée]alis[ée]|j'ai\s+r[ée]ussi|l'avoir\s+fait)/i;
-  // NOUVEAU : PortSwigger n'est plus une expérience validée (au même titre que TryHackMe/Linux) —
-  // même traitement, sur l'historique réel des 82 posts.
-  const portswiggerPattern=/portswigger/i;
-  let flagged=0;
-  mine.forEach(h=>{
-    const reasons=[];
-    if(thPattern.test(h.text))reasons.push('TryHackMe cité comme expérience personnelle');
-    if(linuxNamePattern.test(h.text)&&practiceVerbPattern.test(h.text))reasons.push('Linux présenté comme pratique acquise');
-    if(portswiggerPattern.test(h.text)&&practiceVerbPattern.test(h.text))reasons.push('PortSwigger présenté comme pratique acquise (expérience non validée)');
-    // NOUVEAU (section 25.4) : un hashtag bloqué reste un problème même si le corps du texte, lui,
-    // est correctement formulé — un hashtag affirme une association à lui seul.
-    const badTags=extractHashtags(h.text).filter(t=>BLOCKED_EXPERIENCE_HASHTAGS.has(t));
-    if(badTags.length)reasons.push('Hashtag(s) à retirer : '+badTags.join(' '));
-    if(reasons.length){h.checked=false;h.flagReason=reasons.join(' · ');flagged++;}
-  });
-  if(flagged){
-    saveAll();
-    hFilterUnchecked=true;
-    const btn=document.getElementById('h-check-filter-btn');if(btn)btn.classList.add('sel');
-  }
-  renderH();
-  toast(flagged?`🔍 ${flagged} post(s) repassé(s) en « à vérifier »`:'🔍 Aucune violation détectée sur TryHackMe/Linux/PortSwigger','in');
 }
 function renderH(){
   const list=document.getElementById('h-list'),badge=document.getElementById('h-bdg');
   // BUGFIX indépendance : H mélange les deux comptes ; on n'affiche ici que celui actif.
-  const mineHAll=H.filter(h=>h.account===acc);
-  // NOUVEAU : base active vs archive — un post archivé sort de la base active (compteur, "sans
-  // vues", "à confirmer", "à vérifier", Performance) mais reste consultable via le bouton Archive.
-  const mineH=hShowArchive?mineHAll.filter(h=>h.archived):mineHAll.filter(h=>!h.archived);
+  const mineH=H.filter(h=>h.account===acc);
   badge.textContent=mineH.length;
-  const archCntEl=document.getElementById('h-archive-cnt');
-  if(archCntEl)archCntEl.textContent=mineHAll.filter(h=>h.archived).length;
-  const missing=mineH.filter(h=>!viewsAreKnown(h));
+  const missing=mineH.filter(h=>!h.views);
   const cntEl=document.getElementById('h-filter-cnt');
   if(cntEl)cntEl.textContent=missing.length;
   const unconfirmed=mineH.filter(h=>!h.confirmed);
@@ -2442,7 +2338,7 @@ function renderH(){
   let shown;
   if(hFilterNoViews||hFilterUnconfirmed||hFilterUnchecked){
     shown=mineH;
-    if(hFilterNoViews)shown=shown.filter(h=>!viewsAreKnown(h));
+    if(hFilterNoViews)shown=shown.filter(h=>!h.views);
     if(hFilterUnconfirmed)shown=shown.filter(h=>!h.confirmed);
     if(hFilterUnchecked)shown=shown.filter(h=>!h.checked);
   }else{
@@ -2469,7 +2365,7 @@ function renderH(){
       :'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,193,7,.12);color:#ffc107;border:1px solid rgba(255,193,7,.3);margin-left:3px" title="Copié/partagé mais pas confirmé publié — n\'entre pas dans les stats de performance">🕓 À confirmer</span>';
     // NOUVEAU : badge compact, affiché seulement si pas encore vérifié (pour ne pas surcharger la
     // ligne repliée) — distinct de confBdg qui porte sur la publication, pas sur le contenu.
-    const checkBdg=h.checked?'':`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.12);color:var(--orange);border:1px solid rgba(255,109,0,.3);margin-left:3px" title="Contenu pas encore relu/vérifié${h.flagReason?' — '+h.flagReason:''}">🔎 À vérifier</span>`;
+    const checkBdg=h.checked?'':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.12);color:var(--orange);border:1px solid rgba(255,109,0,.3);margin-left:3px" title="Contenu pas encore relu/vérifié (véracité, niveau, plateformes ou pratiques non réalisées...)">🔎 À vérifier</span>';
     const modMark=(h.originalText!==undefined&&h.originalText!==h.text)?'<span title="Modifié depuis la version générée/publiée initialement" style="font-size:11px">✏️</span>':'';
     return `<div class="hi" onclick="tgH(${h.id})">
       <div class="hir">
@@ -2479,23 +2375,20 @@ function renderH(){
         <button class="hcp" onclick="event.stopPropagation();toggleConfirmed(${h.id})" title="${h.confirmed?'Repasser en à confirmer':'Confirmer la publication'}">${h.confirmed?'🔄':'✅'}</button>
         <button class="hcp" onclick="event.stopPropagation();cpH(${h.id})">📋</button>
         <button class="hcp" onclick="event.stopPropagation();delH(${h.id})" style="color:rgba(255,23,68,.5)">✕</button>
-        ${viewsAreKnown(h)?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
+        ${h.views?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
         <span class="htm">${ts}</span>
       </div>
       <div class="hex" id="hex-${h.id}">
-        ${h.flagReason?`<div style="font-size:11px;color:var(--orange);margin-bottom:8px">⚠️ Signalé par le scan : ${h.flagReason}</div>`:''}
         <textarea onclick="event.stopPropagation()" onchange="editHText(${h.id},this.value)" style="width:100%;min-height:80px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${h.text}</textarea>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
           <label style="font-size:11px;color:var(--muted)">📅 Publié le :</label>
           <input type="datetime-local" value="${toLocalInputValue(h.publishedAt||h.ts)}" style="background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="editHDate(${h.id},this.value)">
           <label style="font-size:11px;color:var(--muted);margin-left:6px">👁 Vues/impressions LinkedIn :</label>
-          <input type="number" min="0" inputmode="numeric" value="${viewsAreKnown(h)?h.views:''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
+          <input type="number" min="0" inputmode="numeric" value="${h.views||''}" placeholder="0" style="width:90px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="setViews(${h.id},this.value)">
         </div>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
           <button onclick="toggleChecked(${h.id})" style="background:${h.checked?'rgba(0,230,118,.1)':'rgba(255,109,0,.1)'};color:${h.checked?'var(--green)':'var(--orange)'};border:1px solid ${h.checked?'rgba(0,230,118,.25)':'rgba(255,109,0,.25)'};border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">${h.checked?'🔎 Contenu vérifié':'🔎 Marquer comme vérifié'}</button>
           ${h.originalText!==undefined&&h.originalText!==h.text?`<button onclick="restoreHText(${h.id})" style="background:rgba(255,109,0,.1);color:var(--orange);border:1px solid rgba(255,109,0,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">↩️ Restaurer la version d'origine</button>`:''}
-          ${h.originalText!==undefined&&h.originalText!==h.text?`<button onclick="flagAvoidedFormulationH(${h.id})" style="background:rgba(255,23,68,.08);color:var(--red);border:1px solid rgba(255,23,68,.2);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">🚫 Éviter cette ancienne formulation</button>`:''}
-          <button onclick="${h.archived?'unarchiveH':'archiveH'}(${h.id})" style="background:rgba(120,130,145,.12);color:var(--muted);border:1px solid rgba(120,130,145,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;">${h.archived?'↩️ Sortir de l\'archive':'📦 Archiver (retirer de la base active)'}</button>
         </div>
       </div>
       ${tags?`<div class="htgs">${tags}</div>`:''}
@@ -2614,26 +2507,12 @@ function delAllRJ(){
 }
 function setViews(id,val){
   const h=H.find(x=>x.id===id);if(!h)return;
-  const trimmed=(val===null||val===undefined)?'':String(val).trim();
+  const n=Math.max(0,parseInt(val,10)||0);
+  h.views=n;saveAll();renderH();
   const stBody=document.getElementById('st-pf-body');
-  if(trimmed===''){
-    // NOUVEAU : champ vidé volontairement -> on repasse en "vues inconnues", à ne pas confondre
-    // avec "0 vue réellement constatée" (cf. viewsAreKnown()).
-    h.views=0;h.viewsKnown=false;saveAll();renderH();
-    if(stBody&&stBody.classList.contains('open'))renderStatsPanel();
-    toast('Vues réinitialisées (inconnu)','in');
-    return;
-  }
-  const n=Math.max(0,parseInt(trimmed,10)||0);
-  h.views=n;h.viewsKnown=true; // NOUVEAU : distingue "0 vue observée" de "jamais renseigné"
-  saveAll();renderH();
   if(stBody&&stBody.classList.contains('open'))renderStatsPanel();
-  toast(n?'👁 '+n+' vues enregistrées':'👁 0 vue enregistrée (valeur réelle, pas "inconnu")','ok');
+  toast(n?'👁 '+n+' vues enregistrées':'Vues réinitialisées','ok');
 }
-// NOUVEAU : une entrée créée avant ce champ n'a pas viewsKnown -> on déduit son statut comme avant
-// (views>0) pour ne rien casser sur les données déjà existantes. Toute nouvelle saisie via
-// setViews() renseigne désormais viewsKnown explicitement, y compris pour une vraie valeur 0.
-function viewsAreKnown(h){return h.viewsKnown!==undefined?h.viewsKnown:!!h.views;}
 // NOUVEAU (règle 11 du prompt maître) : un post archivé peut être réécrit après coup, et dans ce
 // cas l'ancienne date ne doit pas être considérée comme définitive — ces deux fonctions permettent
 // de corriger directement le texte et/ou la date de publication d'un post déjà dans l'historique.
@@ -2643,9 +2522,8 @@ function editHText(id,val){
   if(!v){toast('Le texte ne peut pas être vide','er');renderH();return;}
   if(v===h.text)return;
   if(h.originalText===undefined)h.originalText=h.text; // NOUVEAU (non destructif) : conserve le texte généré/publié avant correction
-  const hashtagRetiré=recordRemovedHashtags(h.text,v); // NOUVEAU (section 25.9)
   h.text=v;saveAll();renderH();
-  toast(hashtagRetiré?'Texte mis à jour ✓ — hashtag retiré mémorisé pour les prochaines générations':'Texte du post archivé mis à jour ✓ (version d\'origine conservée)','ok');
+  toast('Texte du post archivé mis à jour ✓ (version d\'origine conservée)','ok');
 }
 // NOUVEAU (non destructif) : revient au texte généré/publié à l'origine pour ce post archivé,
 // sans le supprimer ni créer une nouvelle entrée — même identifiant conservé dans l'historique.
@@ -2782,14 +2660,14 @@ function syncStatus(s,msg){
 function buildSyncPayload(){
   const other=acc==='simon'?'niko':'simon';
   const payload={updatedAt:Date.now(),stats:stats};
-  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ};
-  payload[other]={Q:lsL(qk(other),[]),H:lsL(hk(other),[]),CF:lsL(cfk(other),[]),RJ:lsL(rjk(other),[])};
+  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ,W:W};
+  payload[other]={Q:lsL(qk(other),[]),H:lsL(hk(other),[]),CF:lsL(cfk(other),[]),RJ:lsL(rjk(other),[]),W:lsL(wk(other),[])};
   return payload;
 }
 function applySyncPayload(p){
-  ['simon','niko'].forEach(a=>{if(p[a]){lsS(qk(a),p[a].Q||[]);lsS(hk(a),p[a].H||[]);lsS(cfk(a),p[a].CF||[]);lsS(rjk(a),p[a].RJ||[]);lsS(grk(a),Object.assign(defGR(),p[a].GR||{}));}});
+  ['simon','niko'].forEach(a=>{if(p[a]){lsS(qk(a),p[a].Q||[]);lsS(hk(a),p[a].H||[]);lsS(cfk(a),p[a].CF||[]);lsS(rjk(a),p[a].RJ||[]);lsS(wk(a),p[a].W||[]);}});
   if(p.stats){stats=p.stats;lsS(SK.stats,stats);}
-  loadAcc(acc);updateStats();renderQ();renderH();renderCF();renderRJ();
+  loadAcc(acc);updateStats();renderQ();renderH();renderCF();renderRJ();renderW();
   lsS(GK.ts,p.updatedAt);
   dedupQueueVsHistory(true);
 }
@@ -2828,8 +2706,8 @@ async function pushSync(){
 }
 function buildFullBackup(){
   const payload={updatedAt:Date.now(),stats:stats,app:'BotLik',exportedAt:Date.now()};
-  ['simon','niko'].forEach(a=>{payload[a]={Q:lsL(qk(a),[]),H:lsL(hk(a),[]),CF:lsL(cfk(a),[]),RJ:lsL(rjk(a),[]),GR:Object.assign(defGR(),lsL(grk(a),{}))};});
-  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ,GR:GR}; // s'assure que le compte actif en mémoire est bien à jour
+  ['simon','niko'].forEach(a=>{payload[a]={Q:lsL(qk(a),[]),H:lsL(hk(a),[]),CF:lsL(cfk(a),[]),RJ:lsL(rjk(a),[]),W:lsL(wk(a),[])};});
+  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ,W:W}; // s'assure que le compte actif en mémoire est bien à jour
   return payload;
 }
 function downloadBackup(){
@@ -2839,7 +2717,7 @@ function downloadBackup(){
   const d=new Date();
   const stamp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'_'+String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0');
   const a=document.createElement('a');
-  a.href=url;a.download='botlik-sauvegarde-'+stamp+'.json';
+  a.href=url;a.download='botlik-sauvegarde-'+stamp+'-base-corrigee.json';
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   toast('Sauvegarde téléchargée ✓','ok');
@@ -2865,12 +2743,12 @@ function importBackupFile(input){
 }
 function localPayloadSize(){
   let n=0;
-  ['simon','niko'].forEach(a=>{n+=lsL(qk(a),[]).length+lsL(hk(a),[]).length+lsL(rjk(a),[]).length;});
+  ['simon','niko'].forEach(a=>{n+=lsL(qk(a),[]).length+lsL(hk(a),[]).length+lsL(rjk(a),[]).length+lsL(wk(a),[]).length;});
   return n;
 }
 function remotePayloadSize(p){
   let n=0;
-  ['simon','niko'].forEach(a=>{if(p[a])n+=(p[a].Q?.length||0)+(p[a].H?.length||0)+(p[a].RJ?.length||0);});
+  ['simon','niko'].forEach(a=>{if(p[a])n+=(p[a].Q?.length||0)+(p[a].H?.length||0)+(p[a].RJ?.length||0)+(p[a].W?.length||0);});
   return n;
 }
 async function pullSync(silent){
@@ -2907,6 +2785,23 @@ function queueSync(){
 }
 function toggleSync(){const b=document.getElementById('sy-body');const o=b.classList.toggle('open');document.getElementById('sy-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';}
 function toggleRJ(){const b=document.getElementById('rj-body');const o=b.classList.toggle('open');document.getElementById('rj-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderRJ();}
+function toggleW(){const b=document.getElementById('w-body');const o=b.classList.toggle('open');document.getElementById('w-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderW();}
+function renderW(){
+  const list=document.getElementById('w-list'),badge=document.getElementById('w-count');if(!list)return;
+  const mine=W.filter(r=>r.account===acc);if(badge)badge.textContent='('+mine.length+')';
+  if(!mine.length){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun ancien post en attente de classement.</div>';return;}
+  list.innerHTML=mine.map(r=>{
+    const d=new Date(r.publishedAt||r.scheduledAt||r.ts||r.rejectedAt||Date.now());
+    const ts=d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const checked=r.checked?'✓ Contrôlé':'🔎 À contrôler';
+    return `<div class="hi" id="w-${r.id}" onclick="tgW(${r.id})"><div class="hir"><span class="bdg b-or">${r.label||TL[r.type]||'📝'}</span><span style="font-size:9px;color:var(--orange)">${checked}</span><span class="htxt">${(r.text||'').substring(0,90)}…</span><button class="hcp" onclick="event.stopPropagation();promoteW(${r.id})" title="Réintégrer dans l'historique actif">↩️</button><button class="hcp" onclick="event.stopPropagation();delW(${r.id})" style="color:rgba(255,23,68,.5)" title="Supprimer définitivement">✕</button><span class="htm">${ts}</span></div><div class="hex" id="wex-${r.id}"><div style="font-size:12px;color:var(--text);white-space:pre-wrap">${(r.text||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div><div style="margin-top:10px;display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-c" onclick="event.stopPropagation();promoteW(${r.id})">↩️ Réintégrer actif</button><button class="btn btn-s" onclick="event.stopPropagation();delW(${r.id})">🗑️ Supprimer</button></div></div></div>`;
+  }).join('');
+}
+function tgW(id){const el=document.getElementById('wex-'+id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+function promoteW(id){const r=W.find(x=>x.id===id);if(!r)return;if(!confirm('Réintégrer ce post dans la base active ? Il pourra alors être pris en compte par les contrôles et l\'historique.'))return;W=W.filter(x=>x.id!==id);delete r.waitingReason;r.status='A_VERIFIER';r.checked=false;r.account=acc;H.unshift(r);saveAll();renderW();renderH();toast('Post réintégré dans l\'historique actif — à vérifier ✓','ok');}
+function delW(id){if(!confirm('Supprimer définitivement cet ancien post ?'))return;W=W.filter(x=>x.id!==id);saveAll();renderW();toast('Post supprimé définitivement','in');}
+function delAllW(){const n=W.filter(x=>x.account===acc).length;if(!n)return;if(!confirm('Supprimer définitivement les '+n+' posts en attente ?'))return;W=W.filter(x=>x.account!==acc);saveAll();renderW();toast(n+' posts supprimés','in');}
+function classifyAllW(){let n=0;W.forEach(r=>{if(r.account===acc&&!r.checked){r.checked=true;r.status='CONTROLE';n++;}});saveAll();renderW();toast(n+' post'+(n>1?'s':'')+' marqué'+(n>1?'s':'')+' comme contrôlé','ok');}
 function toggleStatsPanel(){const b=document.getElementById('st-pf-body');const o=b.classList.toggle('open');document.getElementById('st-pf-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderStatsPanel();}
 // Détermine la famille narrative d'un post archivé en comparant son texte à l'accroche
 // connue du thème (AF) — pas de champ dédié stocké sur H, pour ne rien changer au schéma
