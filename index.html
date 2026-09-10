@@ -475,7 +475,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       <button class="tp" id="h-confirm-filter-btn" onclick="toggleHConfirmFilter()" title="N'afficher que les posts « à confirmer » — copiés/partagés mais pas encore validés comme réellement publiés sur LinkedIn">🕓 À valider (<span id="h-confirm-filter-cnt">0</span>)</button>
       <button class="tp" id="h-check-filter-btn" onclick="toggleHCheckFilter()" title="N'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié (véracité, niveau, TryHackMe/Linux non inventés...) — pratique pour dépouiller progressivement les anciens posts">🔎 À vérifier (<span id="h-check-filter-cnt">0</span>)</button>
       <button class="tp" id="h-archive-btn" onclick="toggleArchiveView()" title="Les posts archivés sortent de la base active (compteurs, filtres, Performance) sans être supprimés — reste consultable ici">📦 Archive (<span id="h-archive-cnt">0</span>)</button>
-      <button class="tp" onclick="scanHForViolations()" title="Relit tout l'historique réel à la recherche de TryHackMe/Linux présentés comme une pratique personnelle, et repasse les posts concernés en « à vérifier »">🔍 Scanner TryHackMe/Linux</button>
+      <button class="tp" onclick="scanHForViolations()" title="Relit tout l'historique réel à la recherche de TryHackMe/Linux/PortSwigger présentés comme une pratique personnelle, et repasse les posts concernés en « à vérifier »">🔍 Scanner expériences non validées</button>
       <button class="tp" onclick="toggleImportForm()">📥 Importer LinkedIn</button>
     </div>
     <div class="hl" id="h-list"><div style="text-align:center;color:var(--muted);font-size:12px;padding:14px">Aucun post archivé.</div></div>
@@ -1069,32 +1069,32 @@ const TS = {
     "a": [
       "Une faille XSS réussie sur un site d'entraînement légal. Petite mais vraie satisfaction.",
       "Un site qui affiche direct ce qu'on tape dans la recherche sans le filtrer. Terrain de jeu pour un XSS.",
-      "Je m'entraîne sur PortSwigger Academy pour la partie XSS.",
+      "Je me renseigne sur PortSwigger Academy pour comprendre les failles XSS.",
       "Le XSS, avant je pensais que c'était juste \"afficher une popup\". En creusant, je réalise que ça peut aussi voler la session de quelqu'un d'autre.",
       "Ce qui m'a étonné avec le XSS : la faille vient presque toujours du même problème — un site qui fait confiance à ce qu'on lui envoie."
     ],
     "c": [
-      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe m'entraîne sur PortSwigger Web Security Academy, une plateforme gratuite, en commençant par les failles XSS — injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\nC'est un autre univers que le pentest classique : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie, plutôt que dans sa configuration.",
-      "3 choses que je retiens de mes débuts en sécurité web :\n\n1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.\n\nJe suis tout début, mais déjà bluffé.",
-      "Une faille XSS réussie sur un exercice d'entraînement : faire apparaître une popup en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire vu de l'extérieur, mais pour moi c'est la preuve que je commence à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape : comprendre comment on corrige ce genre de faille.",
+      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe me renseigne notamment sur PortSwigger Web Security Academy, une plateforme gratuite avec plein de ressources sur les failles XSS — injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\nC'est un autre univers que le pentest classique : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie, plutôt que dans sa configuration.",
+      "Ce que je retiens de mes lectures sur la sécurité web :\n\n1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.\n\nJe suis tout début, mais déjà bluffé.",
+      "Un exemple de faille XSS qui revient souvent dans les writeups que je lis : faire apparaître une popup juste en glissant du code dans un champ de recherche mal protégé.\n\nRien de spectaculaire à lire, mais ça aide à comprendre comment un site traite vraiment les données qu'on lui envoie.\n\nProchaine étape pour moi : comprendre comment on corrige ce genre de faille.",
       "Ce qui me frappe en découvrant la sécurité web : la même erreur revient sans arrêt sur des sites différents — ne pas filtrer ce que l'utilisateur envoie.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site.",
-      "Question pour les devs web qui passent par ici : vous êtes formés aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?\n\nJe découvre la sécurité web côté attaque avec PortSwigger Academy, et je me demande comment ça se passe côté développement."
+      "Question pour les devs web qui passent par ici : vous êtes formés aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?\n\nJe me renseigne sur la sécurité web côté attaque en lisant les ressources de PortSwigger Academy, et ça me fait me demander comment ça se passe côté développement."
     ]
   },
   "Injection SQL": {
     "a": [
       "Un simple formulaire mal protégé peut parfois laisser passer bien plus qu'un mot de passe.",
       "L'injection SQL, j'en avais entendu parler cent fois avant de comprendre vraiment comment ça marche.",
-      "Je m'entraîne aussi sur PortSwigger Academy pour la partie injection SQL.",
+      "Je me renseigne aussi sur PortSwigger Academy pour la partie injection SQL.",
       "L'injection SQL, ça m'a pris du temps à vraiment visualiser : on ne \"pirate\" rien à proprement parler, on fait juste dire au site autre chose que ce qu'il devait dire.",
       "Ce qui surprend avec l'injection SQL : une simple apostrophe mal gérée dans un champ de recherche peut suffire à tout faire dérailler."
     ],
     "c": [
-      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe m'entraîne sur PortSwigger Web Security Academy, une plateforme gratuite, en ce moment surtout sur l'injection SQL — glisser du code dans un champ de formulaire pour qu'un site exécute autre chose que prévu.\n\nC'est un autre univers que le pentest classique : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie, plutôt que dans sa configuration.",
-      "L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut glisser du code dans un champ de formulaire pour qu'il exécute autre chose que prévu — genre afficher des infos censées rester privées.\n\nL'avoir fait sur un site d'entraînement légal m'a appris bien plus que dix articles lus avant.",
+      "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe me renseigne notamment sur PortSwigger Web Security Academy, une plateforme gratuite avec plein de ressources, en ce moment surtout sur l'injection SQL — glisser du code dans un champ de formulaire pour qu'un site exécute autre chose que prévu.\n\nC'est un autre univers que le pentest classique : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie, plutôt que dans sa configuration.",
+      "L'injection SQL, ça faisait longtemps que j'en entendais parler sans comprendre le principe.\n\nEn gros, si un site n'est pas bien protégé, on peut glisser du code dans un champ de formulaire pour qu'il exécute autre chose que prévu — genre afficher des infos censées rester privées.\n\nCe qui m'aide le plus à comprendre, c'est de lire comment d'autres expliquent une injection réussie étape par étape, bien plus que dix définitions théoriques lues avant.",
       "Ce qui me frappe avec l'injection SQL : la faille vient presque toujours du même oubli — ne jamais faire confiance à ce qu'un utilisateur tape dans un champ.\n\nÇa donne l'impression que c'est surtout une histoire de vigilance répétée plus que de génie technique.\n\nJe garde ça en tête pour le jour où ce sera moi qui développerai un site avec une base de données derrière.",
-      "3 choses que je retiens de mes débuts sur l'injection SQL :\n\n1/ Une requête mal construite peut laisser quelqu'un de mal intentionné dicter sa propre commande à la base de données.\n\n2/ Ne jamais faire confiance à ce qu'on reçoit d'un formulaire, même le plus anodin.\n\n3/ La plupart des protections sont simples une fois qu'on les connaît — le plus dur est de penser à les appliquer partout.\n\nJe suis tout début, mais déjà bluffé par la simplicité du principe.",
-      "Question pour les devs qui passent par ici : les requêtes préparées, c'est un réflexe dès le début pour vous, ou un truc qu'on apprend après une mauvaise surprise ?\n\nJe découvre l'injection SQL côté attaque avec PortSwigger Academy, et ça me fait me demander comment ça se passe côté développement."
+      "Ce que je retiens de mes lectures sur l'injection SQL :\n\n1/ Une requête mal construite peut laisser quelqu'un de mal intentionné dicter sa propre commande à la base de données.\n\n2/ Ne jamais faire confiance à ce qu'on reçoit d'un formulaire, même le plus anodin.\n\n3/ La plupart des protections sont simples une fois qu'on les connaît — le plus dur est de penser à les appliquer partout.\n\nJe suis tout début, mais déjà bluffé par la simplicité du principe.",
+      "Question pour les devs qui passent par ici : les requêtes préparées, c'est un réflexe dès le début pour vous, ou un truc qu'on apprend après une mauvaise surprise ?\n\nJe me renseigne sur l'injection SQL côté attaque en lisant les ressources de PortSwigger Academy, et ça me fait me demander comment ça se passe côté développement."
     ]
   },
   "Forensic numérique": {
@@ -1404,8 +1404,8 @@ const HT={
     'Sécurité mobile':['#SécuritéMobile','#Smartphone'],
     'Réseaux':['#Réseaux','#TCPIP','#SIN','#Cisco'],
     'Linux':['#Linux','#Terminal','#Kali','#LearningByDoing'],
-    'XSS':['#XSS','#SécuritéWeb','#PortSwigger','#EthicalHacking'],
-    'Injection SQL':['#SQLInjection','#SécuritéWeb','#PortSwigger','#WebSecurity'],
+    'XSS':['#XSS','#SécuritéWeb','#EthicalHacking','#Débutant'],
+    'Injection SQL':['#SQLInjection','#SécuritéWeb','#WebSecurity','#Débutant'],
     'Forensic numérique':['#Forensic','#InvestigationNumérique'],
     'Fuites de données':['#FuiteDeDonnées','#DataBreach'],
     'Sécurité réseaux sociaux':['#RéseauxSociaux','#Discord','#Instagram'],
@@ -2373,12 +2373,16 @@ function scanHForViolations(){
   const mine=H.filter(h=>h.account===acc);
   const thPattern=/tryhackme/i;
   const linuxNamePattern=/\blinux\b/i;
-  const linuxVerbPattern=/(je\s+pratique|m'entra[iî]ne|je\s+ma[iî]trise|je\s+configure|à l'aise avec|utilise\s+r[ée]guli[èe]rement)/i;
+  const practiceVerbPattern=/(je\s+pratique|m'entra[iî]ne|je\s+ma[iî]trise|je\s+configure|à l'aise avec|utilise\s+r[ée]guli[èe]rement|j'ai\s+r[ée]alis[ée]|j'ai\s+r[ée]ussi|l'avoir\s+fait)/i;
+  // NOUVEAU : PortSwigger n'est plus une expérience validée (au même titre que TryHackMe/Linux) —
+  // même traitement, sur l'historique réel des 82 posts.
+  const portswiggerPattern=/portswigger/i;
   let flagged=0;
   mine.forEach(h=>{
     const reasons=[];
     if(thPattern.test(h.text))reasons.push('TryHackMe cité comme expérience personnelle');
-    if(linuxNamePattern.test(h.text)&&linuxVerbPattern.test(h.text))reasons.push('Linux présenté comme pratique acquise');
+    if(linuxNamePattern.test(h.text)&&practiceVerbPattern.test(h.text))reasons.push('Linux présenté comme pratique acquise');
+    if(portswiggerPattern.test(h.text)&&practiceVerbPattern.test(h.text))reasons.push('PortSwigger présenté comme pratique acquise (expérience non validée)');
     if(reasons.length){h.checked=false;h.flagReason=reasons.join(' · ');flagged++;}
   });
   if(flagged){
@@ -2387,7 +2391,7 @@ function scanHForViolations(){
     const btn=document.getElementById('h-check-filter-btn');if(btn)btn.classList.add('sel');
   }
   renderH();
-  toast(flagged?`🔍 ${flagged} post(s) repassé(s) en « à vérifier »`:'🔍 Aucune violation détectée sur TryHackMe/Linux','in');
+  toast(flagged?`🔍 ${flagged} post(s) repassé(s) en « à vérifier »`:'🔍 Aucune violation détectée sur TryHackMe/Linux/PortSwigger','in');
 }
 function renderH(){
   const list=document.getElementById('h-list'),badge=document.getElementById('h-bdg');
