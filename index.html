@@ -560,7 +560,7 @@ let Q=[], H=[], CF=[], RJ=[];
 // ici — ce sont des listes locales simples, consultées par genPost() pour éviter de repicker une
 // formulation explicitement rejetée. defGR() donne toujours une structure complète (même après
 // import d'une sauvegarde plus ancienne qui ne connaît pas encore ce champ).
-const defGR=()=>({preferredFormulations:[],avoidedFormulations:[],preferredAngles:[],avoidedAngles:[],experienceRules:[],structuralPatterns:[]});
+const defGR=()=>({preferredFormulations:[],avoidedFormulations:[],preferredAngles:[],avoidedAngles:[],experienceRules:[],structuralPatterns:[],avoidedHashtags:[]});
 let GR=defGR();
 let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
 // BUGFIX "toujours les mêmes thèmes" (round 3, suite) : fairnessWeights se base sur Q+H, qui
@@ -1443,10 +1443,17 @@ const HT={
 /* Choisit entre 2 et 4 hashtags : mélange de tags spécifiques au thème/occasion
    et de tags génériques du compte, tirés aléatoirement à chaque génération pour
    éviter que les posts se terminent toujours par le même bloc. */
+// NOUVEAU (section 25) : un hashtag n'est jamais neutre — il affirme une association, même quand
+// le texte du post reste correctement formulé en découverte. Liste figée (jamais débloquable, même
+// par une future correction) pour les 2 plateformes déjà confirmées non validées pour Simon, en
+// plus de GR.avoidedHashtags (appris des corrections, lui modifiable). Vérification AVANT
+// sélection, pas de correction après coup — voir section 25.8.
+const BLOCKED_EXPERIENCE_HASHTAGS=new Set(['#TryHackMe','#PortSwigger']);
 function pickHashtags(key,a){
   const pool=(a==='simon'?HT.simon:HT.niko)||{};
-  const specific=pool[key]||[];
-  const all=[...new Set([...specific,...pool.generic])];
+  const avoided=new Set([...BLOCKED_EXPERIENCE_HASHTAGS,...(GR.avoidedHashtags||[])]);
+  const specific=(pool[key]||[]).filter(t=>!avoided.has(t));
+  const all=[...new Set([...specific,...(pool.generic||[]).filter(t=>!avoided.has(t))])];
   if(!all.length)return '';
   const n=Math.min(all.length,3+Math.floor(Math.random()*3));
   const shuffled=[...all].sort(()=>Math.random()-0.5);
@@ -1456,6 +1463,17 @@ function pickHashtags(key,a){
     chosen=[...new Set(chosen)];
   }
   return chosen.join(' ');
+}
+// NOUVEAU (section 25.9) : si une correction fait disparaître un hashtag qui était présent avant,
+// on le retient — les prochaines sélections de pickHashtags() ne le repropose plus. Détection
+// automatique (pas de bouton dédié), au même titre que originalText est capturé automatiquement.
+function extractHashtags(t){return (t||'').match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[];}
+function recordRemovedHashtags(oldText,newText){
+  const before=new Set(extractHashtags(oldText));
+  const after=new Set(extractHashtags(newText));
+  let added=false;
+  before.forEach(h=>{if(!after.has(h)&&!GR.avoidedHashtags.includes(h)){GR.avoidedHashtags.push(h);added=true;}});
+  return added;
 }
 /* Retire un éventuel bloc hashtag final avant comparaison anti-doublon, pour que
    les textes archivés avant cette mise à jour (hashtags encore intégrés au texte)
@@ -2049,8 +2067,9 @@ function editQText(id,val){
   if(!v){toast('Le texte ne peut pas être vide','er');renderQ();return;}
   if(v===q.text)return;
   if(q.originalText===undefined)q.originalText=q.text; // NOUVEAU (non destructif) : conserve la version générée avant toute modification
+  const hashtagRetiré=recordRemovedHashtags(q.text,v); // NOUVEAU (section 25.9)
   q.text=v;saveAll();renderQ();updateStats();
-  toast('Post modifié ✓ (version générée conservée)','ok');
+  toast(hashtagRetiré?'Post modifié ✓ — hashtag retiré mémorisé pour les prochaines générations':'Post modifié ✓ (version générée conservée)','ok');
 }
 // NOUVEAU (non destructif) : revient au texte produit par le générateur pour ce post de la file,
 // sans rien supprimer ni créer de doublon — même identifiant, même position dans la file.
@@ -2383,6 +2402,10 @@ function scanHForViolations(){
     if(thPattern.test(h.text))reasons.push('TryHackMe cité comme expérience personnelle');
     if(linuxNamePattern.test(h.text)&&practiceVerbPattern.test(h.text))reasons.push('Linux présenté comme pratique acquise');
     if(portswiggerPattern.test(h.text)&&practiceVerbPattern.test(h.text))reasons.push('PortSwigger présenté comme pratique acquise (expérience non validée)');
+    // NOUVEAU (section 25.4) : un hashtag bloqué reste un problème même si le corps du texte, lui,
+    // est correctement formulé — un hashtag affirme une association à lui seul.
+    const badTags=extractHashtags(h.text).filter(t=>BLOCKED_EXPERIENCE_HASHTAGS.has(t));
+    if(badTags.length)reasons.push('Hashtag(s) à retirer : '+badTags.join(' '));
     if(reasons.length){h.checked=false;h.flagReason=reasons.join(' · ');flagged++;}
   });
   if(flagged){
@@ -2617,8 +2640,9 @@ function editHText(id,val){
   if(!v){toast('Le texte ne peut pas être vide','er');renderH();return;}
   if(v===h.text)return;
   if(h.originalText===undefined)h.originalText=h.text; // NOUVEAU (non destructif) : conserve le texte généré/publié avant correction
+  const hashtagRetiré=recordRemovedHashtags(h.text,v); // NOUVEAU (section 25.9)
   h.text=v;saveAll();renderH();
-  toast('Texte du post archivé mis à jour ✓ (version d\'origine conservée)','ok');
+  toast(hashtagRetiré?'Texte mis à jour ✓ — hashtag retiré mémorisé pour les prochaines générations':'Texte du post archivé mis à jour ✓ (version d\'origine conservée)','ok');
 }
 // NOUVEAU (non destructif) : revient au texte généré/publié à l'origine pour ce post archivé,
 // sans le supprimer ni créer une nouvelle entrée — même identifiant conservé dans l'historique.
