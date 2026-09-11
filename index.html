@@ -433,6 +433,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     </div>
     <button class="btn btn-p" onclick="genPost()">⚡ Générer le post</button>
     <div class="pw" id="pw">
+      <div id="po-mod-banner" onclick="restoreLastPost()" title="Cliquer pour revenir à la version générée automatiquement" style="display:none;background:rgba(0,178,255,.1);color:var(--cyan);border:1px solid rgba(0,178,255,.25);border-radius:6px;padding:7px 11px;font-size:12px;margin-bottom:8px;cursor:pointer">✏️ Modifié depuis la génération — <u>restaurer l'original</u></div>
       <div class="po" id="po" contenteditable="true" oninput="onPoEdited()" onblur="onPoBlur()"></div>
       <div class="htb" id="htb"></div>
       <div class="pm"><span id="pm"></span><span style="color:var(--muted)">✏️ Texte modifiable · Clic # pour copier</span></div>
@@ -1540,6 +1541,16 @@ function renderPost(text){
   po.innerHTML=esc.replace(/#([\wÀ-ÿéèêëàâîïôùûüç]+)/gi,'<span class="ht" onclick="cpHt(\'#$1\')">#$1</span>');
   htb.innerHTML=tags.length?'<span style="color:var(--muted);font-size:10px;margin-right:4px">TAGS:</span>'+tags.map(h=>`<span class="htag" onclick="cpHt('${h}')">${h}</span>`).join(''):'<span style="color:var(--muted);font-size:11px">Aucun hashtag</span>';
   const len=text.length;pm.textContent=`${len} car. · ${tags.length} hashtags`;pm.parentElement.className='pm'+(len>3000?' over':len>2500?' warn':'');
+  updatePoModBanner();
+}
+// NOUVEAU : bandeau visible dès que le texte affiché diffère de la version générée d'origine —
+// cliquer dessus restaure directement l'original. Appelé après chaque rendu/frappe pour rester
+// synchro, y compris quand #po affiche en fait un post de la file déjà modifié précédemment.
+function updatePoModBanner(){
+  const banner=document.getElementById('po-mod-banner');
+  if(!banner)return;
+  const modified=!!(lastPost&&lastPost.originalText!==undefined&&lastPost.originalText!==lastPost.text);
+  banner.style.display=modified?'block':'none';
 }
 function cpHt(h){navigator.clipboard.writeText(h).then(()=>toast('Copié : '+h,'in'));}
 // NOUVEAU : le post juste généré (#po) est modifiable avant publication. copyPost/publishLinkedIn
@@ -1558,6 +1569,7 @@ function onPoEdited(){
   const htb=document.getElementById('htb'),pm=document.getElementById('pm');
   htb.innerHTML=tags.length?'<span style="color:var(--muted);font-size:10px;margin-right:4px">TAGS:</span>'+tags.map(h=>`<span class="htag" onclick="cpHt('${h}')">${h}</span>`).join(''):'<span style="color:var(--muted);font-size:11px">Aucun hashtag</span>';
   const len=text.length;pm.textContent=`${len} car. · ${tags.length} hashtags`;pm.parentElement.className='pm'+(len>3000?' over':len>2500?' warn':'');
+  updatePoModBanner();
 }
 // NOUVEAU : si l'aperçu affiche en réalité un post déjà en file (chargé via prvQ, même référence
 // objet que dans Q), on persiste la modification dès qu'on quitte le champ — même garantie que
@@ -1574,7 +1586,7 @@ function onPoBlur(){
   if(current===original)return;
   const validation=validateGeneratedPost({text:current}), hashtags=validateHashtags(current);
   if(!validation.ok||!hashtags.ok){
-    renderPost(original);lastPost.text=original;
+    lastPost.text=original;renderPost(original);
     toast('⚠️ Correction refusée : retour à la version générée','er');
     return;
   }
@@ -1588,8 +1600,8 @@ function onPoBlur(){
 function restoreLastPost(){
   if(!lastPost||lastPost.originalText===undefined)return;
   if(lastPost.originalText===lastPost.text){toast('Déjà la version générée','in');return;}
-  renderPost(lastPost.originalText);
   lastPost.text=lastPost.originalText;
+  renderPost(lastPost.originalText);
   if(Q.includes(lastPost)){saveAll();renderQ();}
   toast('Version générée restaurée ✓','in');
 }
@@ -1666,8 +1678,8 @@ function genPost(){
     text=candidate;isDup=dup;break;
   }
   if(!text||!validation?.ok){toast('⚠️ Génération refusée : contenu ou hashtag non conforme aux règles','er');return;}
-  renderPost(text);
   lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc,originalText:text,previousVersions:[]};
+  renderPost(text);
   if(!stats[acc])stats[acc]={total:0,sent:0};
   stats[acc].total++;saveAll();updateStats();
   if(isDup)toast('⚠️ Toutes les variantes de ce thème sont déjà utilisées (texte en double avec un post existant)','er');
@@ -2134,7 +2146,7 @@ function markPubQ(id){
   toast('Marqué comme publié — retiré de la file ✓','ok');
   autoRefill(true);
 }
-function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;renderPost(q.text);lastPost=q;document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});toast('Aperçu chargé','in');}
+function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;lastPost=q;renderPost(q.text);document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});toast('Aperçu chargé','in');}
 function delQ(id){
   if(!confirm('Supprimer ce post de la file ?'))return;
   const removed=Q.find(x=>x.id===id);
@@ -2589,7 +2601,7 @@ function delCf(id){CF=CF.filter(x=>x.id!==id);saveAll();renderCF();}
 function genCf(id){
   const c=CF.find(x=>x.id===id);if(!c)return;
   const text=genTxt({type:'congrats',who:c.name,occ:c.occ,note:c.note,ctx:c.note});
-  renderPost(text);lastPost={id:Date.now(),text,type:'congrats',topic:c.name,label:'🎉 Félicitations',ts:Date.now(),account:acc,originalText:text};
+  lastPost={id:Date.now(),text,type:'congrats',topic:c.name,label:'🎉 Félicitations',ts:Date.now(),account:acc,originalText:text};renderPost(text);
   if(!stats[acc])stats[acc]={total:0,sent:0};stats[acc].total++;saveAll();updateStats();
   toast('Post pour '+c.name+' ✓','ok');document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
