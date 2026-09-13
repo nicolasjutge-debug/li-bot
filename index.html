@@ -1502,9 +1502,26 @@ const UNVALIDATED_EXPERIENCE_PATTERNS=[
   /(?:portswigger|web security academy)[\s\S]{0,90}(?:j['’]?(?:ai|a)\s+|je\s+)(?:test|réalis|realiz|réuss|reuss|m['’]entra[iî]ne|utilis|exploit|pratiqu|fais|fait|effectu|lab|exerc)/i,
   /(?:j['’]?(?:ai|a)\s+|je\s+)(?:m['’]entra[iî]ne|teste|testé|réalis|réussi|utilis|pratique|exploite|fais|fait|effectue)[\s\S]{0,90}(?:portswigger|web security academy)/i,
   /(?:tryhackme|try\s*hack\s*me)/i,
-  /(?:j['’]?(?:ai|a)\s+|je\s+)(?:pratique|pratiqu|utilis|configure|configur|installe|install|travaille|m['’]entra[iî]ne|m['’]exerce|ma[iî]trise)[\s\S]{0,70}(?:linux|terminal|kali)/i
+  /(?:j['’]?(?:ai|a)\s+|je\s+)(?:pratique|pratiqu|utilis|configure|configur|installe|install|travaille|m['’]entra[iî]ne|m['’]exerce|ma[iî]trise)[\s\S]{0,70}(?:linux|terminal|kali)/i,
+  // AJOUTS (prompt correction BotLik §7) : CTF réalisés personnellement, pentests/audits/
+  // missions professionnels, certifications présentées comme obtenues. Le thème correspondant
+  // (CTF, Pentest...) reste utilisable tant qu'il reste formulé comme découverte/intérêt —
+  // testé sur les 745 combinaisons intro×corps existantes de TS : aucun faux positif.
+  /(?:j['’]?(?:ai|a)|je)\s+(?:[^\s]+\s+){0,2}(?:réalis|fait|termin|résolu|resolu|particip|gagn)[\s\S]{0,40}(?:ctf|capture[\s-]the[\s-]flag)/i,
+  /(?:ctf|capture[\s-]the[\s-]flag)[\s\S]{0,40}(?:j['’]?(?:ai|a)|je)\s+(?:[^\s]+\s+){0,2}(?:réalis|fait|termin|résolu|resolu|particip|gagn)/i,
+  /(?:j['’]?(?:ai|a)|je)\s+(?:[^\s]+\s+){0,2}(?:réalis|effectu|men[eé]|conduit)[\s\S]{0,50}(?:pentest|test[s]?\s+d['’]intrusion|audit\s+de\s+s[eé]curit[eé]|mission)[\s\S]{0,40}(?:client|entreprise|professionnel)/i,
+  /(?:en\s+mission|lors\s+de\s+mon\s+stage|durant\s+mon\s+stage|en\s+tant\s+que\s+(?:pentester|consultant|analyste))[\s\S]{0,60}(?:chez|pour)\s+[^\s]+[\s\S]{0,60}(?:j['’]?(?:ai|a)|je)\s+(?:[^\s]+\s+){0,2}(?:réalis|effectu|analys|audit|men[eé])/i,
+  /(?:je\s+suis\s+certifi[eé]|certifi[eé]\s+[^\s]|j['’]?(?:ai|a)\s+(?:[^\s]+\s+){0,2}obtenu\s+(?:ma|la)\s+certification|titulaire\s+de\s+la\s+certification)/i,
+  // COMPLÉMENT : le motif Linux/terminal/Kali ci-dessus ne couvre pas l'élision "j'utilise"/
+  // "j'installe" (seule "je pratique"/"j'ai utilisé" y était couverte) — testé séparément,
+  // 0 faux positif sur les 745 combinaisons existantes.
+  /j['’](?:utilise|utilis|installe|install)[\s\S]{0,70}(?:linux|terminal|kali)/i
 ];
 const UNVALIDATED_HASHTAGS=['#PortSwigger','#TryHackMe'];
+// Gabarit générique "verbe 1ère personne + complément proche" réutilisé pour relire
+// generationRules.avoidedExperiences dans validateGeneratedPost (voir plus bas) — sans bloquer
+// une simple mention de découverte comme "je découvre X" (§6 du prompt).
+const PRACTICE_VERB_RE=/(?:j['’]?(?:ai|a)|je)\s+(?:[^\s]+\s+){0,2}(?:test|réalis|utilis|pratiqu|m['’]entra[iî]ne|exploit|configure|installe|ma[iî]trise|effectu|travaille)/i;
 // Motifs génériques de sur-affirmation (indépendants de TryHackMe/PortSwigger/Linux, cf. §5 du
 // prompt "générateur adaptatif") : verbe de pratique/réalisation aboutie + le complément qui
 // suit immédiatement (jusqu'à 45 caractères ou fin de phrase). On retient la formulation
@@ -1536,6 +1553,17 @@ function validateGeneratedPost(post){
     if(generationRules.avoidedFormulations?.some(f=>f&&low.includes(String(f).toLowerCase()))) errors.push('formulation rejetée');
     if(generationRules.avoidedAngles?.some(a=>a&&low.includes(String(a).toLowerCase()))) errors.push('angle rejeté');
     if(generationRules.avoidedHashtags?.some(h=>h&&new RegExp(String(h).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(text))) errors.push('hashtag rejeté');
+    // CORRECTIF (prompt §5/§11) : generationRules.avoidedExperiences était alimenté par
+    // learnCorrection (PortSwigger/TryHackMe/Linux pratique) mais jamais relu ici — resté sans
+    // effet réel sur la génération. Fenêtre de ±90 caractères autour de la mention pour exiger
+    // un verbe de pratique à proximité (§6 : une simple découverte, ex. "je découvre X", reste permise).
+    if(generationRules.avoidedExperiences?.some(exp=>{
+      if(!exp) return false;
+      const idx=low.indexOf(String(exp).toLowerCase());
+      if(idx===-1) return false;
+      const win=text.slice(Math.max(0,idx-90),Math.min(text.length,idx+String(exp).length+90));
+      return PRACTICE_VERB_RE.test(win);
+    })) errors.push('expérience apprise à éviter');
   }
   return {ok:errors.length===0,errors};
 }
@@ -1777,7 +1805,9 @@ function clearGenerator(){
 function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');if(lastPost)archive(lastPost,'copie');});}
 
 function genPost(){
-  const usedTexts=new Set([...Q.filter(x=>x.account===acc).map(q=>q.text),...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text)].map(norm));
+  // NOUVEAU (prompt §3) : un post archivé dans W (anciens posts retirés de la base active)
+  // reste utilisable pour détecter une répétition, même s'il ne compte plus dans les stats.
+  const usedTexts=new Set([...Q.filter(x=>x.account===acc).map(q=>q.text),...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text),...W.filter(x=>x.account===acc).map(w=>w.text)].map(norm));
   const maxAttempts=10;
   let text='', isDup=false, validation=null;
   for(let attempt=0;attempt<maxAttempts;attempt++){
@@ -2011,7 +2041,9 @@ function genOnePost(extraAvoid=[]){
   // N'accepte jamais un texte déjà en file, déjà publié, déjà supprimé manuellement (rejeté),
   // ni un texte tout juste vidé par une RAZ (extraAvoid, valable pour cet appel seulement)
   // BUGFIX indépendance des comptes : ne considère "déjà utilisé" que le texte DU MÊME compte.
-  const usedTexts = new Set([...Q.filter(x=>x.account===acc).map(q=>q.text), ...H.filter(x=>x.account===acc).map(h=>h.text), ...RJ.filter(x=>x.account===acc).map(r=>r.text), ...extraAvoid].map(norm));
+  // NOUVEAU (prompt §3) : un post archivé dans W (anciens posts retirés de la base active)
+  // reste utilisable pour détecter une répétition, même s'il ne compte plus dans les stats.
+  const usedTexts = new Set([...Q.filter(x=>x.account===acc).map(q=>q.text), ...H.filter(x=>x.account===acc).map(h=>h.text), ...RJ.filter(x=>x.account===acc).map(r=>r.text), ...W.filter(x=>x.account===acc).map(w=>w.text), ...extraAvoid].map(norm));
   // BUGFIX : cherche une variante VRAIMENT inédite pour un plan, au lieu de tirer un texte
   // au hasard et croiser les doigts. Avant, avec un tirage aveugle (genTxt) sur 15 essais,
   // un thème presque épuisé (1 seule variante fraîche sur 16 combinaisons) avait ~35% de
