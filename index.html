@@ -577,7 +577,14 @@ const GK={tok:'sj5_gh_tok',gid:'sj5_gh_gid',ts:'sj5_sync_ts'};
 /* ════ STATE ════ */
 let acc='simon', typ='original', topic='Pentest';
 let Q=[], H=[], CF=[], RJ=[], W=[];
-let generationRules=lsL(grk('simon'),{avoidedFormulations:[],avoidedExperiences:[],avoidedAngles:[],avoidedHashtags:[],preferredFormulations:[],preferredStructures:[]});
+// Structure complète de la mémoire éditoriale (prompt "générateur adaptatif", §4) : les 8
+// catégories sont toujours présentes dès la création (y compris corrections/validatedExamples,
+// absentes de l'ancienne structure) pour que learnCorrection et la validation puissent y
+// lire/écrire sans avoir à re-vérifier l'existence de chaque clé à chaque appel.
+function defaultGenerationRules(){
+  return {avoidedFormulations:[],avoidedExperiences:[],avoidedAngles:[],avoidedHashtags:[],preferredFormulations:[],preferredStructures:[],corrections:[],validatedExamples:[]};
+}
+let generationRules=defaultGenerationRules();
 let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
 // BUGFIX "toujours les mêmes thèmes" (round 3, suite) : fairnessWeights se base sur Q+H, qui
 // restent VIDES tant qu'on ne fait que cliquer "⚡ Générer le post" sans jamais valider
@@ -597,7 +604,19 @@ let hFilterUnconfirmed=false; // Filtre affichage historique : n'afficher que le
 let hFilterUnchecked=false; // Filtre affichage historique : n'afficher que les posts dont le CONTENU n'a pas encore été relu/vérifié.
 let wFilter=false; // Vue des anciens posts retirés de la base active, à classer/contrôler
 
-function loadAcc(a){Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);W=lsL(wk(a),[]);}
+function loadAcc(a){
+  Q=lsL(qk(a),[]).filter(x=>x.text&&!x.text.startsWith('['));H=lsL(hk(a),[]);CF=lsL(cfk(a),[]);RJ=lsL(rjk(a),[]);W=lsL(wk(a),[]);
+  // BUGFIX mémoire éditoriale par compte : generationRules n'était chargée QU'UNE FOIS au
+  // démarrage (toujours pour 'simon', ancienne ligne d'init), jamais rechargée en changeant de
+  // profil dans switchAcc(). Concrètement : après avoir basculé sur Nicolas, une correction sur
+  // SON profil modifiait en mémoire les règles de SIMON (jamais rechargées) — puis saveAll() les
+  // écrivait à tort sous la clé de Nicolas au prochain enregistrement. Résultat : contamination
+  // croisée entre les deux profils, et corrections qui semblaient ne "jamais influencer" la
+  // génération suivante puisqu'elles atterrissaient sous le mauvais compte.
+  const gr=lsL(grk(a),defaultGenerationRules());
+  for(const k of Object.keys(defaultGenerationRules())) if(!Array.isArray(gr[k]))gr[k]=[];
+  generationRules=gr;
+}
 function saveAll(){
   lsS(qk(acc),Q);lsS(hk(acc),H);lsS(cfk(acc),CF);lsS(rjk(acc),RJ);lsS(wk(acc),W);lsS(grk(acc),generationRules);lsS(SK.stats,stats);lsS(SK.acc,acc);
   const b=document.getElementById('sv-bdg');b.textContent='💾 Sauvegardé';b.style.color='var(--green)';setTimeout(()=>b.style.color='',1500);
@@ -1486,6 +1505,26 @@ const UNVALIDATED_EXPERIENCE_PATTERNS=[
   /(?:j['’]?(?:ai|a)\s+|je\s+)(?:pratique|pratiqu|utilis|configure|configur|installe|install|travaille|m['’]entra[iî]ne|m['’]exerce|ma[iî]trise)[\s\S]{0,70}(?:linux|terminal|kali)/i
 ];
 const UNVALIDATED_HASHTAGS=['#PortSwigger','#TryHackMe'];
+// Motifs génériques de sur-affirmation (indépendants de TryHackMe/PortSwigger/Linux, cf. §5 du
+// prompt "générateur adaptatif") : verbe de pratique/réalisation aboutie + le complément qui
+// suit immédiatement (jusqu'à 45 caractères ou fin de phrase). On retient la formulation
+// PRÉCISE (verbe + objet), jamais le verbe seul, pour ne pas interdire tout un vocabulaire à
+// cause d'une seule correction (règle "ne pas sur-corriger", §22 du prompt).
+// (pas de \b en fin de motif : \w est ASCII-only en JS, donc \b après une terminaison accentuée
+// comme "testé"/"maîtrise" ne matche jamais — la frontière finale est déjà garantie par les
+// terminaisons explicites e?s? de chaque verbe, elle n'a pas besoin d'un \b redondant et cassé)
+const OVERCLAIM_RE=/\b(?:j['’]ai (?:test[ée]e?s?|r[ée]alis[ée]e?s?|pratiqu[ée]e?s?|effectu[ée]e?s?|men[ée]e?s?|audit[ée]e?s?|exploit[ée]e?s?)|je (?:pratique|ma[iî]trise|m['’]entra[iî]ne (?:sur|avec)|m['’]exerce sur|utilise r[ée]guli[èe]rement))[^.\n]{0,45}/gi;
+// Formulations "découverte" à favoriser en remplacement (mêmes exemples que §18 du prompt).
+const DISCOVERY_RE=/\b(?:je (?:d[ée]couvre|me renseigne(?: sur)?|commence à comprendre|m['’]int[ée]resse à)|[cç]a m['’]int[ée]resse|le principe m['’]int[ée]resse)[^.\n]{0,45}/gi;
+function wordsOf(s){return (s||'').toLowerCase().match(/[\wÀ-ÿéèêëàâîïôùûüç]{3,}/g)||[];}
+// Proportion des mots de a retrouvés dans b — sert à distinguer une simple retouche de style
+// (recoupement élevé) d'un remplacement complet de l'angle de départ (recoupement faible).
+function wordOverlapRatio(a,b){
+  const wa=wordsOf(a),wb=new Set(wordsOf(b));
+  if(!wa.length)return 1;
+  let common=0;wa.forEach(w=>{if(wb.has(w))common++;});
+  return common/wa.length;
+}
 function validateGeneratedPost(post){
   const text=String(post?.text||'').trim();
   const errors=[];
@@ -1495,6 +1534,7 @@ function validateGeneratedPost(post){
     if(/#(?:PortSwigger|TryHackMe)\b/i.test(text)) errors.push('hashtag lié à une expérience non validée');
     const low=text.toLowerCase();
     if(generationRules.avoidedFormulations?.some(f=>f&&low.includes(String(f).toLowerCase()))) errors.push('formulation rejetée');
+    if(generationRules.avoidedAngles?.some(a=>a&&low.includes(String(a).toLowerCase()))) errors.push('angle rejeté');
     if(generationRules.avoidedHashtags?.some(h=>h&&new RegExp(String(h).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(text))) errors.push('hashtag rejeté');
   }
   return {ok:errors.length===0,errors};
@@ -1507,15 +1547,46 @@ function validateHashtags(text){
 }
 function learnCorrection(original, corrected){
   if(acc!=='simon'||!original||!corrected||original===corrected)return;
-  generationRules=generationRules||{};
-  for(const k of ['avoidedFormulations','avoidedExperiences','avoidedAngles','avoidedHashtags','preferredFormulations','preferredStructures']) if(!Array.isArray(generationRules[k]))generationRules[k]=[];
-  const removed=(original.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).filter(h=>!(corrected.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).some(x=>x.toLowerCase()===h.toLowerCase()));
-  for(const h of removed) if(!generationRules.avoidedHashtags.includes(h)) generationRules.avoidedHashtags.push(h);
+  generationRules=generationRules||defaultGenerationRules();
+  for(const k of Object.keys(defaultGenerationRules())) if(!Array.isArray(generationRules[k]))generationRules[k]=[];
+  // 1) Log brut de la correction (§4/§12 du prompt : conserver original + corrigé) — plafonné
+  // pour ne pas alourdir indéfiniment le localStorage sur un usage au long cours.
+  generationRules.corrections.push({original:original.slice(0,300),corrected:corrected.slice(0,300),ts:Date.now()});
+  if(generationRules.corrections.length>40) generationRules.corrections=generationRules.corrections.slice(-40);
+  // 2) Hashtags retirés
+  const removedTags=(original.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).filter(h=>!(corrected.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]).some(x=>x.toLowerCase()===h.toLowerCase()));
+  for(const h of removedTags) if(!generationRules.avoidedHashtags.includes(h)) generationRules.avoidedHashtags.push(h);
+  // 3) Expériences nommées explicitement interdites par le prompt (§7)
   if(/(?:portswigger|web security academy)/i.test(original) && !/(?:portswigger|web security academy)/i.test(corrected)) generationRules.avoidedExperiences.push('PortSwigger');
   if(/(?:tryhackme|try\s*hack\s*me)/i.test(original)) generationRules.avoidedExperiences.push('TryHackMe');
   if(/(?:linux|terminal|kali)/i.test(original) && /(?:pratique|m['’]entra[iî]ne|configure|utilise|travaille)/i.test(original) && !/(?:pratique|m['’]entra[iî]ne|configure|utilise|travaille)/i.test(corrected)) generationRules.avoidedExperiences.push('Linux pratique');
+  // 4) NOUVEAU — généralisation à N'IMPORTE QUEL sujet (pas seulement les 3 cas ci-dessus, §5 du
+  // prompt) : une formulation de pratique aboutie retirée par la correction devient une
+  // formulation à éviter ; verbe + complément gardés ensemble pour rester spécifique à CE qui a
+  // été corrigé (et non au verbe seul, qui resterait légitime ailleurs).
+  const overclaims=[...original.matchAll(OVERCLAIM_RE)].map(m=>m[0].trim().toLowerCase());
+  for(const oc of overclaims) if(oc.length>4 && !corrected.toLowerCase().includes(oc) && !generationRules.avoidedFormulations.includes(oc)) generationRules.avoidedFormulations.push(oc);
+  // 5) NOUVEAU — la formulation de "découverte" utilisée en remplacement devient une formulation
+  // préférée (audit + base pour une éventuelle génération assistée par IA, §9 du prompt).
+  const discoveries=[...corrected.matchAll(DISCOVERY_RE)].map(m=>m[0].trim().toLowerCase());
+  for(const d of discoveries) if(!original.toLowerCase().includes(d) && !generationRules.preferredFormulations.includes(d)) generationRules.preferredFormulations.push(d);
+  // 6) NOUVEAU — angle refusé (§5/§8) : l'accroche (1ʳᵉ ligne, cf. TS[thème].a) fait l'objet d'un
+  // recoupement de mots avec sa version corrigée ; si ce recoupement est FAIBLE, l'angle de
+  // départ est entièrement réécrit (pas juste retouché) et devient un angle à éviter. Un simple
+  // ajustement de style (recoupement élevé) n'est volontairement PAS retenu, pour ne pas
+  // interdire tout un thème après une correction mineure (§22 : ne pas sur-corriger).
+  const origFirstLine=(original.split('\n')[0]||'').trim();
+  const correctedFirstLine=(corrected.split('\n')[0]||'').trim();
+  if(origFirstLine.length>15 && wordOverlapRatio(origFirstLine,correctedFirstLine)<0.3){
+    const angleKey=origFirstLine.slice(0,70).toLowerCase();
+    if(!generationRules.avoidedAngles.includes(angleKey)) generationRules.avoidedAngles.push(angleKey);
+  }
+  // Déduplication + plafonnement de toutes les listes apprises.
   generationRules.avoidedExperiences=[...new Set(generationRules.avoidedExperiences)];
   generationRules.avoidedHashtags=[...new Set(generationRules.avoidedHashtags)];
+  generationRules.avoidedFormulations=[...new Set(generationRules.avoidedFormulations)].slice(-30);
+  generationRules.preferredFormulations=[...new Set(generationRules.preferredFormulations)].slice(-20);
+  generationRules.avoidedAngles=[...new Set(generationRules.avoidedAngles)].slice(-20);
   lsS(grk(acc),generationRules);
 }
 
@@ -1760,6 +1831,17 @@ function archive(post,src='copie'){
   // ouvert) restent "à confirmer" tant que l'utilisateur ne le fait pas via toggleConfirmed().
   const confirmed = (src==='publie'||src==='linkedin-import');
   H.unshift({...post,publishedAt:Date.now(),source:src,confirmed,previousVersions:post.previousVersions||[]});
+  // NOUVEAU (mémoire éditoriale, §17/§20 du prompt) : un post CORRIGÉ puis réellement validé
+  // (archivé, donc suite à une action explicite — copier/partager/marquer publié) devient un
+  // exemple de formulation validée : utile comme référence de style/niveau pour la suite, jamais
+  // comme preuve d'une nouvelle expérience personnelle — on ne stocke QUE le texte final, pas
+  // d'interprétation. Sauvegardé juste après par saveAll() ci-dessous.
+  if(acc==='simon'&&post.originalText!==undefined&&post.originalText!==post.text){
+    generationRules=generationRules||defaultGenerationRules();
+    if(!Array.isArray(generationRules.validatedExamples))generationRules.validatedExamples=[];
+    const ex=post.text.trim();
+    if(ex&&!generationRules.validatedExamples.includes(ex)) generationRules.validatedExamples=[...generationRules.validatedExamples,ex].slice(-15);
+  }
   if(!stats[acc])stats[acc]={total:0,sent:0};
   stats[acc].sent++;saveAll();renderH();updateStats();
 }
@@ -1947,11 +2029,22 @@ function genOnePost(extraAvoid=[]){
       const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===p.topic&&q.account===acc).map(q=>q.text);
       const combos=[];
       d.a.forEach((ai,aIdx)=>d.c.forEach(ci=>combos.push({ai,aIdx,text:(ai+'\n\n'+ci).trim()})));
+      // CORRECTION (mémoire éditoriale, §1/§5/§8 du prompt) : ce chemin de génération (planning
+      // auto — genOnePost, utilisé par autoRefill/autoGen, LE plus utilisé d'après le bouton
+      // "🤖 Planning automatique 7 posts") ne passait jusqu'ici par AUCUN contrôle de
+      // validateGeneratedPost (expériences non validées, formulations/angles appris comme
+      // refusés) — seul genPost() (génération à l'unité) les appliquait. Concrètement : une
+      // correction apprise pouvait modifier generationRules sans jamais influencer le planning
+      // automatique. Si TOUT le thème est bloqué par les règles apprises, on l'abandonne pour cet
+      // appel (retour null) plutôt que d'ignorer la validation — l'appelant retente alors un autre
+      // thème (voir hasFreshContent plus bas et la boucle de genOnePost).
+      const combosOk=acc==='simon'?combos.filter(c=>validateGeneratedPost({text:c.text}).ok):combos;
+      if(!combosOk.length) return null;
       // BUGFIX MAJEUR : comparait le texte BRUT du combo (usedTexts.has(c.text)) contre des
       // entrées normalisées (stripTags) → un post déjà publié avec la moindre variation
       // d'espace/casse/retour à la ligne n'était JAMAIS reconnu comme doublon. norm() aligne
       // les deux côtés de la comparaison.
-      let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
+      let fresh=combosOk.filter(c=>!usedTexts.has(norm(c.text)));
       const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
       if(freshNewIntro.length) fresh=freshNewIntro;
       // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
@@ -1964,12 +2057,14 @@ function genOnePost(extraAvoid=[]){
       const variants=CG[p.occ]||CG.promotion;
       // Chaque variante intègre désormais un tirage aléatoire de hashtags (pickHashtags) ;
       // on compare donc la version sans hashtags pour juger de la fraîcheur du fond du message.
-      const fresh=variants.map(fn=>fn(p.who,'',acc)).filter(t=>!usedTexts.has(norm(t)));
+      let fresh=variants.map(fn=>fn(p.who,'',acc)).filter(t=>!usedTexts.has(norm(t)));
+      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t}).ok);
       return fresh.length?{text:pick(fresh),aIdx:null}:null;
     }
     if(p.type==='repost'){
       const variants=acc==='simon'?RS:RN;
-      const fresh=variants.map(fn=>fn(p.content||'')).filter(t=>!usedTexts.has(norm(t)));
+      let fresh=variants.map(fn=>fn(p.content||'')).filter(t=>!usedTexts.has(norm(t)));
+      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t}).ok);
       return fresh.length?{text:pick(fresh),aIdx:null}:null;
     }
     return null;
