@@ -1667,11 +1667,39 @@ function draftSnapshot(){
     generatedText:lastPost.originalText!==undefined?lastPost.originalText:lastPost.text,
     modifiedText:current,savedText:current,savedAt:Date.now(),baseRevision:draftBaseRevision};
 }
+// NOUVEAU (prompt §20-23/§46/§50) : retire du texte tout hashtag interdit (liste statique) ou
+// appris comme à éviter suite à une correction (generationRules.avoidedHashtags). Sert
+// uniquement à ne jamais laisser un hashtag bloquer, à lui seul, toute une sauvegarde — voir
+// saveDraft() ci-dessous. Ne touche jamais au fond du texte (authenticité/contenu).
+function stripBadHashtags(text){
+  const bad=new Set([...UNVALIDATED_HASHTAGS.map(h=>h.toLowerCase()),...(generationRules.avoidedHashtags||[]).map(h=>String(h).toLowerCase())]);
+  return text.replace(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi,m=>bad.has(m.toLowerCase())?'':m)
+    .replace(/[ \t]{2,}/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+}
 function saveDraft(){
   if(!lastPost){toast('Aucun brouillon à sauvegarder','er');return;}
-  const current=(document.getElementById('po')?.innerText||'').trim();
+  let current=(document.getElementById('po')?.innerText||'').trim();
   if(!current){toast('Le texte ne peut pas être vide','er');return;}
-  const validation=validateGeneratedPost({text:current}), hashtags=validateHashtags(current);
+  let validation=validateGeneratedPost({text:current});
+  let hashtags=validateHashtags(current);
+  // CORRECTIF (prompt §20-23/§46/§50) : un refus purement lié aux hashtags (interdit, ou appris
+  // « à éviter » à la suite d'une correction sur un AUTRE post) ne doit jamais bloquer toute la
+  // sauvegarde. validateGeneratedPost vérifie lui aussi les hashtags (en plus de validateHashtags) :
+  // on regarde donc la NATURE des erreurs, pas juste validation.ok, pour décider si un nettoyage
+  // suffit. On retente UNE SEULE fois — jamais deux sauvegardes avec le même contenu, et jamais
+  // de contournement si une vraie erreur de fond (authenticité/contenu) est présente.
+  const HASHTAG_ERRORS=new Set(['hashtag lié à une expérience non validée','hashtag rejeté','hashtag non autorisé']);
+  const allErrors=[...(validation.errors||[]),...(hashtags.errors||[])];
+  if(allErrors.length && allErrors.every(e=>HASHTAG_ERRORS.has(e))){
+    const cleaned=stripBadHashtags(current);
+    const v2=validateGeneratedPost({text:cleaned}), h2=validateHashtags(cleaned);
+    if(cleaned!==current && v2.ok && h2.ok){
+      current=cleaned;
+      document.getElementById('po').innerText=current;
+      validation=v2;hashtags=h2;
+      toast('Hashtag(s) non autorisé(s) retiré(s) automatiquement avant sauvegarde','in');
+    }
+  }
   if(!validation.ok||!hashtags.ok){
     const raisons=[...(validation.errors||[]),...(hashtags.errors||[])].join(', ');
     toast('⚠️ Sauvegarde refusée ('+raisons+')','er');return;
@@ -1689,6 +1717,7 @@ function saveDraft(){
     q.originalText=lastPost.originalText!==undefined?lastPost.originalText:q.originalText;
     saveAll();renderQ();
   }
+  lastPost.text=current; // reflète un éventuel nettoyage de hashtags jusque dans lastPost
   lastPost.savedText=current;lastPost.modifiedText=current;lastPost.savedAt=snap.savedAt;
   markDraftSaved();
   toast('Brouillon sauvegardé ✓','ok');
