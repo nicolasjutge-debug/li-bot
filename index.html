@@ -345,6 +345,18 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   </div>
 </div>
 
+<div class="lic">
+  <div class="lih" onclick="toggleRulesPanel()">
+    <div class="lilo" style="background:var(--orange)">🧠</div>
+    <h2>Mémoire éditoriale</h2>
+    <span id="rules-bdg" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
+  </div>
+  <div class="lib" id="rules-body">
+    <div class="liinf">🧠 Ce que Li-Bot a appris de tes corrections sur Simon, et ce qui reste toujours actif quoi qu'il arrive. Utilisé pour filtrer les générations manuelles et automatiques. Concerne uniquement Simon.</div>
+    <div id="rules-content"></div>
+  </div>
+</div>
+
 <div class="grid">
 
 
@@ -1753,6 +1765,7 @@ function onPoBlur(){
     return;
   }
   learnCorrection(original,current);
+  {const rb=document.getElementById('rules-body');if(rb&&rb.classList.contains('open'))renderRulesPanel();}
   lastPost.previousVersions=[...(lastPost.previousVersions||[]),{text:original,source:'generated',corrected:true}];
   lastPost.text=current;
   markDraftDirty();
@@ -1771,7 +1784,11 @@ function restoreLastPost(){
 function publishLinkedIn(){
   const text = document.getElementById('po').innerText || '';
   if(!text){ toast('Génère d\'abord un post','er'); return; }
-  if(lastPost) archive(lastPost,'copie');
+  const postToArchive = lastPost;
+  // CORRECTIF (BUG B) : l'archivage se faisait ici, avant même de savoir si le partage
+  // aboutissait — une annulation du partage archivait quand même le post. Publication
+  // confirmée uniquement = archivage + retrait de la zone de génération ; échec/annulation
+  // = aucun changement, le post reste actif pour une nouvelle tentative.
   // iOS Share API — ouvre le menu partage natif
   if(navigator.share){
     navigator.share({
@@ -1779,9 +1796,10 @@ function publishLinkedIn(){
       text: text
     }).then(()=>{
       toast('Partagé avec succès ✓','ok');
+      if(postToArchive) archive(postToArchive,'copie');
       clearGenerator();
     }).catch(()=>{
-      // Annulé par l'utilisateur ou erreur — fallback clipboard
+      // Annulé par l'utilisateur ou erreur — fallback clipboard, AUCUN archivage
       navigator.clipboard.writeText(text).catch(()=>{});
       toast('Partage annulé — post copié','in');
     });
@@ -1791,6 +1809,7 @@ function publishLinkedIn(){
       const encoded = encodeURIComponent(text.substring(0,700));
       window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encoded,'_blank');
       toast('Post copié + LinkedIn ouvert 💼','ok');
+      if(postToArchive) archive(postToArchive,'copie');
       clearGenerator();
     });
   }
@@ -1802,7 +1821,7 @@ function clearGenerator(){
   document.getElementById('pm').textContent='';
   lastPost=null;
 }
-function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');if(lastPost)archive(lastPost,'copie');});}
+function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');});}
 
 function genPost(){
   // NOUVEAU (prompt §3) : un post archivé dans W (anciens posts retirés de la base active)
@@ -2302,6 +2321,7 @@ function editQText(id,val){
   if(q.originalText===undefined)q.originalText=q.text;
   q.previousVersions=[...(q.previousVersions||[]),{text:q.text,correctedAt:Date.now()}];
   learnCorrection(original,v);
+  {const rb=document.getElementById('rules-body');if(rb&&rb.classList.contains('open'))renderRulesPanel();}
   q.text=v;q.modified=true;q.modifiedAt=Date.now();q.modifiedText=v;
   // La correction est apprise immédiatement, mais n'est persistée comme brouillon que via Sauvegarder.
   draftDirty=true;
@@ -2744,6 +2764,7 @@ function editHText(id,val){
   const original=h.originalText!==undefined?h.originalText:h.text; // NOUVEAU (non destructif)
   if(h.originalText===undefined)h.originalText=h.text;
   learnCorrection(original,v); // NOUVEAU : une correction sur un post déjà publié alimente aussi les règles apprises
+  {const rb=document.getElementById('rules-body');if(rb&&rb.classList.contains('open'))renderRulesPanel();}
   h.text=v;saveAll();renderH();
   toast('Texte du post archivé mis à jour ✓ (règles de génération mises à jour)','ok');
 }
@@ -3118,7 +3139,75 @@ function renderStatsPanel(){
   el.innerHTML=html;
 }
 
-// Protection contre la fermeture/rechargement avec un brouillon modifié non sauvegardé.
+function toggleRulesPanel(){const b=document.getElementById('rules-body');const o=b.classList.toggle('open');document.getElementById('rules-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderRulesPanel();}
+
+// Redérive, uniquement pour l'affichage (aucune écriture, aucun état parallèle — prompt §12/§16),
+// ce qu'une correction a probablement appris, en réutilisant EXACTEMENT les mêmes détections que
+// learnCorrection. Le panneau doit refléter la mémoire réellement utilisée par le moteur.
+function describeCorrection(original,corrected){
+  const notes=[];
+  const tagsOf=t=>(t.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]);
+  const removedTags=tagsOf(original).filter(h=>!tagsOf(corrected).some(x=>x.toLowerCase()===h.toLowerCase()));
+  removedTags.forEach(h=>notes.push('hashtag écarté : '+h));
+  if(/(?:portswigger|web security academy)/i.test(original)&&!/(?:portswigger|web security academy)/i.test(corrected)) notes.push('expérience écartée : PortSwigger');
+  if(/(?:tryhackme|try\s*hack\s*me)/i.test(original)) notes.push('expérience écartée : TryHackMe');
+  if(/(?:linux|terminal|kali)/i.test(original)&&/(?:pratique|m['’]entra[iî]ne|configure|utilise|travaille)/i.test(original)&&!/(?:pratique|m['’]entra[iî]ne|configure|utilise|travaille)/i.test(corrected)) notes.push('expérience écartée : Linux pratique');
+  try{
+    if(typeof OVERCLAIM_RE!=='undefined')[...original.matchAll(OVERCLAIM_RE)].forEach(m=>{const oc=m[0].trim().toLowerCase();if(oc.length>4&&!corrected.toLowerCase().includes(oc))notes.push('formulation écartée : "'+m[0].trim()+'"');});
+    if(typeof DISCOVERY_RE!=='undefined')[...corrected.matchAll(DISCOVERY_RE)].forEach(m=>{const d=m[0].trim().toLowerCase();if(!original.toLowerCase().includes(d))notes.push('formulation retenue : "'+m[0].trim()+'"');});
+  }catch(e){}
+  const l1=(original.split('\n')[0]||'').trim(), l2=(corrected.split('\n')[0]||'').trim();
+  if(l1.length>15&&typeof wordOverlapRatio==='function'&&wordOverlapRatio(l1,l2)<0.3) notes.push("angle écarté (réécriture complète de l'accroche)");
+  return notes.length?notes.join(' · '):'ajustement de style (aucune règle nouvelle détectée)';
+}
+
+function renderRulesPanel(){
+  const el=document.getElementById('rules-content');
+  if(!el)return;
+  const gr=generationRules||defaultGenerationRules();
+  const esc=s=>String(s).replace(/</g,'&lt;');
+  const section=(icon,title,arr,emptyMsg)=>{
+    const list=Array.isArray(arr)?arr:[];
+    const items=list.length?('<div style="font-size:12px;color:var(--muted);margin-top:4px">'+list.slice(-12).map(x=>esc(x)).join(' · ')+'</div>'):('<div style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic">'+emptyMsg+'</div>');
+    return `<div style="margin-top:10px"><b>${icon} ${title}</b> (${list.length})${items}</div>`;
+  };
+  let html='';
+  html+='<div style="font-size:12px;font-weight:600;margin-top:2px">🔒 Règles absolues (jamais désactivables, indépendantes des corrections)</div>';
+  html+='<div style="font-size:12px;color:var(--muted);margin-top:4px">Ne jamais attribuer à Simon comme pratique personnelle : TryHackMe (toute mention) · PortSwigger Academy · Linux/terminal/Kali · CTF réalisés · pentests/audits/missions professionnels · certifications présentées comme obtenues. La version "découverte / intérêt" du même thème reste toujours autorisée — interdire une expérience ne veut pas dire interdire le sujet.</div>';
+  html+='<div style="height:1px;background:var(--border);margin:12px 0"></div>';
+  html+='<div style="font-size:12px;font-weight:600">🧠 Règles apprises de tes corrections (réinitialisables)</div>';
+  html+=section('🔒','Expériences à ne pas attribuer à Simon',gr.avoidedExperiences,'Aucune expérience enregistrée.');
+  html+=section('🚫','Formulations à éviter',gr.avoidedFormulations,'Aucune formulation enregistrée.');
+  html+=section('✅','Formulations préférées',gr.preferredFormulations,'Aucune formulation enregistrée.');
+  html+=section('🚫','Angles à éviter',gr.avoidedAngles,'Aucun angle enregistré.');
+  html+=section('#️⃣','Hashtags à éviter',gr.avoidedHashtags,'Aucun hashtag enregistré.');
+  const corr=Array.isArray(gr.corrections)?gr.corrections:[];
+  html+=`<div style="margin-top:10px;font-size:12px;color:var(--muted)">📝 Corrections apprises : <b>${corr.length}</b></div>`;
+  if(corr.length){
+    const last=corr[corr.length-1];
+    html+=`<div style="font-size:11px;color:var(--muted);margin-top:2px">Dernière mise à jour : ${new Date(last.ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>`;
+    html+='<div style="height:1px;background:var(--border);margin:12px 0"></div>';
+    html+='<div style="font-size:12px;font-weight:600;margin-bottom:6px">📝 Corrections récentes</div>';
+    html+=corr.slice(-6).reverse().map(c=>{
+      const rule=describeCorrection(c.original,c.corrected);
+      return `<div style="font-size:11.5px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="color:var(--muted)">Avant → ${esc(c.original.slice(0,90))}${c.original.length>90?'…':''}</div>
+        <div style="color:var(--muted);margin-top:2px">Après → ${esc(c.corrected.slice(0,90))}${c.corrected.length>90?'…':''}</div>
+        <div style="margin-top:2px">Règle apprise → ${esc(rule)}</div>
+      </div>`;
+    }).join('');
+  }
+  html+='<button class="btn btn-s" onclick="resetLearnedRules()" style="margin-top:12px;font-size:11px">🗑️ Réinitialiser la mémoire apprise</button>';
+  el.innerHTML=html;
+}
+
+function resetLearnedRules(){
+  if(!confirm('⚠️ Cette action supprimera les règles éditoriales apprises à partir des corrections. L\'historique des publications et les règles absolues ne seront pas supprimés. Continuer ?'))return;
+  generationRules=defaultGenerationRules();
+  lsS(grk(acc),generationRules);
+  renderRulesPanel();
+  toast('Mémoire apprise réinitialisée — historique et règles absolues conservés ✓','ok');
+}
 window.addEventListener('beforeunload',e=>{
   if(!draftDirty)return;
   e.preventDefault();e.returnValue='';
