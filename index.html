@@ -105,6 +105,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .fld select option{background:#080d18;}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
 .btn-p{background:var(--grad);color:#fff;width:100%;}
 .btn-p:hover{box-shadow:0 4px 20px rgba(0,200,255,.3);}
 .btn-c{background:rgba(0,200,255,.08);color:var(--cyan);border:1px solid rgba(0,200,255,.2)!important;font-size:11px;padding:6px 13px;}
@@ -345,18 +346,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   </div>
 </div>
 
-<div class="lic">
-  <div class="lih" onclick="toggleRulesPanel()">
-    <div class="lilo" style="background:var(--orange)">🧠</div>
-    <h2>Mémoire éditoriale</h2>
-    <span id="rules-bdg" style="font-size:11px;color:var(--muted)">Ouvrir ▾</span>
-  </div>
-  <div class="lib" id="rules-body">
-    <div class="liinf">🧠 Ce que Li-Bot a appris de tes corrections sur Simon, et ce qui reste toujours actif quoi qu'il arrive. Utilisé pour filtrer les générations manuelles et automatiques. Concerne uniquement Simon.</div>
-    <div id="rules-content"></div>
-  </div>
-</div>
-
 <div class="grid">
 
 
@@ -446,7 +435,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     <button class="btn btn-p" onclick="genPost()">⚡ Générer le post</button>
     <div class="pw" id="pw">
       <div id="po-mod-banner" onclick="restoreLastPost()" title="Cliquer pour revenir à la version générée automatiquement" style="display:none;background:rgba(0,178,255,.1);color:var(--cyan);border:1px solid rgba(0,178,255,.25);border-radius:6px;padding:7px 11px;font-size:12px;margin-bottom:8px;cursor:pointer">✏️ Modifié depuis la génération — <u>restaurer l'original</u></div>
-      <div class="po" id="po" contenteditable="true" oninput="onPoEdited()" onblur="onPoBlur()"></div>
+      <div class="po" id="po" contenteditable="true" oninput="onPoEdited()" onblur="onPoBlur()" onkeyup="onPoEdited()"></div>
       <div class="htb" id="htb"></div>
       <div class="pm"><span id="pm"></span><span id="draft-st" style="color:var(--muted)">📝 Brouillon non sauvegardé</span></div>
       <div class="btn-row">
@@ -1341,11 +1330,11 @@ const TN = {
       "La prospection en assurance a complètement changé en 28 ans.",
       "On me demande souvent comment je trouve encore de nouveaux clients après 28 ans. Ma réponse surprend toujours.",
       "Le meilleur prospect, c'est rarement celui qu'on est allé chercher.",
-      "En 1997, je faisais du porte-à-porte. En 2025, ce sont mes clients qui font la prospection à ma place.",
+      "En 1997, je faisais du porte-à-porte. En 2026, ce sont mes clients qui font la prospection à ma place.",
       "Un contact LinkedIn m'a écrit juste pour me remercier d'un post qui l'avait aidé à comprendre sa RC Pro. Six mois plus tard, il m'a recommandé à un collègue."
     ],
     "c": [
-      "La prospection en assurance en 2025, c'est plus du tout ce que c'était en 1997 quand j'ai commencé.\n\nÀ l'époque : porte-à-porte, phoning intensif. Aujourd'hui : recommandations, LinkedIn, contenu utile, réseau.\n\nCe qui fonctionne dans mon activité :\n→ Les recommandations clients (80% de mes nouveaux clients)\n→ La présence LinkedIn avec du contenu à valeur\n→ Les partenariats avec des professionnels complémentaires\n→ Les événements réseau à Rennes et en Bretagne\n\nLa clé c'est la confiance avant la vente.",
+      "La prospection en assurance en 2026, c'est plus du tout ce que c'était en 1997 quand j'ai commencé.\n\nÀ l'époque : porte-à-porte, phoning intensif. Aujourd'hui : recommandations, LinkedIn, contenu utile, réseau.\n\nCe qui fonctionne dans mon activité :\n→ Les recommandations clients (80% de mes nouveaux clients)\n→ La présence LinkedIn avec du contenu à valeur\n→ Les partenariats avec des professionnels complémentaires\n→ Les événements réseau à Rennes et en Bretagne\n\nLa clé c'est la confiance avant la vente.",
       "Comment un conseiller avec 28 ans de métier trouve-t-il encore de nouveaux clients ? C'est la question qu'on me pose souvent. La réponse est simple : je n'en cherche presque plus, ce sont eux qui viennent.\n\nCe qui fonctionne dans la durée, ce n'est pas la technique de prospection, c'est ce qui se passe APRÈS la vente :\n→ Un sinistre bien géré génère plus de recommandations qu'une belle offre commerciale\n→ Un client qui comprend vraiment son contrat en parle autour de lui\n→ Rester disponible même quand il n'y a rien à vendre construit la confiance sur la durée\n\nLa meilleure prospection, c'est souvent de bien s'occuper des clients qu'on a déjà.",
       "On imagine souvent la prospection comme une course permanente à trouver de nouveaux clients. Dans mon expérience, c'est l'inverse qui fonctionne le mieux.\n\nLa majorité de mes nouveaux clients viennent de recommandations, pas de démarchage. Et une recommandation ne se force pas, elle se mérite dans la façon de traiter les clients existants.\n\nLa meilleure prospection reste souvent invisible.",
       "Ce qui génère le plus de nouveaux clients dans mon activité, dans l'ordre :\n\n1/ Les recommandations de clients satisfaits, de loin le canal le plus fiable.\n\n2/ La présence régulière sur LinkedIn avec du contenu utile, pas juste commercial.\n\n3/ Les partenariats avec d'autres professionnels du secteur.\n\nAucune de ces trois sources ne demande de courir après les prospects.",
@@ -1362,7 +1351,7 @@ const TN = {
       "Question que je pose désormais à chaque professionnel : si votre logiciel de facturation était bloqué demain matin, combien de temps tiendriez-vous avant que ça devienne un problème de trésorerie ?"
     ],
     "c": [
-      "Mon fils Simon se forme en cybersécurité. Et dans mon métier, je vois de plus en plus de sinistres cyber chez mes clients professionnels.\n\nLa réalité de 2025 : les PME et indépendants sont des cibles de choix — moins bien protégés que les grandes entreprises.\n\nCe que couvre une assurance cyber pro :\n→ Les pertes d'exploitation suite à une attaque\n→ Les frais de remise en état des systèmes\n→ La responsabilité en cas de fuite de données\n→ L'assistance juridique\n\nUn ransomware qui bloque votre activité 2 semaines, c'est souvent la fin pour un indépendant. On en parle ?",
+      "Mon fils Simon se forme en cybersécurité. Et dans mon métier, je vois de plus en plus de sinistres cyber chez mes clients professionnels.\n\nLa réalité de 2026 : les PME et indépendants sont des cibles de choix — moins bien protégés que les grandes entreprises.\n\nCe que couvre une assurance cyber pro :\n→ Les pertes d'exploitation suite à une attaque\n→ Les frais de remise en état des systèmes\n→ La responsabilité en cas de fuite de données\n→ L'assistance juridique\n\nUn ransomware qui bloque votre activité 2 semaines, c'est souvent la fin pour un indépendant. On en parle ?",
       "\"C'est un problème de grande entreprise, pas pour moi\" — c'est ce qu'un client artisan me disait encore récemment à propos du piratage informatique.\n\nQuelques mois plus tard, son logiciel de facturation était bloqué par un rançongiciel. Deux semaines sans pouvoir émettre une seule facture.\n\nCe que je vois de plus en plus chez les indépendants et petites structures :\n→ Les attaques ciblent justement les structures les moins protégées\n→ Une cyberassurance couvre la perte d'exploitation, pas seulement la remise en état technique\n→ L'accompagnement juridique et la communication de crise font souvent la différence\n\nCe n'est plus une question de taille d'entreprise, c'est une question de dépendance au numérique. Et aujourd'hui, tout le monde en dépend.",
       "Une TPE de 6 salariés a subi une intrusion sur son logiciel de gestion commerciale. Trois jours sans pouvoir facturer, ni consulter l'historique client.\n\nLe dirigeant pensait que sa taille le mettait à l'abri. C'est même souvent l'inverse : moins de protections en place, donc une cible plus simple.\n\nLa cyberassurance n'a pas empêché l'attaque, mais elle a limité les dégâts financiers et accompagné la remise en route.",
       "Trois questions que je pose désormais à chaque client professionnel, quelle que soit sa taille :\n\n1/ Que se passe-t-il concrètement si vos outils numériques sont bloqués une semaine ?\n\n2/ Vos données clients sont-elles sauvegardées ailleurs que sur l'ordinateur principal ?\n\n3/ Savez-vous qui contacter en cas d'incident, avant même qu'il n'arrive ?\n\nLa cyberassurance ne remplace pas ces réflexes, elle les complète.",
@@ -1667,39 +1656,11 @@ function draftSnapshot(){
     generatedText:lastPost.originalText!==undefined?lastPost.originalText:lastPost.text,
     modifiedText:current,savedText:current,savedAt:Date.now(),baseRevision:draftBaseRevision};
 }
-// NOUVEAU (prompt §20-23/§46/§50) : retire du texte tout hashtag interdit (liste statique) ou
-// appris comme à éviter suite à une correction (generationRules.avoidedHashtags). Sert
-// uniquement à ne jamais laisser un hashtag bloquer, à lui seul, toute une sauvegarde — voir
-// saveDraft() ci-dessous. Ne touche jamais au fond du texte (authenticité/contenu).
-function stripBadHashtags(text){
-  const bad=new Set([...UNVALIDATED_HASHTAGS.map(h=>h.toLowerCase()),...(generationRules.avoidedHashtags||[]).map(h=>String(h).toLowerCase())]);
-  return text.replace(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi,m=>bad.has(m.toLowerCase())?'':m)
-    .replace(/[ \t]{2,}/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
-}
 function saveDraft(){
   if(!lastPost){toast('Aucun brouillon à sauvegarder','er');return;}
-  let current=(document.getElementById('po')?.innerText||'').trim();
+  const current=(document.getElementById('po')?.innerText||'').trim();
   if(!current){toast('Le texte ne peut pas être vide','er');return;}
-  let validation=validateGeneratedPost({text:current});
-  let hashtags=validateHashtags(current);
-  // CORRECTIF (prompt §20-23/§46/§50) : un refus purement lié aux hashtags (interdit, ou appris
-  // « à éviter » à la suite d'une correction sur un AUTRE post) ne doit jamais bloquer toute la
-  // sauvegarde. validateGeneratedPost vérifie lui aussi les hashtags (en plus de validateHashtags) :
-  // on regarde donc la NATURE des erreurs, pas juste validation.ok, pour décider si un nettoyage
-  // suffit. On retente UNE SEULE fois — jamais deux sauvegardes avec le même contenu, et jamais
-  // de contournement si une vraie erreur de fond (authenticité/contenu) est présente.
-  const HASHTAG_ERRORS=new Set(['hashtag lié à une expérience non validée','hashtag rejeté','hashtag non autorisé']);
-  const allErrors=[...(validation.errors||[]),...(hashtags.errors||[])];
-  if(allErrors.length && allErrors.every(e=>HASHTAG_ERRORS.has(e))){
-    const cleaned=stripBadHashtags(current);
-    const v2=validateGeneratedPost({text:cleaned}), h2=validateHashtags(cleaned);
-    if(cleaned!==current && v2.ok && h2.ok){
-      current=cleaned;
-      document.getElementById('po').innerText=current;
-      validation=v2;hashtags=h2;
-      toast('Hashtag(s) non autorisé(s) retiré(s) automatiquement avant sauvegarde','in');
-    }
-  }
+  const validation=validateGeneratedPost({text:current}), hashtags=validateHashtags(current);
   if(!validation.ok||!hashtags.ok){
     const raisons=[...(validation.errors||[]),...(hashtags.errors||[])].join(', ');
     toast('⚠️ Sauvegarde refusée ('+raisons+')','er');return;
@@ -1717,7 +1678,6 @@ function saveDraft(){
     q.originalText=lastPost.originalText!==undefined?lastPost.originalText:q.originalText;
     saveAll();renderQ();
   }
-  lastPost.text=current; // reflète un éventuel nettoyage de hashtags jusque dans lastPost
   lastPost.savedText=current;lastPost.modifiedText=current;lastPost.savedAt=snap.savedAt;
   markDraftSaved();
   toast('Brouillon sauvegardé ✓','ok');
@@ -1794,7 +1754,6 @@ function onPoBlur(){
     return;
   }
   learnCorrection(original,current);
-  {const rb=document.getElementById('rules-body');if(rb&&rb.classList.contains('open'))renderRulesPanel();}
   lastPost.previousVersions=[...(lastPost.previousVersions||[]),{text:original,source:'generated',corrected:true}];
   lastPost.text=current;
   markDraftDirty();
@@ -1813,11 +1772,12 @@ function restoreLastPost(){
 function publishLinkedIn(){
   const text = document.getElementById('po').innerText || '';
   if(!text){ toast('Génère d\'abord un post','er'); return; }
-  const postToArchive = lastPost;
-  // CORRECTIF (BUG B) : l'archivage se faisait ici, avant même de savoir si le partage
-  // aboutissait — une annulation du partage archivait quand même le post. Publication
-  // confirmée uniquement = archivage + retrait de la zone de génération ; échec/annulation
-  // = aucun changement, le post reste actif pour une nouvelle tentative.
+  // CORRECTIF (Bug B — post publié qui reste affiché en Génération) : l'archivage se faisait ici,
+  // avant même de savoir si le partage allait réussir ou être annulé. En cas d'annulation, le post
+  // se retrouvait déjà dans l'historique tout en restant affiché comme actif. On archive
+  // maintenant uniquement APRÈS confirmation réelle du partage (succès du navigator.share, ou
+  // ouverture effective de la fenêtre LinkedIn côté desktop) — jamais avant, jamais en cas d'échec/annulation.
+  const postToArchive=lastPost;
   // iOS Share API — ouvre le menu partage natif
   if(navigator.share){
     navigator.share({
@@ -1828,9 +1788,10 @@ function publishLinkedIn(){
       if(postToArchive) archive(postToArchive,'copie');
       clearGenerator();
     }).catch(()=>{
-      // Annulé par l'utilisateur ou erreur — fallback clipboard, AUCUN archivage
+      // Annulé par l'utilisateur ou erreur — fallback clipboard. Aucune publication : le post
+      // reste actif dans Génération, rien n'est ajouté à l'historique.
       navigator.clipboard.writeText(text).catch(()=>{});
-      toast('Partage annulé — post copié','in');
+      toast('Partage annulé — post copié, toujours dans Génération','in');
     });
   } else {
     // Fallback navigateur desktop — copie + ouvre LinkedIn
@@ -2300,31 +2261,38 @@ function renderQ(){
 function pubLiQ(id){
   const q=Q.find(x=>x.id===id);
   if(!q) return;
-  archive({...q},'copie-file');
-  // BUGFIX MAJEUR "les posts restent dans la génération automatique" : cette fonction
-  // archivait le post mais ne le retirait JAMAIS de Q. Il restait donc affiché comme
-  // "à publier" indéfiniment, et comme Q ne raccourcissait jamais, autoRefill() ne
-  // générait jamais de remplaçant (Q.length < QUEUE_TARGET n'était jamais vrai).
-  // On retire maintenant le post, on recale les échéances des posts restants
-  // (cascade 48h, même logique que delQ), puis on régénère pour revenir à 7.
-  Q=Q.filter(x=>x.id!==id);
-  // BUGFIX indépendance : ne recale QUE les échéances du compte de ce post (voir
-  // rescheduleAccountQueue) — l'autre profil n'est plus jamais décalé par cette action.
-  rescheduleAccountQueue(q.account);
-  saveAll();renderQ();updateStats();rfTmr();
+  // CORRECTIF (même bug que publishLinkedIn) : l'archivage et le retrait de la file se faisaient
+  // avant même de savoir si le partage allait réussir — une annulation laissait quand même le
+  // post retiré de la file et déjà archivé. On agit maintenant uniquement après confirmation réelle
+  // (succès du partage, ou ouverture effective de LinkedIn côté desktop) — jamais en cas d'annulation.
+  const finalizePublish=()=>{
+    archive({...q},'copie-file');
+    // BUGFIX MAJEUR "les posts restent dans la génération automatique" : cette fonction
+    // archivait le post mais ne le retirait JAMAIS de Q. Il restait donc affiché comme
+    // "à publier" indéfiniment, et comme Q ne raccourcissait jamais, autoRefill() ne
+    // générait jamais de remplaçant (Q.length < QUEUE_TARGET n'était jamais vrai).
+    // On retire maintenant le post, on recale les échéances des posts restants
+    // (cascade 48h, même logique que delQ), puis on régénère pour revenir à 7.
+    Q=Q.filter(x=>x.id!==id);
+    // BUGFIX indépendance : ne recale QUE les échéances du compte de ce post (voir
+    // rescheduleAccountQueue) — l'autre profil n'est plus jamais décalé par cette action.
+    rescheduleAccountQueue(q.account);
+    saveAll();renderQ();updateStats();rfTmr();
+    autoRefill(true);
+  };
   if(navigator.share){
     navigator.share({
       title:'Post LinkedIn — '+PR[acc].nom,
       text:q.text
-    }).then(()=>toast('Partagé ✓','ok'))
-    .catch(()=>{navigator.clipboard.writeText(q.text).catch(()=>{});toast('Annulé — post copié','in');});
+    }).then(()=>{toast('Partagé ✓','ok');finalizePublish();})
+    .catch(()=>{navigator.clipboard.writeText(q.text).catch(()=>{});toast('Annulé — post copié, toujours dans la file','in');});
   } else {
     navigator.clipboard.writeText(q.text).catch(()=>{});
     const encoded=encodeURIComponent(q.text.substring(0,700));
     window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encoded,'_blank');
     toast('Post copié + LinkedIn ouvert','ok');
+    finalizePublish();
   }
-  autoRefill(true);
 }
 // NOUVEAU : déplie/replie la zone d'édition d'un post encore en file (pas publié) — même
 // mécanique que tgH pour l'historique.
@@ -2350,7 +2318,6 @@ function editQText(id,val){
   if(q.originalText===undefined)q.originalText=q.text;
   q.previousVersions=[...(q.previousVersions||[]),{text:q.text,correctedAt:Date.now()}];
   learnCorrection(original,v);
-  {const rb=document.getElementById('rules-body');if(rb&&rb.classList.contains('open'))renderRulesPanel();}
   q.text=v;q.modified=true;q.modifiedAt=Date.now();q.modifiedText=v;
   // La correction est apprise immédiatement, mais n'est persistée comme brouillon que via Sauvegarder.
   draftDirty=true;
@@ -2369,13 +2336,10 @@ function cpQ(id){
   const q=Q.find(x=>x.id===id);
   if(!q)return;
   navigator.clipboard.writeText(q.text).then(()=>toast('Copié ! 💼','ok'));
-  archive({...q},'copie-file');
-  // BUGFIX : même défaut que pubLiQ (voir commentaire ci-dessus) — le bouton copier
-  // archive aussi le post (stats.sent++) donc il doit lui aussi quitter la file.
-  Q=Q.filter(x=>x.id!==id);
-  rescheduleAccountQueue(q.account);
-  saveAll();renderQ();updateStats();rfTmr();
-  autoRefill(true);
+  // CORRECTIF (Copier ≠ Publier) : copier ne fait plus qu'une chose — copier le texte. Avant, ce
+  // bouton archivait le post ET le retirait de la file, ce qui donnait l'impression qu'un simple
+  // copier-coller équivalait à une publication. Le post reste maintenant dans la file jusqu'à une
+  // action explicite (🚀 Publier / ✔️ Déjà publié).
 }
 // NOUVEAU : pour un post encore EN FILE (pas encore publié via l'app) qui s'avère être
 // un doublon d'un post déjà publié en vrai sur LinkedIn. Même logique que markPublishedRJ
@@ -2793,7 +2757,6 @@ function editHText(id,val){
   const original=h.originalText!==undefined?h.originalText:h.text; // NOUVEAU (non destructif)
   if(h.originalText===undefined)h.originalText=h.text;
   learnCorrection(original,v); // NOUVEAU : une correction sur un post déjà publié alimente aussi les règles apprises
-  {const rb=document.getElementById('rules-body');if(rb&&rb.classList.contains('open'))renderRulesPanel();}
   h.text=v;saveAll();renderH();
   toast('Texte du post archivé mis à jour ✓ (règles de génération mises à jour)','ok');
 }
@@ -3168,75 +3131,7 @@ function renderStatsPanel(){
   el.innerHTML=html;
 }
 
-function toggleRulesPanel(){const b=document.getElementById('rules-body');const o=b.classList.toggle('open');document.getElementById('rules-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderRulesPanel();}
-
-// Redérive, uniquement pour l'affichage (aucune écriture, aucun état parallèle — prompt §12/§16),
-// ce qu'une correction a probablement appris, en réutilisant EXACTEMENT les mêmes détections que
-// learnCorrection. Le panneau doit refléter la mémoire réellement utilisée par le moteur.
-function describeCorrection(original,corrected){
-  const notes=[];
-  const tagsOf=t=>(t.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]);
-  const removedTags=tagsOf(original).filter(h=>!tagsOf(corrected).some(x=>x.toLowerCase()===h.toLowerCase()));
-  removedTags.forEach(h=>notes.push('hashtag écarté : '+h));
-  if(/(?:portswigger|web security academy)/i.test(original)&&!/(?:portswigger|web security academy)/i.test(corrected)) notes.push('expérience écartée : PortSwigger');
-  if(/(?:tryhackme|try\s*hack\s*me)/i.test(original)) notes.push('expérience écartée : TryHackMe');
-  if(/(?:linux|terminal|kali)/i.test(original)&&/(?:pratique|m['’]entra[iî]ne|configure|utilise|travaille)/i.test(original)&&!/(?:pratique|m['’]entra[iî]ne|configure|utilise|travaille)/i.test(corrected)) notes.push('expérience écartée : Linux pratique');
-  try{
-    if(typeof OVERCLAIM_RE!=='undefined')[...original.matchAll(OVERCLAIM_RE)].forEach(m=>{const oc=m[0].trim().toLowerCase();if(oc.length>4&&!corrected.toLowerCase().includes(oc))notes.push('formulation écartée : "'+m[0].trim()+'"');});
-    if(typeof DISCOVERY_RE!=='undefined')[...corrected.matchAll(DISCOVERY_RE)].forEach(m=>{const d=m[0].trim().toLowerCase();if(!original.toLowerCase().includes(d))notes.push('formulation retenue : "'+m[0].trim()+'"');});
-  }catch(e){}
-  const l1=(original.split('\n')[0]||'').trim(), l2=(corrected.split('\n')[0]||'').trim();
-  if(l1.length>15&&typeof wordOverlapRatio==='function'&&wordOverlapRatio(l1,l2)<0.3) notes.push("angle écarté (réécriture complète de l'accroche)");
-  return notes.length?notes.join(' · '):'ajustement de style (aucune règle nouvelle détectée)';
-}
-
-function renderRulesPanel(){
-  const el=document.getElementById('rules-content');
-  if(!el)return;
-  const gr=generationRules||defaultGenerationRules();
-  const esc=s=>String(s).replace(/</g,'&lt;');
-  const section=(icon,title,arr,emptyMsg)=>{
-    const list=Array.isArray(arr)?arr:[];
-    const items=list.length?('<div style="font-size:12px;color:var(--muted);margin-top:4px">'+list.slice(-12).map(x=>esc(x)).join(' · ')+'</div>'):('<div style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic">'+emptyMsg+'</div>');
-    return `<div style="margin-top:10px"><b>${icon} ${title}</b> (${list.length})${items}</div>`;
-  };
-  let html='';
-  html+='<div style="font-size:12px;font-weight:600;margin-top:2px">🔒 Règles absolues (jamais désactivables, indépendantes des corrections)</div>';
-  html+='<div style="font-size:12px;color:var(--muted);margin-top:4px">Ne jamais attribuer à Simon comme pratique personnelle : TryHackMe (toute mention) · PortSwigger Academy · Linux/terminal/Kali · CTF réalisés · pentests/audits/missions professionnels · certifications présentées comme obtenues. La version "découverte / intérêt" du même thème reste toujours autorisée — interdire une expérience ne veut pas dire interdire le sujet.</div>';
-  html+='<div style="height:1px;background:var(--border);margin:12px 0"></div>';
-  html+='<div style="font-size:12px;font-weight:600">🧠 Règles apprises de tes corrections (réinitialisables)</div>';
-  html+=section('🔒','Expériences à ne pas attribuer à Simon',gr.avoidedExperiences,'Aucune expérience enregistrée.');
-  html+=section('🚫','Formulations à éviter',gr.avoidedFormulations,'Aucune formulation enregistrée.');
-  html+=section('✅','Formulations préférées',gr.preferredFormulations,'Aucune formulation enregistrée.');
-  html+=section('🚫','Angles à éviter',gr.avoidedAngles,'Aucun angle enregistré.');
-  html+=section('#️⃣','Hashtags à éviter',gr.avoidedHashtags,'Aucun hashtag enregistré.');
-  const corr=Array.isArray(gr.corrections)?gr.corrections:[];
-  html+=`<div style="margin-top:10px;font-size:12px;color:var(--muted)">📝 Corrections apprises : <b>${corr.length}</b></div>`;
-  if(corr.length){
-    const last=corr[corr.length-1];
-    html+=`<div style="font-size:11px;color:var(--muted);margin-top:2px">Dernière mise à jour : ${new Date(last.ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>`;
-    html+='<div style="height:1px;background:var(--border);margin:12px 0"></div>';
-    html+='<div style="font-size:12px;font-weight:600;margin-bottom:6px">📝 Corrections récentes</div>';
-    html+=corr.slice(-6).reverse().map(c=>{
-      const rule=describeCorrection(c.original,c.corrected);
-      return `<div style="font-size:11.5px;padding:6px 0;border-bottom:1px solid var(--border)">
-        <div style="color:var(--muted)">Avant → ${esc(c.original.slice(0,90))}${c.original.length>90?'…':''}</div>
-        <div style="color:var(--muted);margin-top:2px">Après → ${esc(c.corrected.slice(0,90))}${c.corrected.length>90?'…':''}</div>
-        <div style="margin-top:2px">Règle apprise → ${esc(rule)}</div>
-      </div>`;
-    }).join('');
-  }
-  html+='<button class="btn btn-s" onclick="resetLearnedRules()" style="margin-top:12px;font-size:11px">🗑️ Réinitialiser la mémoire apprise</button>';
-  el.innerHTML=html;
-}
-
-function resetLearnedRules(){
-  if(!confirm('⚠️ Cette action supprimera les règles éditoriales apprises à partir des corrections. L\'historique des publications et les règles absolues ne seront pas supprimés. Continuer ?'))return;
-  generationRules=defaultGenerationRules();
-  lsS(grk(acc),generationRules);
-  renderRulesPanel();
-  toast('Mémoire apprise réinitialisée — historique et règles absolues conservés ✓','ok');
-}
+// Protection contre la fermeture/rechargement avec un brouillon modifié non sauvegardé.
 window.addEventListener('beforeunload',e=>{
   if(!draftDirty)return;
   e.preventDefault();e.returnValue='';
@@ -3280,6 +3175,9 @@ if(existingDraft&&existingDraft.savedText){draftSavedAt=existingDraft.savedAt||0
 syncTopicPill(sa,topic);
 
 updateStats();renderQ();renderH();renderCF();renderRJ();rfTmr();chkMissed();
+restoreSavedDraft(); // CORRECTION PRIORITAIRE : cette fonction existait mais n'était jamais appelée au
+// chargement — le brouillon se sauvegardait bien dans localStorage mais ne réapparaissait jamais à
+// la réouverture, ce qui donnait exactement l'impression que "Sauvegarder" ne fonctionnait pas.
 document.getElementById('sy-tok').value=lsL(GK.tok,'');
 document.getElementById('sy-gid').value=lsL(GK.gid,'');
 if(syncReady()){syncStatus('idle');pullSync(true);}
