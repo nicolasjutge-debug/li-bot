@@ -1618,6 +1618,47 @@ function learnCorrection(original, corrected){
   generationRules.avoidedAngles=[...new Set(generationRules.avoidedAngles)].slice(-20);
   lsS(grk(acc),generationRules);
 }
+// ═══ CORRECTIF CIBLÉ — « Correction refusée (hashtag rejeté, hashtag rejeté) » ═══
+// AVANT : validateGeneratedPost ET validateHashtags remontent CHACUNE 'hashtag rejeté' dès qu'un
+// hashtag figure dans generationRules.avoidedHashtags (liste APPRISE par learnCorrection à partir
+// d'une correction passée — pas une règle absolue). D'où le message dupliqué "hashtag rejeté,
+// hashtag rejeté", et surtout le rejet de TOUTE la correction — texte par ailleurs valide inclus —
+// pour un simple hashtag déjà signalé une fois ailleurs.
+// APRÈS : si le SEUL problème détecté (fond + hashtags confondus, dédupliqué) est 'hashtag rejeté',
+// on retire uniquement les hashtags fautifs du texte et on retente la validation UNE SEULE fois
+// (jamais de boucle). Si ça passe, la correction est sauvegardée sans ces hashtags précis — mais
+// generationRules.avoidedHashtags n'est ni modifié ni traité comme une interdiction globale : un
+// même hashtag réutilisé plus tard dans un autre post par ailleurs valide subira exactement le même
+// traitement (retiré + sauvegardé), jamais un blocage définitif du post.
+// Dans tous les autres cas — un vrai problème de fond (authenticité/formulation/angle/texte vide),
+// OU un hashtag à blocage ABSOLU (#TryHackMe/#PortSwigger, remonté sous 'hashtag non autorisé' par
+// validateHashtags ou sous 'hashtag lié à une expérience non validée' par validateGeneratedPost) —
+// le refus reste complet et inchangé : aucune règle absolue n'est jamais nettoyée silencieusement,
+// et un hashtag n'est jamais retiré pour contourner un vrai problème éditorial.
+// N'appelle et ne modifie ni validateGeneratedPost, ni validateHashtags, ni learnCorrection : se
+// contente de les envelopper, sans toucher aux règles déjà validées.
+function resolveHashtagOnlyRejection(text){
+  const validation=validateGeneratedPost({text}), hashtags=validateHashtags(text);
+  const errors=[...new Set([...(validation.errors||[]),...(hashtags.errors||[])])];
+  if(!errors.length) return {ok:true,text,removed:[]};
+  // Un vrai problème de fond, ou un hashtag à blocage absolu, coexistant ou non avec un hashtag
+  // appris : refus complet inchangé, jamais de nettoyage partiel pour contourner.
+  if(errors.length!==1||errors[0]!=='hashtag rejeté') return {ok:false,text,errors,removed:[]};
+  const tags=[...new Set((text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]))];
+  const bad=tags.filter(t=>(generationRules.avoidedHashtags||[]).some(h=>String(h).toLowerCase()===t.toLowerCase()));
+  // Garde-fou : si l'erreur dit 'hashtag rejeté' mais qu'aucun hashtag appris n'est identifiable
+  // dans le texte (cas imprévu), ne rien nettoyer à l'aveugle — refus normal.
+  if(!bad.length) return {ok:false,text,errors,removed:[]};
+  let cleaned=text;
+  for(const t of bad){
+    cleaned=cleaned.replace(new RegExp('\\s?'+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![\\wÀ-ÿéèêëàâîïôùûüç])','gi'),'');
+  }
+  cleaned=cleaned.replace(/[ \t]{2,}/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n[ \t]+/g,'\n').trim();
+  // UNE SEULE tentative supplémentaire — jamais de boucle, jamais un 3e essai.
+  const v2=validateGeneratedPost({text:cleaned}), h2=validateHashtags(cleaned);
+  if(v2.ok&&h2.ok) return {ok:true,text:cleaned,removed:bad};
+  return {ok:false,text,errors:[...new Set([...(v2.errors||[]),...(h2.errors||[])])],removed:[]};
+}
 
 function genTxt(opts={}){
   const a=acc,t=opts.type||typ,tp=opts.topic||topic;
@@ -1660,27 +1701,33 @@ function saveDraft(){
   if(!lastPost){toast('Aucun brouillon à sauvegarder','er');return;}
   const current=(document.getElementById('po')?.innerText||'').trim();
   if(!current){toast('Le texte ne peut pas être vide','er');return;}
-  const validation=validateGeneratedPost({text:current}), hashtags=validateHashtags(current);
-  if(!validation.ok||!hashtags.ok){
-    const raisons=[...(validation.errors||[]),...(hashtags.errors||[])].join(', ');
+  // CORRECTIF CIBLÉ (refus "hashtag rejeté, hashtag rejeté") : voir resolveHashtagOnlyRejection —
+  // un refus purement dû à des hashtags appris retire juste ces hashtags et retente une fois ;
+  // un vrai problème de fond ou #TryHackMe/#PortSwigger refuse toujours intégralement, inchangé.
+  const res=resolveHashtagOnlyRejection(current);
+  if(!res.ok){
+    const raisons=[...new Set(res.errors||[])].join(', ');
     toast('⚠️ Sauvegarde refusée ('+raisons+')','er');return;
   }
+  // Si des hashtags ont été retirés automatiquement, l'aperçu affiché doit refléter le texte
+  // réellement sauvegardé — sinon draftSnapshot() (qui relit #po) capturerait encore l'ancien texte.
+  if(res.removed.length){renderPost(res.text);lastPost.text=res.text;}
   const snap=draftSnapshot();
   if(!snap)return;
-  snap.savedText=current;
-  snap.modifiedText=current;
+  snap.savedText=res.text;
+  snap.modifiedText=res.text;
   snap.savedAt=Date.now();
   lsS(draftKey(),snap);
   // Une sauvegarde explicite est le seul moment où le brouillon courant est persisté dans Q.
   const q=Q.find(x=>x.id===lastPost.id);
   if(q){
-    q.text=current;q.savedText=current;q.modifiedText=current;q.modified=true;q.savedAt=snap.savedAt;
+    q.text=res.text;q.savedText=res.text;q.modifiedText=res.text;q.modified=true;q.savedAt=snap.savedAt;
     q.originalText=lastPost.originalText!==undefined?lastPost.originalText:q.originalText;
     saveAll();renderQ();
   }
-  lastPost.savedText=current;lastPost.modifiedText=current;lastPost.savedAt=snap.savedAt;
+  lastPost.savedText=res.text;lastPost.modifiedText=res.text;lastPost.savedAt=snap.savedAt;
   markDraftSaved();
-  toast('Brouillon sauvegardé ✓','ok');
+  toast(res.removed.length?('⚠️ Hashtag(s) retiré(s) automatiquement : '+res.removed.join(', ')+'. Correction sauvegardée sans modifier le reste du texte ✓'):'Brouillon sauvegardé ✓','ok');
 }
 function restoreSavedDraft(){
   const d=lsL(draftKey(),null);
@@ -1744,18 +1791,25 @@ function onPoBlur(){
   if(!current)return;
   const original=lastPost.originalText!==undefined?lastPost.originalText:current;
   if(current===original)return;
-  const validation=validateGeneratedPost({text:current}), hashtags=validateHashtags(current);
-  if(!validation.ok||!hashtags.ok){
+  // CORRECTIF CIBLÉ (refus "hashtag rejeté, hashtag rejeté") : voir resolveHashtagOnlyRejection —
+  // un refus purement dû à des hashtags appris retire juste ces hashtags et retente une fois ;
+  // un vrai problème de fond ou #TryHackMe/#PortSwigger refuse toujours intégralement, inchangé.
+  const res=resolveHashtagOnlyRejection(current);
+  if(!res.ok){
     lastPost.text=original;renderPost(original);
     // NOUVEAU (diagnostic post PortSwigger) : dire précisément pourquoi, plutôt qu'un refus
     // générique — sinon la correction semble bloquée sans raison compréhensible.
-    const raisons=[...(validation.errors||[]),...(hashtags.errors||[])].join(', ');
+    const raisons=[...new Set(res.errors||[])].join(', ');
     toast('⚠️ Correction refusée ('+raisons+') : retour à la version générée','er');
     return;
   }
-  learnCorrection(original,current);
+  learnCorrection(original,res.text);
   lastPost.previousVersions=[...(lastPost.previousVersions||[]),{text:original,source:'generated',corrected:true}];
-  lastPost.text=current;
+  lastPost.text=res.text;
+  if(res.removed.length){
+    renderPost(res.text);
+    toast('⚠️ Hashtag(s) retiré(s) automatiquement : '+res.removed.join(', ')+' — reste du texte conservé ✓','in');
+  }
   markDraftDirty();
 }
 // NOUVEAU (non destructif) : revient au texte produit par le générateur avant toute modification
@@ -2305,24 +2359,27 @@ function editQText(id,val){
   const v=val.trim();
   if(!v){toast('Le texte ne peut pas être vide','er');renderQ();return;}
   if(v===q.text)return;
-  const validation=validateGeneratedPost({text:v});
-  const hashtags=validateHashtags(v);
-  if(!validation.ok||!hashtags.ok){
+  // CORRECTIF CIBLÉ (refus "hashtag rejeté, hashtag rejeté") : voir resolveHashtagOnlyRejection —
+  // un refus purement dû à des hashtags appris retire juste ces hashtags et retente une fois ;
+  // un vrai problème de fond ou #TryHackMe/#PortSwigger refuse toujours intégralement, inchangé.
+  const res=resolveHashtagOnlyRejection(v);
+  if(!res.ok){
     // NOUVEAU (diagnostic post PortSwigger) : dire précisément pourquoi.
-    const raisons=[...(validation.errors||[]),...(hashtags.errors||[])].join(', ');
+    const raisons=[...new Set(res.errors||[])].join(', ');
     toast('⚠️ Correction refusée ('+raisons+')','er');renderQ();return;
   }
   // CORRECTION (§15-19/26 du prompt) : modifier un post ne doit JAMAIS l'archiver — il reste
   // dans la file, pas encore publié. Seule une action explicite (📋/🚀/✔️) écrit dans H.
+  const finalText=res.text;
   const original=q.originalText!==undefined?q.originalText:q.text;
   if(q.originalText===undefined)q.originalText=q.text;
   q.previousVersions=[...(q.previousVersions||[]),{text:q.text,correctedAt:Date.now()}];
-  learnCorrection(original,v);
-  q.text=v;q.modified=true;q.modifiedAt=Date.now();q.modifiedText=v;
+  learnCorrection(original,finalText);
+  q.text=finalText;q.modified=true;q.modifiedAt=Date.now();q.modifiedText=finalText;
   // La correction est apprise immédiatement, mais n'est persistée comme brouillon que via Sauvegarder.
   draftDirty=true;
   renderQ();updateStats();
-  toast('✓ Correction enregistrée — brouillon modifié, utilise « Sauvegarder » pour la conserver','ok');
+  toast(res.removed.length?('⚠️ Hashtag(s) retiré(s) automatiquement : '+res.removed.join(', ')+' — brouillon modifié, utilise « Sauvegarder » pour la conserver'):'✓ Correction enregistrée — brouillon modifié, utilise « Sauvegarder » pour la conserver',res.removed.length?'in':'ok');
 }
 // NOUVEAU (non destructif) : revient au texte produit par le générateur pour ce post de la file,
 // sans rien supprimer ni créer de doublon — même identifiant, même position dans la file.
