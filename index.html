@@ -1130,10 +1130,10 @@ const TS = {
   "Sécurité web": {
     "a": [
       "Un simple formulaire mal protégé peut parfois laisser passer bien plus qu'un mot de passe.",
-      "Une faille XSS réussie sur un site d'entraînement légal. Petite mais vraie satisfaction.",
+      "Le XSS est une notion que je découvre en me renseignant sur la sécurité web.",
       "L'injection SQL, j'en avais entendu parler cent fois avant de comprendre vraiment comment ça marche.",
-      "Un site qui affiche direct ce qu'on tape dans la recherche sans le filtrer. Terrain de jeu pour un XSS.",
-      "Je me renseigne sur PortSwigger Academy pour mieux comprendre la sécurité web."
+      "Un site qui traite mal ce qu'un utilisateur saisit peut parfois créer une vulnérabilité XSS. C'est une notion que je commence à comprendre.",
+      "En découvrant les bases de la sécurité web, je cherche surtout à comprendre comment certaines vulnérabilités peuvent apparaître dans un site."
     ],
     "c": [
       "Je découvre la sécurité web en ce moment, en plus du pentest réseau.\n\nJe me renseigne sur PortSwigger Web Security Academy, une plateforme gratuite avec des exercices sur les failles web comme l'injection SQL ou le XSS.\n\nC'est un autre univers que le pentest classique, mais tout aussi passionnant : on cherche des erreurs dans la façon dont un site traite les données qu'on lui envoie.",
@@ -1546,7 +1546,12 @@ const UNVALIDATED_EXPERIENCE_PATTERNS=[
   // 0 faux positif sur les 745 combinaisons existantes.
   /j['’](?:utilise|utilis|installe|install)[\s\S]{0,70}(?:linux|terminal|kali)/i
 ];
-const UNVALIDATED_HASHTAGS=['#PortSwigger','#TryHackMe'];
+const UNVALIDATED_HASHTAGS=['#PortSwigger','#TryHackMe','#Kali','#Pentest','#RedTeam','#EthicalHacking'];
+// RÈGLE FERME : PortSwigger, TryHackMe, Kali et la pratique offensive ne doivent jamais
+// apparaître comme une expérience personnelle de Simon sans confirmation explicite.
+// Ces références peuvent être citées uniquement dans un contexte général de découverte,
+// sans laisser entendre une utilisation personnelle.
+const UNCONFIRMED_PRACTICE_TERMS=['portswigger','tryhackme','web security academy','kali linux'];
 // GARDE-FOU 2026-09-18 : Simon est débutant et ne doit pas être présenté comme ayant
 // personnellement testé/utilisé des outils, plateformes ou situations qui n'ont pas été confirmés.
 // Ces motifs couvrent notamment les exemples qui ont encore réussi à passer malgré les contrôles
