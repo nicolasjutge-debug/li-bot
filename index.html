@@ -583,7 +583,46 @@ let Q=[], H=[], CF=[], RJ=[], W=[];
 // absentes de l'ancienne structure) pour que learnCorrection et la validation puissent y
 // lire/écrire sans avoir à re-vérifier l'existence de chaque clé à chaque appel.
 function defaultGenerationRules(){
-  return {avoidedFormulations:[],avoidedExperiences:[],avoidedAngles:[],avoidedHashtags:[],preferredFormulations:[],preferredStructures:[],corrections:[],validatedExamples:[]};
+  return {
+    avoidedFormulations:[
+      'outil le moins spectaculaire',
+      'pas une technique de génie',
+      'écran noir',
+      'aucun bouton',
+      'bidouillé un outil',
+      'je me suis lancé dans un CTF',
+      'je me suis entraîné sur',
+      'je pratique Linux',
+      'j’utilise Kali',
+      'j'ai testé un SIEM'
+    ],
+    avoidedExperiences:['TryHackMe','PortSwigger','Linux pratique','Kali en pratique','CTF pratiqués','SIEM testé','OSINT pratiqué'],
+    avoidedAngles:[
+      'problème n'est pas technique, il est humain',
+      'arnaque la plus efficace',
+      'piratage sophistiqué',
+      'juste un oubli',
+      'plus de monde autour de moi que n'importe quelle attaque technique'
+    ],
+    avoidedHashtags:['#Kali','#TryHackMe','#PortSwigger','#EthicalHacking','#RedTeam'],
+    preferredFormulations:[
+      'je découvre',
+      'je cherche surtout à comprendre',
+      'je commence à mieux comprendre',
+      'ça m'intéresse',
+      'un exemple concret',
+      'les bons réflexes restent essentiels',
+      'encore beaucoup à apprendre'
+    ],
+    preferredStructures:[
+      'découverte personnelle sans pratique revendiquée',
+      'situation concrète puis enseignement simple',
+      'constat puis nuance',
+      'liste courte de notions découvertes'
+    ],
+    corrections:[],
+    validatedExamples:[]
+  };
 }
 let generationRules=defaultGenerationRules();
 let stats=lsL(SK.stats,{simon:{total:0,sent:0},niko:{total:0,sent:0}});
@@ -1411,7 +1450,7 @@ const HT={
     'Sécurité IoT':['#IoT','#ObjetsConnectés'],
     'Sécurité mobile':['#SécuritéMobile','#Smartphone'],
     'Réseaux':['#Réseaux','#TCPIP','#SIN','#Cisco'],
-    'Linux':['#Linux','#Terminal','#Kali','#LearningByDoing'],
+    'Linux':['#Linux','#Terminal','#Découverte'],
     'Sécurité web':['#SécuritéWeb','#XSS','#SQLInjection'],
     'Forensic numérique':['#Forensic','#InvestigationNumérique'],
     'Fuites de données':['#FuiteDeDonnées','#DataBreach'],
@@ -1522,10 +1561,11 @@ const UNVALIDATED_PERSONAL_CLAIM_PATTERNS=[
   /(?:j['’]?(?:ai|a)|je)\s+(?:essay[ée]|test[ée]|chiffr[ée])[^.\n]{0,100}(?:message à la main|méthode de cryptographie|cryptographie)/i,
   /(?:j['’]?(?:ai|a)|je)\s+(?:r[ée]ussi|coch[ée]|valid[ée])[^.\n]{0,100}(?:rapport de bug bounty|défi|exercice|simulation)/i
 ];
-// #Cybersécurité est volontairement absent des hashtags de Simon : le générateur ne doit
-// jamais le réintroduire automatiquement, même si une ancienne règle ou une édition manuelle
-// l'avait conservé.
-const FORCED_REMOVED_HASHTAGS_SIMON=['#Cybersécurité'];
+// #Cybersécurité fait partie du positionnement éditorial de Simon :
+// il est autorisé et peut être proposé automatiquement lorsque le post traite réellement
+// de cybersécurité. Il ne doit pas être ajouté systématiquement à tous les posts.
+// Les hashtags qui suggèrent une pratique non acquise restent interdits (ex. #TryHackMe).
+const FORCED_REMOVED_HASHTAGS_SIMON=[];
 // PROFIL D'EXPÉRIENCE SIMON : l'historique est conservé, mais il sert à la mémoire éditoriale
 // (doublons, corrections, style validé) et ne transforme pas un sujet découvert en expérience.
 const SIMON_EXPERIENCE_PROFILE={
@@ -1538,6 +1578,16 @@ const SIMON_EXPERIENCE_PROFILE={
 // Gabarit générique "verbe 1ère personne + complément proche" réutilisé pour relire
 // generationRules.avoidedExperiences dans validateGeneratedPost (voir plus bas) — sans bloquer
 // une simple mention de découverte comme "je découvre X" (§6 du prompt).
+// CALIBRATION ÉDITORIALE — revue de 9 posts du 24/09/2026 : 2 rejets, 6 corrections, 1 OK.
+// Les corrections montrent que le générateur doit privilégier la découverte et les situations
+// concrètes, sans transformer un sujet lu/regardé en expérience personnelle.
+const SIMON_EDITORIAL_CALIBRATION={
+  rejectedThemes:['VPN/Wi-Fi public avec expérience personnelle non établie'],
+  acceptedAngles:['sécurité web/formulaire présenté comme découverte générale','situation réelle d’un proche sur réseau social, avec aide aux démarches de récupération'],
+  correctedAngles:['mots de passe : nuancer les affirmations générales','CTF : intérêt et découverte, jamais pratique revendiquée','SIEM : fonctionnement découvert, jamais “bidouillé”','Linux : environnement à découvrir, jamais pratique/Kali revendiquée','fuite de données : mauvaise configuration comme exemple, sans certitude excessive'],
+  styleRules:['phrases simples','ton de lycéen débutant','concret et personnel sans surjouer la technique','éviter les formulations spectaculaires','préférer “je découvre / je cherche à comprendre / je commence à comprendre”'],
+  hardStops:['TryHackMe','PortSwigger','Kali/Linux en pratique','CTF pratiqués','SIEM testé','OSINT pratiqué','pentest/audit réalisé']
+};
 const PRACTICE_VERB_RE=/(?:j['’]?(?:ai|a)|je)\s+(?:[^\s]+\s+){0,2}(?:test|réalis|utilis|pratiqu|m['’]entra[iî]ne|exploit|configure|installe|ma[iî]trise|effectu|travaille)/i;
 // Motifs génériques de sur-affirmation (indépendants de TryHackMe/PortSwigger/Linux, cf. §5 du
 // prompt "générateur adaptatif") : verbe de pratique/réalisation aboutie + le complément qui
@@ -1613,8 +1663,6 @@ function validateGeneratedPost(post){
     const low=text.toLowerCase();
     if(generationRules.avoidedFormulations?.some(f=>f&&low.includes(String(f).toLowerCase()))) errors.push('formulation rejetée');
     if(generationRules.avoidedAngles?.some(a=>a&&low.includes(String(a).toLowerCase()))) errors.push('angle rejeté');
-    const learnedConflict=correctionConflict(text,post?.topic||'',post?.mode||'review');
-    if(learnedConflict) errors.push('angle déjà corrigé');
     if(generationRules.avoidedHashtags?.some(h=>h&&new RegExp(String(h).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(text))) errors.push('hashtag rejeté');
     // CORRECTIF (prompt §5/§11) : generationRules.avoidedExperiences était alimenté par
     // learnCorrection (PortSwigger/TryHackMe/Linux pratique) mais jamais relu ici — resté sans
@@ -1637,20 +1685,13 @@ function validateHashtags(text){
   if(generationRules.avoidedHashtags?.some(h=>tags.some(t=>t.toLowerCase()===String(h).toLowerCase()))) return {ok:false,tags,errors:['hashtag rejeté']};
   return {ok:true,tags,errors:[]};
 }
-function learnCorrection(original, corrected, meta={}){
+function learnCorrection(original, corrected){
   if(acc!=='simon'||!original||!corrected||original===corrected)return;
   generationRules=generationRules||defaultGenerationRules();
   for(const k of Object.keys(defaultGenerationRules())) if(!Array.isArray(generationRules[k]))generationRules[k]=[];
   // 1) Log brut de la correction (§4/§12 du prompt : conserver original + corrigé) — plafonné
   // pour ne pas alourdir indéfiniment le localStorage sur un usage au long cours.
-  generationRules.corrections.push({
-    original:original.slice(0,300),
-    corrected:corrected.slice(0,300),
-    topic:meta.topic||'',
-    type:meta.type||'original',
-    changedWords:distinctiveWords(original).filter(w=>!distinctiveWords(corrected).includes(w)).slice(0,12),
-    ts:Date.now()
-  });
+  generationRules.corrections.push({original:original.slice(0,300),corrected:corrected.slice(0,300),ts:Date.now()});
   if(generationRules.corrections.length>40) generationRules.corrections=generationRules.corrections.slice(-40);
   // 2) Hashtags retirés : NE PAS les transformer en blacklist globale.
   // Un hashtag peut être retiré d'un post pour ce post uniquement. Les seuls blocages
@@ -1688,63 +1729,6 @@ function learnCorrection(original, corrected, meta={}){
   generationRules.preferredFormulations=[...new Set(generationRules.preferredFormulations)].slice(-20);
   generationRules.avoidedAngles=[...new Set(generationRules.avoidedAngles)].slice(-20);
   lsS(grk(acc),generationRules);
-}
-
-/* ════ MÉMOIRE ACTIVE DES CORRECTIONS ════
-   Les corrections ne servent pas seulement à bloquer une formulation exacte : elles
-   doivent aussi empêcher le générateur automatique de reproduire le même angle sous une
-   autre formulation. On compare les corrections réellement enregistrées, par thème quand
-   l'information existe, et on garde un seuil volontairement élevé pour éviter de sur-bloquer.
-*/
-const EDITORIAL_STOP_WORDS=new Set(('je j ai le la les un une des de du et en dans pour que qui ce cette ces est sont avec sur au aux a à me mon ma mes mais plus pas ne se son sa ses il elle ils elles on nous vous leur leurs c est ca ça comme par une cela aussi encore très tout toute être avoir faire fait peut peut-être alors donc ou si quand comment pourquoi dont ton votre notre').split(/\s+/));
-function distinctiveWords(text){
-  return [...new Set(wordsOf(text).filter(w=>w.length>=5&&!EDITORIAL_STOP_WORDS.has(w)))];
-}
-function correctionConflict(text, topicName='', mode='review'){
-  if(acc!=='simon'||!text||mode!=='generation')return null;
-  const rules=generationRules||defaultGenerationRules();
-  const list=Array.isArray(rules.corrections)?rules.corrections:[];
-  for(const c of list.slice(-40).reverse()){
-    if(!c||!c.original||!c.corrected)continue;
-    if(c.topic&&topicName&&c.topic!==topicName)continue;
-    const original=String(c.original).trim();
-    const corrected=String(c.corrected).trim();
-    if(!original||original===corrected)continue;
-    const change=1-wordOverlapRatio(original,corrected);
-    if(change<0.25)continue;
-    const firstOrig=(original.split('\n')[0]||'').trim();
-    const firstText=(String(text).split('\n')[0]||'').trim();
-    const firstOverlap=wordOverlapRatio(firstOrig,firstText);
-    const overlap=wordOverlapRatio(original,text);
-    const changed=Array.isArray(c.changedWords)&&c.changedWords.length ? c.changedWords : distinctiveWords(original).filter(w=>!distinctiveWords(corrected).includes(w));
-    const current=distinctiveWords(text);
-    const hitCount=changed.filter(w=>current.includes(w)).length;
-    if(hitCount>=2 && (firstOverlap>=0.30||overlap>=0.42)) return {original,corrected,overlap,firstOverlap,hitCount,reason:'anciens signaux d’angle'};
-    if(firstOverlap>=0.52||overlap>=0.68) return {original,corrected,overlap,firstOverlap,hitCount,reason:'angle trop proche'};
-  }
-  return null;
-}
-function learnedPreferenceScore(text){
-  if(acc!=='simon'||!text)return 0;
-  const prefs=Array.isArray(generationRules?.preferredFormulations)?generationRules.preferredFormulations:[];
-  const low=String(text).toLowerCase();
-  let score=prefs.reduce((n,p)=>low.includes(String(p).toLowerCase())?n+2:n,0);
-  const list=Array.isArray(generationRules?.corrections)?generationRules.corrections:[];
-  const current=distinctiveWords(text);
-  for(const c of list.slice(-20)){
-    const o=distinctiveWords(c?.original||'');
-    const r=distinctiveWords(c?.corrected||'');
-    const newWords=r.filter(w=>!o.includes(w));
-    score+=newWords.filter(w=>current.includes(w)).length*0.15;
-  }
-  return score;
-}
-function prioritizeLearnedPreferences(items){
-  if(!Array.isArray(items)||!items.length||acc!=='simon')return items;
-  const scored=items.map((item,index)=>({item,index,score:learnedPreferenceScore(item.text||item)}));
-  const best=Math.max(...scored.map(x=>x.score));
-  if(best<=0)return items;
-  return scored.filter(x=>x.score===best).map(x=>x.item);
 }
 
 function genTxt(opts={}){
@@ -1900,7 +1884,7 @@ function onPoBlur(){
     renderPost(reviewedText);
     toast('⚠️ Hashtag(s) retiré(s) automatiquement : '+review.removed.join(', '),'in');
   }
-  learnCorrection(original,reviewedText,{topic:lastPost.topic,type:lastPost.type});
+  learnCorrection(original,reviewedText);
   lastPost.previousVersions=[...(lastPost.previousVersions||[]),{text:original,source:'generated',corrected:true}];
   lastPost.text=current;
   markDraftDirty();
@@ -1993,7 +1977,6 @@ function genPost(){
       const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
       if(freshNewIntro.length)fresh=freshNewIntro;
       fresh=applyFamilyDiversity(fresh,topic,acc);
-      fresh=prioritizeLearnedPreferences(fresh);
       const chosen=fresh.length?pick(fresh):pick(combos); candidate=chosen.text; dup=!fresh.length;
       recordFamily(topic,chosen.aIdx,acc);
       candidate=(candidate+'\n\n'+pickHashtags(topic,acc)).trim();
@@ -2239,7 +2222,7 @@ function genOnePost(extraAvoid=[]){
       // automatique. Si TOUT le thème est bloqué par les règles apprises, on l'abandonne pour cet
       // appel (retour null) plutôt que d'ignorer la validation — l'appelant retente alors un autre
       // thème (voir hasFreshContent plus bas et la boucle de genOnePost).
-      const combosOk=acc==='simon'?combos.filter(c=>validateGeneratedPost({text:c.text,topic:p.topic,mode:'generation'}).ok && validateForReview(c.text,{autoCleanHashtags:true}).ok):combos;
+      const combosOk=acc==='simon'?combos.filter(c=>validateGeneratedPost({text:c.text}).ok && validateForReview(c.text,{autoCleanHashtags:true}).ok):combos;
       if(!combosOk.length) return null;
       // BUGFIX MAJEUR : comparait le texte BRUT du combo (usedTexts.has(c.text)) contre des
       // entrées normalisées (stripTags) → un post déjà publié avec la moindre variation
@@ -2251,10 +2234,6 @@ function genOnePost(extraAvoid=[]){
       // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
       fresh=applyFamilyDiversity(fresh,p.topic,acc);
       if(!fresh.length) return null;
-      // La mémoire éditoriale apprise doit réellement influencer le planning automatique :
-      // si plusieurs variantes conformes existent, on privilégie celles qui reprennent les
-      // formulations de découverte validées lors des corrections, sans copier un ancien post.
-      fresh=prioritizeLearnedPreferences(fresh);
       const chosen=pick(fresh);
       return {text:(chosen.text+'\n\n'+pickHashtags(p.topic,acc)).trim(),aIdx:chosen.aIdx};
     }
@@ -2263,13 +2242,13 @@ function genOnePost(extraAvoid=[]){
       // Chaque variante intègre désormais un tirage aléatoire de hashtags (pickHashtags) ;
       // on compare donc la version sans hashtags pour juger de la fraîcheur du fond du message.
       let fresh=variants.map(fn=>fn(p.who,'',acc)).filter(t=>!usedTexts.has(norm(t)));
-      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t,mode:'generation'}).ok);
+      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t}).ok);
       return fresh.length?{text:pick(fresh),aIdx:null}:null;
     }
     if(p.type==='repost'){
       const variants=acc==='simon'?RS:RN;
       let fresh=variants.map(fn=>fn(p.content||'')).filter(t=>!usedTexts.has(norm(t)));
-      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t,mode:'generation'}).ok);
+      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t}).ok);
       return fresh.length?{text:pick(fresh),aIdx:null}:null;
     }
     return null;
@@ -2491,7 +2470,7 @@ function editQText(id,val){
   const original=q.originalText!==undefined?q.originalText:q.text;
   if(q.originalText===undefined)q.originalText=q.text;
   q.previousVersions=[...(q.previousVersions||[]),{text:q.text,correctedAt:Date.now()}];
-  learnCorrection(original,v,{topic:q.topic,type:q.type});
+  learnCorrection(original,v);
   q.text=v;q.modified=true;q.modifiedAt=Date.now();q.modifiedText=v;
   // La correction est apprise immédiatement, mais n'est persistée comme brouillon que via Sauvegarder.
   draftDirty=true;
@@ -2930,7 +2909,7 @@ function editHText(id,val){
   if(v===h.text)return;
   const original=h.originalText!==undefined?h.originalText:h.text; // NOUVEAU (non destructif)
   if(h.originalText===undefined)h.originalText=h.text;
-  learnCorrection(original,v,{topic:h.topic,type:h.type}); // NOUVEAU : une correction sur un post déjà publié alimente aussi les règles apprises
+  learnCorrection(original,v); // NOUVEAU : une correction sur un post déjà publié alimente aussi les règles apprises
   h.text=v;saveAll();renderH();
   toast('Texte du post archivé mis à jour ✓ (règles de génération mises à jour)','ok');
 }
