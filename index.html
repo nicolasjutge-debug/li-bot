@@ -1613,6 +1613,8 @@ function validateGeneratedPost(post){
     const low=text.toLowerCase();
     if(generationRules.avoidedFormulations?.some(f=>f&&low.includes(String(f).toLowerCase()))) errors.push('formulation rejetée');
     if(generationRules.avoidedAngles?.some(a=>a&&low.includes(String(a).toLowerCase()))) errors.push('angle rejeté');
+    const learnedConflict=correctionConflict(text,post?.topic||'',post?.mode||'review');
+    if(learnedConflict) errors.push('angle déjà corrigé');
     if(generationRules.avoidedHashtags?.some(h=>h&&new RegExp(String(h).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(text))) errors.push('hashtag rejeté');
     // CORRECTIF (prompt §5/§11) : generationRules.avoidedExperiences était alimenté par
     // learnCorrection (PortSwigger/TryHackMe/Linux pratique) mais jamais relu ici — resté sans
@@ -1635,13 +1637,20 @@ function validateHashtags(text){
   if(generationRules.avoidedHashtags?.some(h=>tags.some(t=>t.toLowerCase()===String(h).toLowerCase()))) return {ok:false,tags,errors:['hashtag rejeté']};
   return {ok:true,tags,errors:[]};
 }
-function learnCorrection(original, corrected){
+function learnCorrection(original, corrected, meta={}){
   if(acc!=='simon'||!original||!corrected||original===corrected)return;
   generationRules=generationRules||defaultGenerationRules();
   for(const k of Object.keys(defaultGenerationRules())) if(!Array.isArray(generationRules[k]))generationRules[k]=[];
   // 1) Log brut de la correction (§4/§12 du prompt : conserver original + corrigé) — plafonné
   // pour ne pas alourdir indéfiniment le localStorage sur un usage au long cours.
-  generationRules.corrections.push({original:original.slice(0,300),corrected:corrected.slice(0,300),ts:Date.now()});
+  generationRules.corrections.push({
+    original:original.slice(0,300),
+    corrected:corrected.slice(0,300),
+    topic:meta.topic||'',
+    type:meta.type||'original',
+    changedWords:distinctiveWords(original).filter(w=>!distinctiveWords(corrected).includes(w)).slice(0,12),
+    ts:Date.now()
+  });
   if(generationRules.corrections.length>40) generationRules.corrections=generationRules.corrections.slice(-40);
   // 2) Hashtags retirés : NE PAS les transformer en blacklist globale.
   // Un hashtag peut être retiré d'un post pour ce post uniquement. Les seuls blocages
@@ -1679,6 +1688,63 @@ function learnCorrection(original, corrected){
   generationRules.preferredFormulations=[...new Set(generationRules.preferredFormulations)].slice(-20);
   generationRules.avoidedAngles=[...new Set(generationRules.avoidedAngles)].slice(-20);
   lsS(grk(acc),generationRules);
+}
+
+/* ════ MÉMOIRE ACTIVE DES CORRECTIONS ════
+   Les corrections ne servent pas seulement à bloquer une formulation exacte : elles
+   doivent aussi empêcher le générateur automatique de reproduire le même angle sous une
+   autre formulation. On compare les corrections réellement enregistrées, par thème quand
+   l'information existe, et on garde un seuil volontairement élevé pour éviter de sur-bloquer.
+*/
+const EDITORIAL_STOP_WORDS=new Set(('je j ai le la les un une des de du et en dans pour que qui ce cette ces est sont avec sur au aux a à me mon ma mes mais plus pas ne se son sa ses il elle ils elles on nous vous leur leurs c est ca ça comme par une cela aussi encore très tout toute être avoir faire fait peut peut-être alors donc ou si quand comment pourquoi dont ton votre notre').split(/\s+/));
+function distinctiveWords(text){
+  return [...new Set(wordsOf(text).filter(w=>w.length>=5&&!EDITORIAL_STOP_WORDS.has(w)))];
+}
+function correctionConflict(text, topicName='', mode='review'){
+  if(acc!=='simon'||!text||mode!=='generation')return null;
+  const rules=generationRules||defaultGenerationRules();
+  const list=Array.isArray(rules.corrections)?rules.corrections:[];
+  for(const c of list.slice(-40).reverse()){
+    if(!c||!c.original||!c.corrected)continue;
+    if(c.topic&&topicName&&c.topic!==topicName)continue;
+    const original=String(c.original).trim();
+    const corrected=String(c.corrected).trim();
+    if(!original||original===corrected)continue;
+    const change=1-wordOverlapRatio(original,corrected);
+    if(change<0.25)continue;
+    const firstOrig=(original.split('\n')[0]||'').trim();
+    const firstText=(String(text).split('\n')[0]||'').trim();
+    const firstOverlap=wordOverlapRatio(firstOrig,firstText);
+    const overlap=wordOverlapRatio(original,text);
+    const changed=Array.isArray(c.changedWords)&&c.changedWords.length ? c.changedWords : distinctiveWords(original).filter(w=>!distinctiveWords(corrected).includes(w));
+    const current=distinctiveWords(text);
+    const hitCount=changed.filter(w=>current.includes(w)).length;
+    if(hitCount>=2 && (firstOverlap>=0.30||overlap>=0.42)) return {original,corrected,overlap,firstOverlap,hitCount,reason:'anciens signaux d’angle'};
+    if(firstOverlap>=0.52||overlap>=0.68) return {original,corrected,overlap,firstOverlap,hitCount,reason:'angle trop proche'};
+  }
+  return null;
+}
+function learnedPreferenceScore(text){
+  if(acc!=='simon'||!text)return 0;
+  const prefs=Array.isArray(generationRules?.preferredFormulations)?generationRules.preferredFormulations:[];
+  const low=String(text).toLowerCase();
+  let score=prefs.reduce((n,p)=>low.includes(String(p).toLowerCase())?n+2:n,0);
+  const list=Array.isArray(generationRules?.corrections)?generationRules.corrections:[];
+  const current=distinctiveWords(text);
+  for(const c of list.slice(-20)){
+    const o=distinctiveWords(c?.original||'');
+    const r=distinctiveWords(c?.corrected||'');
+    const newWords=r.filter(w=>!o.includes(w));
+    score+=newWords.filter(w=>current.includes(w)).length*0.15;
+  }
+  return score;
+}
+function prioritizeLearnedPreferences(items){
+  if(!Array.isArray(items)||!items.length||acc!=='simon')return items;
+  const scored=items.map((item,index)=>({item,index,score:learnedPreferenceScore(item.text||item)}));
+  const best=Math.max(...scored.map(x=>x.score));
+  if(best<=0)return items;
+  return scored.filter(x=>x.score===best).map(x=>x.item);
 }
 
 function genTxt(opts={}){
@@ -1834,7 +1900,7 @@ function onPoBlur(){
     renderPost(reviewedText);
     toast('⚠️ Hashtag(s) retiré(s) automatiquement : '+review.removed.join(', '),'in');
   }
-  learnCorrection(original,reviewedText);
+  learnCorrection(original,reviewedText,{topic:lastPost.topic,type:lastPost.type});
   lastPost.previousVersions=[...(lastPost.previousVersions||[]),{text:original,source:'generated',corrected:true}];
   lastPost.text=current;
   markDraftDirty();
@@ -1927,6 +1993,7 @@ function genPost(){
       const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
       if(freshNewIntro.length)fresh=freshNewIntro;
       fresh=applyFamilyDiversity(fresh,topic,acc);
+      fresh=prioritizeLearnedPreferences(fresh);
       const chosen=fresh.length?pick(fresh):pick(combos); candidate=chosen.text; dup=!fresh.length;
       recordFamily(topic,chosen.aIdx,acc);
       candidate=(candidate+'\n\n'+pickHashtags(topic,acc)).trim();
@@ -2172,7 +2239,7 @@ function genOnePost(extraAvoid=[]){
       // automatique. Si TOUT le thème est bloqué par les règles apprises, on l'abandonne pour cet
       // appel (retour null) plutôt que d'ignorer la validation — l'appelant retente alors un autre
       // thème (voir hasFreshContent plus bas et la boucle de genOnePost).
-      const combosOk=acc==='simon'?combos.filter(c=>validateGeneratedPost({text:c.text}).ok && validateForReview(c.text,{autoCleanHashtags:true}).ok):combos;
+      const combosOk=acc==='simon'?combos.filter(c=>validateGeneratedPost({text:c.text,topic:p.topic,mode:'generation'}).ok && validateForReview(c.text,{autoCleanHashtags:true}).ok):combos;
       if(!combosOk.length) return null;
       // BUGFIX MAJEUR : comparait le texte BRUT du combo (usedTexts.has(c.text)) contre des
       // entrées normalisées (stripTags) → un post déjà publié avec la moindre variation
@@ -2184,6 +2251,10 @@ function genOnePost(extraAvoid=[]){
       // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
       fresh=applyFamilyDiversity(fresh,p.topic,acc);
       if(!fresh.length) return null;
+      // La mémoire éditoriale apprise doit réellement influencer le planning automatique :
+      // si plusieurs variantes conformes existent, on privilégie celles qui reprennent les
+      // formulations de découverte validées lors des corrections, sans copier un ancien post.
+      fresh=prioritizeLearnedPreferences(fresh);
       const chosen=pick(fresh);
       return {text:(chosen.text+'\n\n'+pickHashtags(p.topic,acc)).trim(),aIdx:chosen.aIdx};
     }
@@ -2192,13 +2263,13 @@ function genOnePost(extraAvoid=[]){
       // Chaque variante intègre désormais un tirage aléatoire de hashtags (pickHashtags) ;
       // on compare donc la version sans hashtags pour juger de la fraîcheur du fond du message.
       let fresh=variants.map(fn=>fn(p.who,'',acc)).filter(t=>!usedTexts.has(norm(t)));
-      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t}).ok);
+      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t,mode:'generation'}).ok);
       return fresh.length?{text:pick(fresh),aIdx:null}:null;
     }
     if(p.type==='repost'){
       const variants=acc==='simon'?RS:RN;
       let fresh=variants.map(fn=>fn(p.content||'')).filter(t=>!usedTexts.has(norm(t)));
-      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t}).ok);
+      if(acc==='simon')fresh=fresh.filter(t=>validateGeneratedPost({text:t,mode:'generation'}).ok);
       return fresh.length?{text:pick(fresh),aIdx:null}:null;
     }
     return null;
@@ -2420,7 +2491,7 @@ function editQText(id,val){
   const original=q.originalText!==undefined?q.originalText:q.text;
   if(q.originalText===undefined)q.originalText=q.text;
   q.previousVersions=[...(q.previousVersions||[]),{text:q.text,correctedAt:Date.now()}];
-  learnCorrection(original,v);
+  learnCorrection(original,v,{topic:q.topic,type:q.type});
   q.text=v;q.modified=true;q.modifiedAt=Date.now();q.modifiedText=v;
   // La correction est apprise immédiatement, mais n'est persistée comme brouillon que via Sauvegarder.
   draftDirty=true;
@@ -2859,7 +2930,7 @@ function editHText(id,val){
   if(v===h.text)return;
   const original=h.originalText!==undefined?h.originalText:h.text; // NOUVEAU (non destructif)
   if(h.originalText===undefined)h.originalText=h.text;
-  learnCorrection(original,v); // NOUVEAU : une correction sur un post déjà publié alimente aussi les règles apprises
+  learnCorrection(original,v,{topic:h.topic,type:h.type}); // NOUVEAU : une correction sur un post déjà publié alimente aussi les règles apprises
   h.text=v;saveAll();renderH();
   toast('Texte du post archivé mis à jour ✓ (règles de génération mises à jour)','ok');
 }
