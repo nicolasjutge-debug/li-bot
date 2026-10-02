@@ -432,12 +432,28 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     <div class="fld"><label>Contexte / angle (optionnel)</label>
       <textarea id="ctx-inp" style="min-height:52px" placeholder="Précise un angle, une anecdote…"></textarea>
     </div>
+    <div id="sg-settings" style="margin-top:8px;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:rgba(0,200,255,.035)">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px">🛡️ Garde-fous Simon</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+        <div class="fld" style="margin:0"><label style="font-size:10px">Progression Root-Me</label><input id="sg-prog" value="30 %" placeholder="30 %" style="padding:7px 8px;font-size:12px"></div>
+        <div class="fld" style="margin:0"><label style="font-size:10px">Zone candidature</label><input id="sg-geo" value="Rennes" placeholder="Rennes" style="padding:7px 8px;font-size:12px"></div>
+      </div>
+      <div class="fld" style="margin:7px 0 0"><label style="font-size:10px">Noms à protéger (séparés par des virgules)</label><input id="sg-names" placeholder="Lycée, professeur…" style="padding:7px 8px;font-size:12px"></div>
+    </div>
     <button class="btn btn-p" onclick="genPost()">⚡ Générer le post</button>
     <div class="pw" id="pw">
       <div id="po-mod-banner" onclick="restoreLastPost()" title="Cliquer pour revenir à la version générée automatiquement" style="display:none;background:rgba(0,178,255,.1);color:var(--cyan);border:1px solid rgba(0,178,255,.25);border-radius:6px;padding:7px 11px;font-size:12px;margin-bottom:8px;cursor:pointer">✏️ Modifié depuis la génération — <u>restaurer l'original</u></div>
       <div class="po" id="po" contenteditable="true" oninput="onPoEdited()" onblur="onPoBlur()" onkeyup="onPoEdited()"></div>
       <div class="htb" id="htb"></div>
       <div class="pm"><span id="pm"></span><span id="draft-st" style="color:var(--muted)">📝 Brouillon non sauvegardé</span></div>
+      <div id="sg-review" style="margin:8px 0;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:rgba(255,109,0,.035)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span id="sg-review-status" style="font-size:11px;color:var(--orange)">🔒 Relecture humaine requise avant copie/publication</span>
+          <button class="btn btn-s" id="sg-review-btn" onclick="sgHumanReview()" style="font-size:11px;padding:5px 9px">✓ Relu et validé</button>
+          <button class="btn btn-c" id="sg-tests-btn" onclick="sgRunTests()" style="font-size:10px;padding:4px 8px">🧪 Tests</button>
+        </div>
+        <div id="sg-review-detail" style="font-size:10px;color:var(--muted);margin-top:5px">Le verrou est lié au hash du texte final. Toute modification invalide la relecture.</div>
+      </div>
       <div class="btn-row">
         <button class="btn btn-c" id="save-draft-btn" onclick="saveDraft()" disabled>💾 Sauvegarder</button>
         <button class="btn btn-c" onclick="copyPost()">📋 Copier</button>
@@ -3348,6 +3364,550 @@ if(lsL(SK.timer,false)&&Q.length){document.getElementById('st-txt').textContent=
 // Service Worker minimal (voir sw-bot.js) : ne cache rien, sert uniquement à rendre
 // l'app installable sur PC (Chrome/Edge) sans risque de version périmée.
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').catch(()=>{});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   GARDE-FOU SIMON v6 — intégré à l'interface historique
+   La partie Nicolas conserve le moteur et l'interface d'origine.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  const SG_TOKEN='{PROGRESSION_ROOT_ME}';
+  const SG_FIXED=['#STI2D','#Découverte','#Cybersécurité'];
+  const SG_BANNED=['#HackTheBox','#OpenToWork','#Analyste','#Pentest'];
+  const SG_ADVANCED=new Set(['SIEM','SOC','Zero-day','Pentest']);
+  const SG_FORMS=[
+    'En découvrant','En me renseignant sur','En lisant sur le sujet','Je découvre',
+    'Je commence à comprendre','Ce que je comprends pour l’instant','Une notion que je découvre',
+    'Une notion que je trouve intéressante','En cherchant à comprendre','Je poursuis ma découverte de',
+    'Ce sujet m’aide à comprendre','Une différence que je découvre','Un point que je retiens',
+    'Ce que je retiens de cette notion','Une notion qui mérite d’être comprise',
+    'En approfondissant cette notion','Je découvre progressivement','Une première chose que je comprends',
+    'Un concept que je commence à distinguer','Une notion que je cherche à mieux comprendre',
+    'En essayant de comprendre la différence','Ce sujet permet de mieux comprendre'
+  ];
+  const SG_STRUCT={
+    'Découverte':['accroche','explication','ce que Simon comprend','conclusion'],
+    'Question':['question','explication','exemple hypothétique','conclusion'],
+    'Comparaison':['idée de départ','comparaison','explication','ce que Simon retient'],
+    'Trois notions':['accroche','notion 1','notion 2','notion 3','conclusion'],
+    'Observation':['constat général','explication','illustration','découverte','conclusion']
+  };
+  const SG_THEME_ROWS=[
+    ['Modèle OSI','#OSI','réseau'],['Adresse IP','#AdresseIP','réseau'],['IPv4','#IPv4','réseau'],
+    ['Masque de sous-réseau','#Réseau','réseau'],['Passerelle','#Réseau','réseau'],['DNS','#DNS','réseau'],
+    ['DHCP','#DHCP','réseau'],['TCP','#TCP','réseau'],['UDP','#UDP','réseau'],['Ports','#Réseau','réseau'],
+    ['Routage','#Routage','réseau'],['VLAN','#VLAN','réseau'],['Wi-Fi','#WiFi','réseau'],['HTTP','#HTTP','réseau'],
+    ['HTTPS','#HTTPS','réseau'],['Ping','#Réseau','réseau'],['Traceroute','#Réseau','réseau'],['ipconfig','#Réseau','réseau'],
+    ['Commandes réseau','#Réseau','réseau'],['Linux','#Linux','linux'],['Terminal','#Linux','linux'],
+    ['Commandes Linux','#Linux','linux'],['Permissions Linux','#Linux','linux'],['Utilisateurs et droits','#Linux','linux'],
+    ['Processus et services','#Linux','linux'],['Pare-feu','#PareFeu','sécurité'],['Sauvegardes','#Sauvegarde','sécurité'],
+    ['Mots de passe','#MotsDePasse','sécurité'],['MFA / 2FA','#2FA','sécurité'],['Mises à jour','#SécuritéInformatique','sécurité'],
+    ['Chiffrement','#Chiffrement','sécurité'],['Contrôle des accès','#SécuritéInformatique','sécurité'],
+    ['Moindre privilège','#SécuritéInformatique','sécurité'],['Journalisation','#Logs','sécurité'],['Authentification','#Informatique','sécurité'],
+    ['Phishing','#Phishing','menaces'],['Ingénierie sociale','#IngenierieSociale','menaces'],['Malware','#Malware','menaces'],
+    ['Ransomware','#Ransomware','menaces'],['Vulnérabilités','#Vulnérabilité','menaces'],['RGPD','#RGPD','données'],
+    ['Données personnelles','#DonnéesPersonnelles','données'],['Confidentialité','#DonnéesPersonnelles','données'],
+    ['SIEM','#SIEM','avancé'],['SOC','#SOC','avancé'],['Zero-day','#ZeroDay','avancé'],['Pentest','#Débutant','avancé']
+  ];
+  const SG_THEME=new Map(SG_THEME_ROWS.map(x=>[x[0],x]));
+  const SG_ALIASES=new Map([['Réseaux','Réseau'],['Zero Day','Zero-day'],['Vulnérabilité','Vulnérabilités'],['MFA/2FA','MFA / 2FA']]);
+  const SG_OFFENSIVE=/\b(?:nmap|sqlmap|metasploit|msfconsole|hydra|hashcat|payload|reverse shell|burp suite|burpsuite|nikto|gobuster|ffuf|john the ripper)\b/i;
+  const SG_ATTACK=/\b(?:wannacry|notpetya|stuxnet|solarwinds|log4shell|heartbleed|mirai|emotet|lockbit)\b/i;
+  const SG_ABSOLUTES=/\b(?:garantit|garantie|aucun risque|prot(?:è|e)ge de tout|personne ne peut|impossible à pirater|empêche toute attaque|infaillible)\b/i;
+  const SG_SUSPICIOUS=[
+    'je teste','j’ai testé','j\'ai testé','je testais','je travaille avec','j’ai travaillé avec','j\'ai travaillé avec',
+    'j’utilise','j\'utilise','j’ai utilisé','j\'ai utilis?é','j’utilisais','j\'utilisais','je manipule','j’ai manipulé','j\'ai manipulé',
+    'mes commandes','mes outils','dans mes exercices','dans ma pratique','je pratique','je m’entraîne','j’ai installé','j\'ai installé',
+    'j’ai analysé','j\'ai analysé','j’ai réalisé','j\'ai réalisé','j’ai configuré','j\'ai configuré','j’ai reçu','j\'ai reçu','j’ai rencontré','j\'ai rencontré',
+    'tous les jours','depuis que je fais de la cybersécurité','dans mon travail','dans mes expériences','après quelques essais',
+    'je maîtrise','je maitrise','mon expertise','je suis expert','je suis experte','je pensais que','je trouvais','je me suis rendu compte','au début je'
+  ];
+  const SG_CONTEXT=[
+    /\bmon (?:prof|professeur|enseignant|stage|tuteur)\b/i,/\bmon professeur nous a\b/i,/\bmon prof nous a\b/i,
+    /\ben (?:classe|cours)\b/i,/\b(?:mon|ma) (?:lycée|classe)\b/i,/\b(?:pendant|lors de|durant) (?:mon|mes|un) stage\b/i,
+    /\bmon stage\b/i,/\bdans mon entreprise\b/i,/\bchez mon entreprise\b/i,/\bun (?:collègue|ami|professeur|prof) m’a\b/i,/\bun (?:collègue|ami|professeur|prof) m'a\b/i
+  ];
+  const SG_CANDIDATE=/\b(?:je suis passionné|je suis passionnée|je suis opérationnel|je suis opérationnelle)\b/i;
+  const SG_DANGEROUS=[
+    /\brm\s+-rf\s+(?:\/|~(?:\/|\b)|\*)/i,
+    /\bdd\b[^\n]*\bof=\/dev\//i,
+    /\bmkfs(?:\.\w+)?\b[^\n]*\/dev\//i,
+    /\bchmod\s+-R\s+777\s+\/\b/i
+  ];
+  const SG_STOP=new Set(('le la les un une des de du dans sur avec pour et ou à au aux en ce cette ces est sont qui que je me mon ma mes on se son sa ses il elle ils elles ne pas plus peut comme mais par aussi tout tous être ont été fait cela ça nous vous ton ta leur leurs quand entre sans sous vers chez après avant alors ainsi même autre autres chaque quelques plusieurs car donc dont très').split(' '));
+  let sgGate={reviewed:false,hash:null};
+  let sgLastMeta=null;
+  const sgOld={
+    genPost:window.genPost, copyPost:window.copyPost, publishLinkedIn:window.publishLinkedIn,
+    schedPost:window.schedPost, markAlreadyPublished:window.markAlreadyPublished,
+    onPoEdited:window.onPoEdited, restoreLastPost:window.restoreLastPost
+  };
+  const sgNorm=s=>String(s??'').normalize('NFKC').replace(/[’‘]/g,"'").toLowerCase().replace(/\s+/g,' ').trim();
+  const sgHash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};
+  const sgWords=s=>sgNorm(s).replace(/[^\p{L}\p{N}\s'-]/gu,' ').split(/\s+/).filter(Boolean);
+  const sgSentences=s=>String(s).split(/[.!?…\n]+/).map(x=>x.trim()).filter(Boolean);
+  const sgThemeWords=t=>new Set(sgWords(t).filter(w=>!SG_STOP.has(w)));
+  const sgSig=s=>sgWords(s).filter(w=>w.length>2&&!SG_STOP.has(w));
+  const sgOverlap=(a,b,theme)=>{
+    const A=sgSig(a).filter(w=>!theme.has(w)),B=sgSig(b).filter(w=>!theme.has(w));
+    if(A.length<4||B.length<4)return 0;
+    const ca=new Map(),cb=new Map();A.forEach(w=>ca.set(w,(ca.get(w)||0)+1));B.forEach(w=>cb.set(w,(cb.get(w)||0)+1));
+    let common=0;for(const [w,n] of ca)common+=Math.min(n,cb.get(w)||0);
+    return common/Math.min(A.length,B.length)*100;
+  };
+  const sgCountWords=s=>sgWords(String(s).replace(/#[\p{L}\p{N}_]+/gu,'')).length;
+  const sgEmojiCount=s=>(String(s).match(/[\p{Extended_Pictographic}\u2600-\u26FF]/gu)||[]).length;
+  const sgHistory=()=>{
+    const h=(typeof H!=='undefined'?H:[]).filter(x=>x.account==='simon');
+    const q=(typeof Q!=='undefined'?Q:[]).filter(x=>x.account==='simon');
+    return [...h.map(x=>({text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.publishedAt||x.ts||0,src:'h'})),
+            ...q.map(x=>({text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.scheduledAt||x.ts||0,src:'q'}))]
+      .filter(x=>x.text).sort((a,b)=>a.ts-b.ts).slice(-7);
+  };
+  const sgRecentPublished=()=>sgHistory().filter(x=>x.src==='h');
+  const sgProgress=()=>{const el=document.getElementById('sg-prog');return (el?.value||'30 %').trim()||'30 %'};
+  const sgGeo=()=>{const el=document.getElementById('sg-geo');return (el?.value||'Rennes').trim()||'Rennes'};
+  const sgNames=()=>((document.getElementById('sg-names')?.value)||'').split(',').map(x=>sgNorm(x)).filter(Boolean);
+  const sgTopicRow=topic=>{
+    const key=SG_ALIASES.get(topic)||topic;
+    return SG_THEME.get(key)||SG_THEME_ROWS.find(x=>sgNorm(x[0])===sgNorm(key));
+  };
+  const sgFamily=topic=>sgTopicRow(topic)?.[2]||'autre';
+  const sgSpecificTag=topic=>sgTopicRow(topic)?.[1]||'#Informatique';
+  const sgTags=topic=>{
+    const specific=sgSpecificTag(topic);
+    const fourth=(SG_FIXED.map(x=>x.toLowerCase()).includes(specific.toLowerCase())||SG_BANNED.some(x=>x.toLowerCase()===specific.toLowerCase()))?'#Informatique':specific;
+    return [...SG_FIXED,fourth];
+  };
+  const sgAdvancedCount5=()=>sgHistory().slice(-5).filter(x=>SG_ADVANCED.has(x.theme)).length;
+  const sgRootCount7=()=>sgHistory().slice(-7).filter(x=>/root[\s-]?me/i.test(x.text)).length;
+  const sgFamilyCount7=f=>sgHistory().slice(-7).filter(x=>(x.family||sgFamily(x.theme))===f).length;
+  const sgRecentForm3=()=>sgHistory().slice(-3).map(x=>x.form).filter(Boolean);
+  const sgRecentStruct2=()=>sgHistory().slice(-2).map(x=>x.structure).filter(Boolean);
+  const sgPickForm=()=>{
+    const used=new Set(sgRecentForm3().map(sgNorm));
+    const pool=SG_FORMS.filter(f=>!used.has(sgNorm(f)));
+    return pool[Math.floor(Math.random()*pool.length)]||SG_FORMS[0];
+  };
+  const sgPickStructure=()=>{
+    const used=new Set(sgRecentStruct2().map(sgNorm));
+    const pool=Object.keys(SG_STRUCT).filter(x=>!used.has(sgNorm(x)));
+    return pool[Math.floor(Math.random()*pool.length)]||Object.keys(SG_STRUCT)[0];
+  };
+  const sgChooseTopic=()=>{
+    const rows=SG_THEME_ROWS.filter(r=>!sgHistory().some(h=>sgNorm(h.theme)===sgNorm(r[0])) && sgFamilyCount7(r[2])<2 && !(r[2]==='avancé'&&sgAdvancedCount5()>=1));
+    const selected=topic&&sgTopicRow(topic)?sgTopicRow(topic):null;
+    if(selected && !sgHistory().some(h=>sgNorm(h.theme)===sgNorm(selected[0])) && sgFamilyCount7(selected[2])<2 && !(selected[2]==='avancé'&&sgAdvancedCount5()>=1)) return selected;
+    return rows[Math.floor(Math.random()*rows.length)]||SG_THEME_ROWS[Math.floor(Math.random()*SG_THEME_ROWS.length)];
+  };
+  const sgEnsureForm=(text,form,topic)=>{
+    const n=sgNorm(text);if(n.includes(sgNorm(form)))return text;
+    return `${form} ${String(topic).toLowerCase()} : ${text}`;
+  };
+  const sgNoHashtags=t=>String(t).replace(/#[\p{L}\p{N}_-]+/gu,'').trim();
+  const sgActualProgressValue=s=>{const m=String(s).match(/\d+(?:[.,]\d+)?/);return m?Number(m[0].replace(',','.')):null};
+  function sgValidate(raw,opt={}){
+    const errors=[];const body=String(raw||'').trim();const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
+    const history=sgHistory();
+    const sentences=sgSentences(display);const themeSet=sgThemeWords(topic);
+    const add=(e)=>{if(!errors.includes(e))errors.push(e)};
+    const words=sgCountWords(display);
+    if(words<80||words>150)add(`Longueur : ${words} mots (80 à 150).`);
+    if(display.includes(SG_TOKEN))add('Variable de progression Root-Me non remplacée.');
+    if(!opt.allowSystemHashtags && /#[\p{L}\p{N}_-]+/u.test(display))add('Hashtag présent dans le texte : les hashtags sont ajoutés par le code.');
+    if(opt.allowSystemHashtags){
+      const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
+      const expected=sgTags(topic).map(x=>x.toLowerCase());
+      if(tags.length!==4||new Set(tags.map(x=>x.toLowerCase())).size!==4||tags.some(x=>!expected.includes(x.toLowerCase())))add('Hashtags finaux non conformes : exactement 4 hashtags attendus.');
+      if(SG_BANNED.some(b=>tags.some(t=>t.toLowerCase()===b.toLowerCase())))add('Hashtag interdit présent.');
+    }
+    if(/(?:https?:\/\/|www\.|\b[a-z0-9-]+\.(?:com|org|fr|io|net|app|dev|eu)\b)/i.test(n))add('URL ou domaine interdit.');
+    if(/^\s*#{1,6}\s|^\s*[-*+]\s|```|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|__[^_]+__/m.test(display))add('Markdown interdit.');
+    const em=sgEmojiCount(display);if(em>1)add(`Trop d’émojis : ${em} (maximum 1).`);
+    if(SG_CANDIDATE.test(display))add('Formulation de candidature non autorisée pour Simon.');
+    for(const p of SG_SUSPICIOUS){if(n.includes(sgNorm(p)))add(`Expérience/vécu non confirmé : « ${p} »`)}
+    if(/\bje\s+pensais\s+que\b/i.test(display))add('Vécu inventé : « je pensais que ». Utiliser une formulation générale.');
+    if(SG_CONTEXT.some(r=>r.test(display)))add('Contexte scolaire/professionnel non confirmé.');
+    if(SG_ABSOLUTES.test(display))add('Affirmation technique absolue non justifiée.');
+    if(SG_OFFENSIVE.test(display))add('Outil offensif détecté : mention pédagogique uniquement, sans pratique revendiquée.');
+    // Commandes dangereuses : seules les cibles réellement destructrices sont bloquées.
+    if(SG_DANGEROUS.some(r=>r.test(display)))add('Commande dangereuse avec cible réelle/procédure détectée.');
+    if(SG_ATTACK.test(display))add('Attaque nommée non fournie/sourcée.');
+    if(/\b(?:millions?|milliards?)\b/i.test(display))add('Quantification en millions/milliards non fournie par le code.');
+    const allowedYear=/\b2027\b/g;const tmp=display.replace(allowedYear,'');if(/\b(?:19|20)\d{2}\b/.test(tmp))add('Année non fournie par le code.');
+    const percentages=[...display.matchAll(/(\d+(?:[.,]\d+)?)\s*%/g)];const prog=sgActualProgressValue(sgProgress());for(const m of percentages){if(prog===null||Number(m[1].replace(',','.'))!==prog)add(`Pourcentage non fourni par le code : « ${m[0]} »`)}
+    const rm=/root[\s-]?me/i.test(display);
+    if(rm){
+      if(sgRootCount7()>=2)add('Root-Me déjà cité dans 2 des 7 derniers posts.');
+      if(/\b(?:challenges?\s+(?:résolu|réussi)|flags?|classement|score|solution|taux de réussite)\b/i.test(display))add('Root-Me : élément interdit (challenge, flag, score, classement ou solution).');
+    }
+    if(/cyberquest/i.test(display)){
+      if(type!=='projet')add('CyberQuest ne doit être cité que dans un post de type projet.');
+      if(/\b(?:utilisateurs|clients|performance|solution professionnelle|produit commercial|développé seul|entièrement développé|créé seul)\b/i.test(display))add('CyberQuest : affirmation non confirmée.');
+      if(/\b(?:battle isle|2048|ai nexus|aegis|shadow|nexus)\b/i.test(display))add('CyberQuest : rôle du composant non fourni par le code.');
+    }
+    if(type==='candidature'){
+      const geo=sgNorm(sgGeo());const cities=['rennes','paris','nantes','bretagne','lyon','brest','lorient','vannes','saint-malo','lille','toulouse'];
+      cities.forEach(g=>{if(n.includes(g)&&geo!==g)add(`Zone géographique non fournie : « ${g} »`)});
+      if(/contactez|appelez|écrivez-moi|joindre|mon (?:e-?mail|mail|numéro|téléphone)|\b(?:dm|mp)\b/i.test(display)&&!n.includes("n'hésitez pas à m'écrire en message privé"))add('Appel à contact non autorisé.');
+    }
+    if(/[\w.+-]+@[\w-]+\.[\w.-]+/.test(n)||/(?:\+33|0033|\b0)\s?[1-9](?:[\s.-]?\d{2}){4}\b/.test(n))add('Coordonnée personnelle interdite.');
+    for(const name of sgNames())if(name&&n.includes(name))add(`Information protégée : « ${name} »`);
+    if(type==='technique'){
+      const form=opt.form||sgLastMeta?.form;if(form&&!n.includes(sgNorm(form)))add(`La formulation assignée « ${form} » n’apparaît pas.`);
+      const structure=opt.structure||sgLastMeta?.structure;if(structure&&!SG_STRUCT[structure])add('Structure inconnue.');
+      // Redondance interne : common words / significant words de la phrase la plus courte.
+      for(let i=0;i<sentences.length;i++)for(let j=i+1;j<sentences.length;j++){
+        const r=sgOverlap(sentences[i],sentences[j],themeSet);if(r>=60)add(`Redondance ${Math.round(r)} % : « ${sentences[i].slice(0,60)} » ≈ « ${sentences[j].slice(0,60)} »`);
+      }
+      // Similarité globale + accroche/conclusion avec chacun des 7 derniers posts.
+      for(const h of history){
+        const hs=sgSentences(h.text),a=sgSig(sgNoHashtags(display)).filter(w=>!themeSet.has(w)),b=sgSig(sgNoHashtags(h.text)).filter(w=>!sgThemeWords(h.theme).has(w));
+        if(a.length>=4&&b.length>=4){const A=new Set(a),B=new Set(b);let common=0;A.forEach(x=>B.has(x)&&common++);const sim=common/Math.min(A.size,B.size)*100;if(sim>=70)add(`Similarité ${Math.round(sim)} % avec un post récent.`)}
+        if(sentences[0]&&hs[0]&&sgOverlap(sentences[0],hs[0],themeSet)>=60)add(`Accroche trop proche d’un post récent : « ${sentences[0].slice(0,70)} »`);
+        if(sentences.at(-1)&&hs.at(-1)&&sgOverlap(sentences.at(-1),hs.at(-1),themeSet)>=60)add(`Conclusion trop proche d’un post récent : « ${sentences.at(-1).slice(0,70)} »`);
+      }
+      if(sgFamilyCount7(sgFamily(topic))>=2)add(`Famille « ${sgFamily(topic)} » déjà utilisée 2 fois dans les 7 derniers posts.`);
+      if(SG_ADVANCED.has(topic)&&sgAdvancedCount5()>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
+    }
+    return [...new Set(errors)];
+  }
+  function sgContext(meta){return {type:meta?.type||'technique',theme:meta?.theme||topic||'Réseau',structure:meta?.structure||'',form:meta?.form||'',prog:sgProgress(),geo:sgGeo(),names:sgNames()}};
+  function sgPrompt(meta){
+    const hist=sgHistory().slice(-7).map((h,i)=>`[${i+1}] ${sgNoHashtags(h.text)}`).join('\n');
+    const role='Écris en français, à la première personne, comme Simon. Ton naturel, simple et crédible pour un lycéen de 17 ans : le post montre une progression d’apprentissage, pas une expertise. Évite le ton commercial, consultant ou expert, les phrases de motivation génériques, la dramatisation et le jargon inutile.';
+    return [role,`TYPE : ${meta.type}`,`THÈME : ${meta.theme}`,`STRUCTURE : ${meta.structure} (${(SG_STRUCT[meta.structure]||[]).join(' → ')})`,`FORMULATION À UTILISER : ${meta.form}`,`LONGUEUR : 80 à 150 mots`,`Écris uniquement le corps du post, sans hashtag, sans URL et sans markdown.`,
+      `Root-Me : si le post le justifie, utilise ${SG_TOKEN}. La valeur réelle sera fournie par le code au dernier moment (${sgProgress()}).`,`Niveau : débutant. Aucune expérience inventée.`,
+      `Protection mineur : ne cite aucun nom protégé ni établissement non fourni.`,`7 DERNIERS POSTS SANS HASHTAGS :`,hist||'(aucun)'].join('\n');
+  }
+  function sgBuildCandidate(){
+    const row=sgChooseTopic();const th=row[0];const structure=sgPickStructure();const form=sgPickForm();
+    const d=TS?.[th]||null;
+    if(!d||!Array.isArray(d.a)||!Array.isArray(d.c))return null;
+    const combos=[];for(const ai of d.a)for(const ci of d.c)combos.push(`${ai}\n\n${ci}`.trim());
+    // Élimine les variantes déjà présentes et teste réellement les 2 tentatives de reformulation.
+    const historyTexts=sgHistory().map(h=>sgNorm(h.text));
+    const fresh=combos.filter(x=>!historyTexts.includes(sgNorm(x)));
+    const shuffled=[...(fresh.length?fresh:combos)].sort(()=>Math.random()-.5);
+    for(const base of shuffled){
+      let text=sgEnsureForm(base,form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
+      const e=sgValidate(text,{type:'technique',topic:th,structure,form});
+      if(!e.length)return {text,theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
+    }
+    return null;
+  }
+  function prepare_post(candidate,meta={}){
+    if(acc!=='simon')return null;
+    const text=String(candidate||'').trim();const display=text.replaceAll(SG_TOKEN,sgProgress());
+    const errors=sgValidate(display,{...meta,allowSystemHashtags:false});
+    if(errors.length)return {ok:false,errors};
+    const tags=sgTags(meta.theme||sgLastMeta?.theme||topic);const full=(display+'\n\n'+tags.join(' ')).trim();
+    const finalErrors=sgValidate(full,{...meta,allowSystemHashtags:true});
+    if(finalErrors.length)return {ok:false,errors:finalErrors};
+    return {ok:true,text:display,raw:text,hashtags:tags,full,meta};
+  }
+  window.prepare_post=prepare_post;
+  function sgSetGate(reviewed=false){
+    const po=document.getElementById('po');const text=(po?.innerText||'').trim();
+    sgGate={reviewed:Boolean(reviewed),hash:reviewed?sgHash(text):null};
+    const btn=document.getElementById('sg-review-btn'),st=document.getElementById('sg-review-status'),detail=document.getElementById('sg-review-detail');
+    if(btn)btn.textContent=reviewed?'✓ Relecture validée — recliquer après modification':'✓ Relu et validé';
+    if(st){st.textContent=reviewed?'🔓 Relecture humaine validée':'🔒 Relecture humaine requise avant copie/publication';st.style.color=reviewed?'var(--green)':'var(--orange)'}
+    if(detail)detail.textContent=reviewed?'Le verrou est lié au hash du texte final. Une modification, même minime, invalide la validation.':'Le verrou est lié au hash du texte final. Toute modification invalide la relecture.';
+    ['save-draft-btn'].forEach(id=>{});
+  }
+  function sgHumanReview(){
+    if(acc!=='simon'){toast('La relecture verrouillée concerne le compte Simon.','in');return;}
+    const text=(document.getElementById('po')?.innerText||'').trim();if(!text){toast('Aucun texte à relire.','er');return;}
+    const meta=sgLastMeta||{type:'technique',theme:topic};const errors=sgValidate(text,{...meta,allowSystemHashtags:true});
+    if(errors.length){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
+    sgSetGate(true);toast('✓ Relecture humaine enregistrée.','ok');
+  }
+  window.sgHumanReview=sgHumanReview;
+  function sgRelease(action){
+    if(acc!=='simon')return true;
+    const po=document.getElementById('po');let text=(po?.innerText||'').trim();if(!text){toast('Génère d’abord un post','er');return false;}
+    const meta=sgLastMeta||{type:'technique',theme:topic,structure:'',form:''};
+    const display=text.replaceAll(SG_TOKEN,sgProgress());
+    const errors=sgValidate(display,{...meta,allowSystemHashtags:true});
+    if(errors.length){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · '),'er');return false;}
+    const expected=sgTags(meta.theme);const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
+    if(tags.length===0){
+      text=(display+'\n\n'+expected.join(' ')).trim();
+      if(po){po.innerText=text;renderPost(text)}
+    }else if(tags.length===4&&tags.every((t,i)=>t.toLowerCase()===expected[i].toLowerCase())){
+      text=display;
+    }else{
+      sgSetGate(false);toast('⚠️ '+action+' bloquée : hashtags finaux incorrects.','er');return false;
+    }
+    const finalHash=sgHash(text);
+    if(!sgGate.reviewed||sgGate.hash!==finalHash){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
+    // Revalidation finale : progression et historique sont relus juste avant la sortie.
+    const finalErrors=sgValidate(text,{...meta,allowSystemHashtags:true});
+    if(finalErrors.length){sgSetGate(false);toast('⚠️ '+action+' bloquée après revalidation : '+finalErrors.slice(0,2).join(' · '),'er');return false;}
+    if(lastPost)lastPost.text=text;
+    if(po&&po.innerText!==text)po.innerText=text;
+    return true;
+  }
+  window.release_post=sgRelease;
+  function sgRenderReview(){
+    const box=document.getElementById('sg-review');if(box)box.style.display=acc==='simon'?'block':'none';
+  }
+  function sgSaveSettings(){
+    try{localStorage.setItem('sg_settings',JSON.stringify({prog:sgProgress(),geo:sgGeo(),names:document.getElementById('sg-names')?.value||''}))}catch(e){}
+  }
+  function sgLoadSettings(){
+    try{const x=JSON.parse(localStorage.getItem('sg_settings')||'{}');if(x.prog)document.getElementById('sg-prog').value=x.prog;if(x.geo)document.getElementById('sg-geo').value=x.geo;if(x.names!==undefined)document.getElementById('sg-names').value=x.names}catch(e){}
+  }
+  function sgGenerate(){
+    if(acc!=='simon')return sgOld.genPost();
+    let result=null;
+    for(let attempt=0;attempt<2&&!result;attempt++) result=sgBuildCandidate();
+    if(!result){toast('⚠️ Aucune combinaison conforme trouvée. Choisis un autre thème.','er');return;}
+    const prepared=prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form});
+    if(!prepared?.ok){toast('⚠️ Génération refusée : '+prepared.errors.slice(0,2).join(' · '),'er');return;}
+    sgLastMeta={type:'technique',theme:result.theme,structure:result.structure,form:result.form,family:result.family,prompt:result.prompt};
+    lastPost={id:Date.now(),text:prepared.full,type:'original',topic:result.theme,label:TL.original,ts:Date.now(),account:'simon',originalText:prepared.full,previousVersions:[],sgFamily:result.family,form:result.form,structure:result.structure};
+    renderPost(prepared.full);sgSetGate(false);
+    if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;saveAll();updateStats();
+    const bd=document.getElementById('gen-bdg');if(bd)bd.textContent='Simon · Cyber';
+    toast('Post généré ✓ · '+result.theme+' · '+result.structure,'ok');
+  }
+  window.genPost=sgGenerate;
+  function sgGenOnePost(extraAvoid=[]){
+    if(acc!=='simon')return sgOld.genOnePost(extraAvoid);
+    const result=sgBuildCandidate();
+    if(!result)return {post:null,wasDup:false};
+    const prepared=prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form});
+    if(!prepared?.ok)return {post:null,wasDup:false};
+    const mine=Q.filter(q=>q.account==='simon');
+    const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
+    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:'original',topic:result.theme,label:TL.original,scheduledAt:base+48*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form};
+    Q.push(post);
+    if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;
+    return {post,wasDup:false};
+  }
+  window.genOnePost=sgGenOnePost;
+  function sgEdited(){
+    const po=document.getElementById('po');const text=(po?.innerText||'').trim();
+    if(lastPost){if(lastPost.originalText===undefined)lastPost.originalText=lastPost.text;lastPost.text=text;}
+    sgSetGate(false);
+    // Reprend uniquement l'affichage de comptage/hashtags de l'interface d'origine.
+    const tags=[...new Set((text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]))];const htb=document.getElementById('htb');
+    if(htb)htb.innerHTML=tags.length?'<span style="color:var(--muted);font-size:10px;margin-right:4px">TAGS:</span>'+tags.map(h=>`<span class="htag">${h}</span>`).join(''):'<span style="color:var(--muted);font-size:11px">Aucun hashtag</span>';
+    const pm=document.getElementById('pm');if(pm){const len=text.length;pm.textContent=`${len} car. · ${tags.length} hashtags`;pm.parentElement.className='pm'+(len>3000?' over':len>2500?' warn':'')}
+    updatePoModBanner();markDraftDirty();
+  }
+  window.onPoEdited=sgEdited;
+  function sgRestore(){
+    if(acc!=='simon')return sgOld.restoreLastPost();
+    if(!lastPost)return;const t=lastPost.originalText||lastPost.text;lastPost.text=t;renderPost(t);sgSetGate(false);toast('Version générée restaurée.','ok');
+  }
+  window.restoreLastPost=sgRestore;
+  function sgCopy(){if(acc!=='simon')return sgOld.copyPost();if(!sgRelease('Copie'))return;const text=(document.getElementById('po').innerText||'').trim();navigator.clipboard.writeText(text).then(()=>{toast('Copié ! 💼','ok');}).catch(()=>toast('Copie impossible sur ce navigateur.','er'))}
+  window.copyPost=sgCopy;
+  function sgPublish(){
+    if(acc!=='simon')return sgOld.publishLinkedIn();
+    if(!sgRelease('Publication'))return;
+    const postToArchive=lastPost;const text=(document.getElementById('po').innerText||'').trim();
+    if(navigator.share){navigator.share({title:'Post LinkedIn — Simon JUTGÉ',text}).then(()=>{if(postToArchive)archive(postToArchive,'copie');clearGenerator();toast('Partagé avec succès ✓','ok')}).catch(()=>toast('Partage annulé — le post reste dans Génération.','in'));}
+    else navigator.clipboard.writeText(text).then(()=>{window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encodeURIComponent(text.substring(0,700)),'_blank');if(postToArchive)archive(postToArchive,'copie');clearGenerator();toast('Post copié + LinkedIn ouvert 💼','ok')});
+  }
+  window.publishLinkedIn=sgPublish;
+  function sgSchedule(){if(acc!=='simon')return sgOld.schedPost();if(!sgRelease('Programmation'))return;const mine=Q.filter(q=>q.account==='simon');const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:'simon',originalText:lastPost.originalText,sgFamily:lastPost.sgFamily,structure:lastPost.structure,form:lastPost.form});saveAll();renderQ();updateStats();toast('Programmé ✓','ok')}
+  window.schedPost=sgSchedule;
+  function sgAlready(){if(acc!=='simon')return sgOld.markAlreadyPublished();if(!sgRelease('Validation de publication'))return;archive(lastPost,'publie');toast('Marqué comme publié — ne sera plus reproposé ✓','ok');clearGenerator();sgSetGate(false)}
+  window.markAlreadyPublished=sgAlready;
+  function sgRunTests(){
+    /*
+      RUNTEST COMPLET — cahier des charges Simon
+      Les tests sont volontairement indépendants du texte actuellement affiché.
+      Les tests qui portent sur l'historique utilisent un historique temporaire,
+      puis restaurent H/Q même en cas d'erreur.
+    */
+    const results=[];
+    const test=(name,fn)=>{try{const ok=!!fn();results.push({name,ok,detail:ok?'':'échec'});}catch(e){results.push({name,ok:false,detail:String(e?.message||e)})}};
+    const expectErrors=(name,text,opt)=>test(name,()=>sgValidate(text,opt).length>0);
+    const expectClean=(name,text,opt)=>test(name,()=>sgValidate(text,opt).length===0);
+    const valid='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau.';
+    const validMeta={type:'technique',theme:'DNS',structure:'Découverte',form:'En découvrant'};
+    const fullValid=valid+'\n\n#STI2D #Découverte #Cybersécurité #DNS';
+    const oldH=Array.isArray(H)?H.slice():null, oldQ=Array.isArray(Q)?Q.slice():null;
+    const resetHistory=(h=[],q=[])=>{if(Array.isArray(H)){H.length=0;H.push(...h)}if(Array.isArray(Q)){Q.length=0;Q.push(...q)}};
+    const make=(theme,extra={})=>({id:Math.random(),account:'simon',text:extra.text||valid,topic:theme,theme,structure:extra.structure||'Découverte',form:extra.form||'En découvrant',sgFamily:extra.family||sgFamily(theme),publishedAt:extra.ts||Date.now()});
+    const withHistory=(h,q,fn)=>{try{resetHistory(h,q);return fn()}finally{resetHistory(oldH||[],oldQ||[])}};
+    const tagSet=(theme)=>sgTags(theme).map(x=>x.toLowerCase());
+
+    // 1 — Intégrité du catalogue : thèmes, structures, formulations, familles et tags.
+    test('Catalogue : 47 thèmes intégrés',()=>SG_THEME_ROWS.length===47);
+    test('Catalogue : 22 formulations',()=>SG_FORMS.length===22);
+    test('Catalogue : 5 structures',()=>Object.keys(SG_STRUCT).length===5);
+    test('Catalogue : chaque thème a un hashtag spécifique',()=>SG_THEME_ROWS.every(r=>/^#[\p{L}\p{N}_-]+$/u.test(r[1])));
+    test('Catalogue : familles renseignées',()=>SG_THEME_ROWS.every(r=>['réseau','linux','sécurité','menaces','données','avancé'].includes(r[2])));
+    test('Hashtags techniques : exactement 4',()=>SG_THEME_ROWS.every(r=>sgTags(r[0]).length===4));
+    test('Hashtags techniques : 3 fixes',()=>SG_THEME_ROWS.every(r=>sgTags(r[0]).slice(0,3).join('|')===SG_FIXED.join('|')));
+    test('Hashtags techniques : 4e spécifique et distinct',()=>SG_THEME_ROWS.every(r=>{const t=sgTags(r[0]);return t[3]!==t[0]&&t[3]!==t[1]&&t[3]!==t[2]}));
+    test('Hashtags interdits absents du générateur',()=>SG_THEME_ROWS.every(r=>!SG_BANNED.some(b=>sgTags(r[0]).some(t=>t.toLowerCase()===b.toLowerCase()))));
+    test('Pentest → hashtag #Débutant',()=>sgTags('Pentest')[3]==='#Débutant');
+    test('Formulations : une formulation ancienne revient dans le pool',()=>{const recent=new Set([SG_FORMS[1],SG_FORMS[2],SG_FORMS[3]]);return SG_FORMS.includes(SG_FORMS[0])&&!recent.has(SG_FORMS[0]);});
+    test('Moteur Nicolas d’origine conservé',()=>typeof sgOld.genPost==='function'&&typeof sgOld.copyPost==='function'&&typeof sgOld.publishLinkedIn==='function'&&document.getElementById('btn-n')!==null);
+
+    // 2 — Validations de format et de longueur.
+    expectClean('Post valide 80–150 mots',valid,validMeta);
+    expectErrors('Post < 80 mots bloqué','DNS réseau adresse IP.',validMeta);
+    expectErrors('Post > 150 mots bloqué',valid+' '+Array(90).fill('notion apprentissage réseau').join(' '),validMeta);
+    expectErrors('Hashtag dans le corps IA bloqué',valid+' #DNS',validMeta);
+    expectClean('Hashtags système valides',fullValid,{...validMeta,allowSystemHashtags:true});
+    expectErrors('Hashtags système incorrects',valid+'\n\n#STI2D #Découverte #Cybersécurité #DNS #Réseau',{...validMeta,allowSystemHashtags:true});
+    expectErrors('Hashtag interdit bloqué',valid+'\n\n#STI2D #Découverte #Cybersécurité #OpenToWork',{...validMeta,allowSystemHashtags:true});
+    expectErrors('URL https bloquée',valid+' https://example.com',validMeta);
+    expectErrors('Domaine nu bloqué',valid+' Consultez example.org.',validMeta);
+    expectErrors('Markdown gras bloqué',valid+' **texte**',validMeta);
+    expectErrors('Markdown liste bloqué',valid+'\n- élément',validMeta);
+    expectErrors('Markdown lien bloqué',valid+' [site](https://example.org)',validMeta);
+    expectErrors('Plus d’un emoji bloqué',valid+' ⚠️ ⚡',validMeta);
+    expectClean('Un emoji maximum autorisé',valid+' ⚠️',validMeta);
+
+    // 3 — Crédibilité débutant / protection des informations.
+    ['je teste','j’ai testé','j’utilise','j’ai utilisé','je manipule','j’ai analysé','j’ai configuré','mes outils','dans ma pratique','je pratique','je m’entraîne','tous les jours','je maîtrise','mon expertise','je suis expert','je pensais que'].forEach((phrase,i)=>expectErrors('Expérience non confirmée #'+(i+1),valid+' '+phrase,validMeta));
+    expectErrors('Contexte professeur bloqué',valid+' Mon professeur nous a expliqué cela.',validMeta);
+    expectErrors('Contexte cours bloqué',valid+' En cours nous avons vu cela.',validMeta);
+    expectErrors('Contexte stage bloqué',valid+' Pendant mon stage j’ai découvert cela.',validMeta);
+    expectClean('Formulation générique autorisée',valid.replace('En découvrant','En me renseignant sur'),{...validMeta,form:'En me renseignant sur'});
+    expectErrors('Affirmation absolue bloquée',valid+' Cette méthode garantit la sécurité.',validMeta);
+    expectErrors('Statistique millions bloquée',valid+' Cela concerne des millions de machines.',validMeta);
+    expectErrors('Année non fournie bloquée',valid+' Cet événement date de 2024.',validMeta);
+    expectErrors('Pourcentage différent de Root-Me bloqué',valid+' La progression est 31%.',validMeta);
+    expectClean('Pourcentage Root-Me configuré autorisé',valid+' Ma progression Root-Me est '+sgProgress()+'.',validMeta);
+    expectErrors('Token Root-Me non remplacé',valid.replace('DNS','{PROGRESSION_ROOT_ME} DNS'),validMeta);
+
+    // 4 — Root-Me : fréquence, vocabulaire interdit et portée du mot « flag ».
+    expectClean('« flag » technique hors Root-Me autorisé',valid+' Le flag est un indicateur du protocole TCP.',validMeta);
+    expectErrors('Flag dans Root-Me bloqué',valid+' Sur Root-Me, je cherche des flags.',{...validMeta,theme:'DNS'});
+    expectErrors('Challenge Root-Me bloqué',valid+' Sur Root-Me, ce challenge est réussi.',validMeta);
+    expectErrors('Score Root-Me bloqué',valid+' Mon score Root-Me progresse.',validMeta);
+    expectErrors('Classement Root-Me bloqué',valid+' Mon classement Root-Me évolue.',validMeta);
+    const rm1=make('DNS',{text:valid+' Je découvre Root-Me.'}),rm2=make('IPv4',{text:valid+' Je découvre Root-Me.'});
+    withHistory([rm1,rm2],[],()=>expectErrors('Root-Me max 2/7 respecté',valid+' Je découvre Root-Me.',validMeta));
+    const rm3=make('TCP',{text:valid+' Je découvre Root-Me.'});
+    withHistory([rm1,rm2,rm3],[],()=>expectErrors('Root-Me 3e occurrence bloquée',valid+' Je découvre Root-Me.',validMeta));
+
+    // 5 — Commandes dangereuses et outils offensifs.
+    expectClean('Mention pédagogique rm -rf autorisée',valid+' La commande rm -rf est dangereuse car elle supprime récursivement sans retour arrière.',validMeta);
+    expectErrors('rm -rf / bloqué',valid+' Ne lancez jamais rm -rf /.',validMeta);
+    expectErrors('rm -rf ~ bloqué',valid+' La commande rm -rf ~ supprime récursivement le dossier personnel.',validMeta);
+    expectErrors('rm -rf * bloqué',valid+' La commande rm -rf * supprime récursivement les éléments visés.',validMeta);
+    expectErrors('dd vers /dev bloqué',valid+' dd if=image of=/dev/sda',validMeta);
+    expectErrors('mkfs /dev bloqué',valid+' mkfs.ext4 /dev/sda',validMeta);
+    expectErrors('chmod -R 777 / bloqué',valid+' chmod -R 777 /',validMeta);
+    ['nmap','sqlmap','metasploit','hydra','hashcat','burp suite','gobuster','ffuf'].forEach((tool,i)=>expectErrors('Outil offensif #'+(i+1)+' bloqué',valid+' '+tool,validMeta));
+    ['WannaCry','NotPetya','Stuxnet','Log4Shell','Heartbleed','Mirai','Emotet','LockBit'].forEach((attack,i)=>expectErrors('Attaque nommée #'+(i+1)+' bloquée',valid+' '+attack,validMeta));
+
+    // 6 — CyberQuest : périmètre du projet.
+    expectErrors('CyberQuest hors type projet bloqué',valid+' Mon projet CyberQuest me permet d’apprendre.',validMeta);
+    expectClean('CyberQuest en type projet',valid.replace('DNS','CyberQuest'),{type:'projet',theme:'CyberQuest',structure:'Découverte',form:'En découvrant'});
+    expectErrors('CyberQuest + utilisateurs bloqué',valid.replace('DNS','CyberQuest')+' Le projet a des utilisateurs.',{type:'projet',theme:'CyberQuest',structure:'Découverte',form:'En découvrant'});
+    expectErrors('Composant CyberQuest sans rôle bloqué',valid.replace('DNS','CyberQuest')+' J’utilise Battle Isle.',{type:'projet',theme:'CyberQuest',structure:'Découverte',form:'En découvrant'});
+
+    // 7 — Candidature : géographie, CTA et coordonnées.
+    const cand='Je recherche une alternance en cybersécurité à Rennes pour septembre 2027. Je suis lycéen en Terminale STI2D et je souhaite continuer à apprendre dans ce domaine. Je cherche une entreprise où je pourrai progresser avec un accompagnement adapté à mon niveau de débutant. N’hésitez pas à m’écrire en message privé pour échanger sur mon projet et mon parcours.';
+    expectClean('Candidature Rennes conforme',cand,{type:'candidature',theme:'Candidature',structure:'',form:''});
+    expectErrors('Candidature ville non fournie bloquée',cand.replace(/Rennes/g,'Lyon'),{type:'candidature',theme:'Candidature'});
+    expectErrors('Candidature email bloqué',cand+' simon@example.com',{type:'candidature',theme:'Candidature'});
+    expectErrors('Candidature téléphone bloqué',cand+' 06 12 34 56 78',{type:'candidature',theme:'Candidature'});
+    test('Année 2027 autorisée',()=>sgValidate(cand,{type:'candidature',theme:'Candidature'}).filter(e=>/Année non fournie/.test(e)).length===0);
+    const nameEl=document.getElementById('sg-names'),savedNames=nameEl?.value||'';
+    if(nameEl){nameEl.value='Nom Test';expectErrors('Nom protégé bloqué',valid+' Nom Test.',validMeta);nameEl.value=savedNames;}
+
+    // 8 — Historique : thème 7, structure 2, formulation 3, famille 2/7, avancé 1/5.
+    const themes7=['DNS','IPv4','TCP','UDP','HTTP','HTTPS','DHCP'].map((t,i)=>make(t,{ts:Date.now()-100000+i}));
+    withHistory(themes7,[],()=>{
+      test('Historique : thème déjà présent exclu des 7',()=>sgChooseTopic()[0]!=='DNS');
+      test('Historique : pool de thèmes respecte 7 derniers',()=>!sgChooseTopic()||!themes7.some(h=>h.theme===sgChooseTopic()[0]));
+    });
+    const s1=make('DNS',{structure:'Découverte',ts:1}),s2=make('IPv4',{structure:'Question',ts:2});
+    withHistory([s1,s2],[],()=>{
+      test('Structure : aucune des 2 dernières',()=>{const x=sgPickStructure();return x!=='Découverte'&&x!=='Question'});
+    });
+    const f1=make('DNS',{form:SG_FORMS[0],ts:1}),f2=make('IPv4',{form:SG_FORMS[1],ts:2}),f3=make('TCP',{form:SG_FORMS[2],ts:3});
+    withHistory([f1,f2,f3],[],()=>{
+      test('Formulation : aucune des 3 dernières',()=>{const x=sgPickForm();return ![SG_FORMS[0],SG_FORMS[1],SG_FORMS[2]].includes(x)});
+    });
+    const famA=[make('DNS',{family:'réseau',ts:1}),make('IPv4',{family:'réseau',ts:2})];
+    withHistory(famA,[],()=>{
+      test('Famille 2/7 : 3e réseau refusé',()=>sgFamilyCount7('réseau')>=2 && sgChooseTopic()[2]!=='réseau');
+    });
+    const adv=make('SIEM',{family:'avancé',ts:1});
+    withHistory([adv],[],()=>{
+      test('Avancé 1/5 : 2e sujet avancé refusé',()=>sgAdvancedCount5()===1 && sgChooseTopic()[2]!=='avancé');
+    });
+    const advOld=[make('SIEM',{family:'avancé',ts:1}),make('SOC',{family:'avancé',ts:2})];
+    withHistory(advOld,[],()=>{
+      test('Avancé : fenêtre 5 bloque après 1',()=>sgAdvancedCount5()>=1 && sgChooseTopic()[2]!=='avancé');
+    });
+
+    // 9 — Redondance : phrases, accroche, conclusion et similarité récente.
+    const dup='Le DNS permet de relier un nom de domaine à une adresse IP. Le DNS permet de relier un nom de domaine à une adresse IP. Je commence à comprendre cette notion de réseau.';
+    expectErrors('Redondance interne ≥60 % bloquée',valid+' '+dup,{...validMeta});
+    const oldText='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre le lien entre le nom saisi et l’adresse utilisée par le réseau. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau.';
+    withHistory([make('DNS',{text:oldText,ts:1})],[],()=>{
+      expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta});
+      const hookOnly=valid.replace('Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie.','Les réseaux reposent sur plusieurs mécanismes différents que je cherche à distinguer.').replace('Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente.','Je découvre aussi la place des services de résolution dans une architecture informatique.').replace('Le DNS sert justement à faire le lien entre les deux.','Cette découverte m’aide à mieux organiser les notions que je rencontre.');
+      expectErrors('Accroche trop proche bloquée',hookOnly,{...validMeta});
+    });
+
+    // 10 — Prompt : contraintes transmises à l’IA, 7 derniers posts et absence de hashtags.
+    withHistory(themes7,[],()=>{
+      const prompt=sgPrompt({type:'technique',theme:'DNS',structure:'Découverte',form:SG_FORMS[3]});
+      test('Prompt : thème transmis',()=>prompt.includes('THÈME : DNS'));
+      test('Prompt : structure transmise',()=>prompt.includes('STRUCTURE : Découverte'));
+      test('Prompt : formulation transmise',()=>prompt.includes('FORMULATION À UTILISER : '+SG_FORMS[3]));
+      test('Prompt : token Root-Me transmis',()=>prompt.includes(SG_TOKEN));
+      test('Prompt : 7 derniers posts transmis',()=>prompt.includes('7 DERNIERS POSTS SANS HASHTAGS')&&['[1]','[2]','[3]','[4]','[5]','[6]','[7]'].every(x=>prompt.includes(x)));
+      test('Prompt : hashtags interdits à l’IA',()=>prompt.includes('sans hashtag, sans URL et sans markdown'));
+      test('Prompt : niveau débutant',()=>prompt.includes('Aucune expérience inventée'));
+    });
+
+    // 11 — Génération : deux tentatives et sortie conforme.
+    test('Générateur : retourne une combinaison conforme',()=>{
+      resetHistory([],[]);const r=sgBuildCandidate();if(!r)return false;const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});return !!p?.ok&&p.hashtags.length===4;
+    });
+    test('Générateur : thème/famille/structure/form présents',()=>{
+      resetHistory([],[]);const r=sgBuildCandidate();return !!r&&!!r.theme&&!!r.family&&!!r.structure&&!!r.form;
+    });
+
+    // 12 — Verrou humain : copie/publication interdite avant relecture et après modification.
+    const po=document.getElementById('po');const savedPo=po?.innerText||'';const savedLast=lastPost?JSON.parse(JSON.stringify(lastPost)):lastPost;const savedMeta=sgLastMeta?JSON.parse(JSON.stringify(sgLastMeta)):sgLastMeta;const savedGate={...sgGate};
+    try{
+      resetHistory([],[]);const r=sgBuildCandidate();const p=r&&prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});
+      if(po&&p?.ok){po.innerText=p.full;sgLastMeta={type:'technique',theme:r.theme,structure:r.structure,form:r.form,family:r.family};lastPost={text:p.full};sgSetGate(false);
+        test('Verrou : release refusé sans relecture',()=>sgRelease('Test')===false);
+        sgSetGate(true);
+        test('Verrou : release accepté après relecture',()=>sgRelease('Test')===true);
+        po.innerText=p.full+' modification';sgEdited();
+        test('Verrou : modification invalide la relecture',()=>sgRelease('Test')===false);
+      }else test('Verrou : préparation du scénario',()=>false);
+    }finally{
+      if(po){po.innerText=savedPo;renderPost(savedPo)}
+      if(lastPost){Object.keys(lastPost).forEach(k=>delete lastPost[k]);if(savedLast)Object.assign(lastPost,savedLast)}
+      else if(savedLast)lastPost=savedLast;
+      sgLastMeta=savedMeta;sgGate=savedGate;resetHistory(oldH||[],oldQ||[]);
+    }
+
+    const passed=results.filter(r=>r.ok).length,total=results.length,failed=results.filter(r=>!r.ok);
+    console.groupCollapsed(`🧪 Garde-fou Simon — ${passed}/${total} tests`);
+    results.forEach(r=>console.log(`${r.ok?'✓':'✗'} ${r.name}${r.detail?' — '+r.detail:''}`));
+    console.groupEnd();
+    if(failed.length){console.error('Tests en échec :',failed);toast(`⚠️ RunTest : ${passed}/${total} — ${failed.length} échec${failed.length>1?'s':''}. Voir la console.`,'er');}
+    else toast(`🧪 RunTest OK — ${passed}/${total}`,'ok');
+    return {ok:failed.length===0,passed,total,failed};
+  }
+  window.sgRunTests=sgRunTests;
+  function sgRefreshUI(){sgRenderReview();}
+  ['sg-prog','sg-geo','sg-names'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{sgSaveSettings();if(id==='sg-prog'&&lastPost){sgSetGate(false)}}));
+  sgLoadSettings();sgRefreshUI();
+})();
+
 </script>
 </body>
 </html>
