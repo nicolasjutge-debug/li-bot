@@ -3431,7 +3431,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   ];
   const SG_CANDIDATE=/\b(?:je suis passionné|je suis passionnée|je suis opérationnel|je suis opérationnelle)\b/i;
   const SG_DANGEROUS=[
-    /\brm\s+-rf\s+(?:\/|~(?:\/|\b)|\*)/i,
+    /\brm\s+-rf\s+(?:\/|~(?:\/|\s|$)|\*)/i,
     /\bdd\b[^\n]*\bof=\/dev\//i,
     /\bmkfs(?:\.\w+)?\b[^\n]*\/dev\//i,
     /\bchmod\s+-R\s+777\s+\/(?:\s|$)/i
@@ -3509,7 +3509,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgNoHashtags=t=>String(t).replace(/#[\p{L}\p{N}_-]+/gu,'').trim();
   const sgActualProgressValue=s=>{const m=String(s).match(/\d+(?:[.,]\d+)?/);return m?Number(m[0].replace(',','.')):null};
   function sgValidate(raw,opt={}){
-    const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
+    const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
     const sentences=sgSentences(display);const themeSet=sgThemeWords(topic);
     const add=(e)=>{if(!errors.includes(e))errors.push(e)};
@@ -3964,7 +3964,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     // 12 — Verrou humain : copie/publication interdite avant relecture et après modification.
     const po=document.getElementById('po');const savedPo=po?.innerText||'';const savedAccLock=acc,savedTopicLock=topic;acc='simon';topic='';const savedLast=lastPost?JSON.parse(JSON.stringify(lastPost)):lastPost;const savedMeta=sgLastMeta?JSON.parse(JSON.stringify(sgLastMeta)):sgLastMeta;const savedGate={...sgGate};
     try{
-      resetHistory([],[]);const r=sgBuildCandidate()||{text:valid,theme:'DNS',structure:'Découverte',form:'En découvrant',family:'réseau'};const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});
+      resetHistory([],[]);const r={text:valid,theme:'DNS',structure:'Découverte',form:'En découvrant',family:'réseau'};const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});
       if(po&&p?.ok){po.innerText=p.full;sgLastMeta={type:'technique',theme:r.theme,structure:r.structure,form:r.form,family:r.family};lastPost={text:p.full};sgSetGate(false);
         test('Verrou : release refusé sans relecture',()=>sgRelease('Test')===false);
         sgSetGate(true);
