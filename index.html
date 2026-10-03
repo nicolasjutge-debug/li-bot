@@ -3725,7 +3725,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       sgSetGate(false);toast('⚠️ '+action+' bloquée : hashtags finaux incorrects.','er');return false;
     }
     const finalHash=sgHash(text);
-    if(!sgGate.reviewed||sgGate.hash!==finalHash){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
+    const reviewedHash=sgGate.hash;
+    // La relecture porte sur le texte final visible. Si le système a dû ajouter les 4 hashtags
+    // après la relecture (cas ancien/importé sans hashtags), on compare aussi le texte avant
+    // cette finalisation déterministe afin de ne pas créer un faux blocage.
+    const bodyHash=sgHash(display.trim());
+    if(!sgGate.reviewed|| (reviewedHash!==finalHash && reviewedHash!==bodyHash)){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
     // Revalidation finale : progression et historique sont relus juste avant la sortie.
     const finalErrors=sgValidate(text,{...meta,allowSystemHashtags:true});
     if(finalErrors.length){sgSetGate(false);toast('⚠️ '+action+' bloquée après revalidation : '+finalErrors.slice(0,2).join(' · '),'er');return false;}
