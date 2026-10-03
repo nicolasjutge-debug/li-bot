@@ -3406,7 +3406,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     ['Mots de passe','#MotsDePasse','sécurité'],['MFA / 2FA','#2FA','sécurité'],['Mises à jour','#SécuritéInformatique','sécurité'],
     ['Chiffrement','#Chiffrement','sécurité'],['Contrôle des accès','#SécuritéInformatique','sécurité'],
     ['Moindre privilège','#SécuritéInformatique','sécurité'],['Journalisation','#Logs','sécurité'],['Authentification','#Informatique','sécurité'],
-    ['Phishing','#Phishing','menaces'],['Ingénierie sociale','#IngenierieSociale','menaces'],['Malware','#Malware','menaces'],
+    ['Phishing','#Phishing','menaces'],['Ingénierie sociale','#IngénierieSociale','menaces'],['Malware','#Malware','menaces'],
     ['Ransomware','#Ransomware','menaces'],['Vulnérabilités','#Vulnérabilité','menaces'],['RGPD','#RGPD','données'],
     ['Données personnelles','#DonnéesPersonnelles','données'],['Confidentialité','#DonnéesPersonnelles','données'],
     ['SIEM','#SIEM','avancé'],['SOC','#SOC','avancé'],['Zero-day','#ZeroDay','avancé'],['Pentest','#Débutant','avancé']
@@ -3541,7 +3541,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const rm=/root[\s-]?me/i.test(display);
     if(rm){
       if(sgRootCount7()>=2)add('Root-Me déjà cité dans 2 des 7 derniers posts.');
-      if(/\b(?:challenges?(?:\s+\w+){0,2}\s+(?:résolu|réussi)|flags?|classement|score|solution|taux de réussite)\b/i.test(display))add('Root-Me : élément interdit (challenge, flag, score, classement ou solution).');
+      if(/\b(?:challenges?\s+(?:résolu|réussi)|flags?|classement|score|solution|taux de réussite)\b/i.test(display))add('Root-Me : élément interdit (challenge, flag, score, classement ou solution).');
     }
     if(/cyberquest/i.test(display)){
       if(type!=='projet')add('CyberQuest ne doit être cité que dans un post de type projet.');
@@ -3725,12 +3725,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       sgSetGate(false);toast('⚠️ '+action+' bloquée : hashtags finaux incorrects.','er');return false;
     }
     const finalHash=sgHash(text);
-    const reviewedHash=sgGate.hash;
-    // La relecture porte sur le texte final visible. Si le système a dû ajouter les 4 hashtags
-    // après la relecture (cas ancien/importé sans hashtags), on compare aussi le texte avant
-    // cette finalisation déterministe afin de ne pas créer un faux blocage.
-    const bodyHash=sgHash(display.trim());
-    if(!sgGate.reviewed|| (reviewedHash!==finalHash && reviewedHash!==bodyHash)){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
+    if(!sgGate.reviewed||sgGate.hash!==finalHash){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
     // Revalidation finale : progression et historique sont relus juste avant la sortie.
     const finalErrors=sgValidate(text,{...meta,allowSystemHashtags:true});
     if(finalErrors.length){sgSetGate(false);toast('⚠️ '+action+' bloquée après revalidation : '+finalErrors.slice(0,2).join(' · '),'er');return false;}
@@ -3941,7 +3936,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     expectErrors('Redondance interne ≥60 % bloquée',valid+' '+dup,{...validMeta});
     const oldText=valid;
     withHistory([make('DNS',{text:oldText,ts:1})],[],()=>{
-      expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta},false);
+      expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta});
       const hookOnly='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau. Cette première approche m’aide aussi à mieux distinguer les rôles des différents services réseau.';
       expectErrors('Accroche trop proche bloquée',hookOnly,{...validMeta});
     });
