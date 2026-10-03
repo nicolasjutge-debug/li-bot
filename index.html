@@ -3895,10 +3895,25 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     }
 
     const passed=results.filter(r=>r.ok).length,total=results.length,failed=results.filter(r=>!r.ok);
+    // Résultat lisible directement dans l'interface : aucune console développeur nécessaire.
+    let panel=document.getElementById('sg-runtest-results');
+    if(!panel){
+      panel=document.createElement('div');panel.id='sg-runtest-results';
+      panel.style.cssText='margin-top:8px;padding:10px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.18);font-size:11px;line-height:1.45;max-height:360px;overflow:auto;';
+      const anchor=document.getElementById('sg-tests-btn')?.parentElement;
+      (anchor||document.getElementById('sg-review')||document.body).appendChild(panel);
+    }
+    const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const grouped={};results.forEach((r,i)=>{const m=r.name.match(/^([^:]+):/);const g=m?m[1]:'Contrôles';(grouped[g]??=[]).push({...r,i:i+1})});
+    panel.innerHTML=`<div style="font-weight:700;margin-bottom:6px">🧪 RunTest Simon — <span style="color:${failed.length?'var(--orange)':'var(--green)'}">${passed}/${total}</span></div>`+
+      `<div style="margin-bottom:8px;color:${failed.length?'var(--orange)':'var(--green)'}">${failed.length?`⚠️ ${failed.length} contrôle(s) à corriger.`:'✓ Tous les contrôles sont conformes.'}</div>`+
+      Object.entries(grouped).map(([g,rs])=>`<details ${rs.some(r=>!r.ok)?'open':''} style="margin:3px 0"><summary>${esc(g)} — ${rs.filter(r=>r.ok).length}/${rs.length}</summary>`+
+        rs.map(r=>`<div style="padding:2px 0;color:${r.ok?'var(--green)':'var(--orange)'}">${r.ok?'✓':'✗'} ${r.i}. ${esc(r.name)}${r.detail?` — ${esc(r.detail)}`:''}</div>`).join('')+`</details>`).join('');
+    panel.scrollTop=failed.length?0:panel.scrollHeight;
     console.groupCollapsed(`🧪 Garde-fou Simon — ${passed}/${total} tests`);
     results.forEach(r=>console.log(`${r.ok?'✓':'✗'} ${r.name}${r.detail?' — '+r.detail:''}`));
     console.groupEnd();
-    if(failed.length){console.error('Tests en échec :',failed);toast(`⚠️ RunTest : ${passed}/${total} — ${failed.length} échec${failed.length>1?'s':''}. Voir la console.`,'er');}
+    if(failed.length){toast(`⚠️ RunTest : ${passed}/${total} — ${failed.length} échec${failed.length>1?'s':''}. Détails affichés ci-dessous.`,'er');}
     else toast(`🧪 RunTest OK — ${passed}/${total}`,'ok');
     return {ok:failed.length===0,passed,total,failed};
   }
