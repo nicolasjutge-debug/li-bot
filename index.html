@@ -3541,7 +3541,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const rm=/root[\s-]?me/i.test(display);
     if(rm){
       if(sgRootCount7()>=2)add('Root-Me déjà cité dans 2 des 7 derniers posts.');
-      if(/\b(?:challenges?\s+(?:résolu|réussi)|flags?|classement|score|solution|taux de réussite)\b/i.test(display))add('Root-Me : élément interdit (challenge, flag, score, classement ou solution).');
+      if(/\b(?:challenges?(?:\s+\w+){0,2}\s+(?:résolu|réussi)|flags?|classement|score|solution|taux de réussite)\b/i.test(display))add('Root-Me : élément interdit (challenge, flag, score, classement ou solution).');
     }
     if(/cyberquest/i.test(display)){
       if(type!=='projet')add('CyberQuest ne doit être cité que dans un post de type projet.');
@@ -3936,7 +3936,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     expectErrors('Redondance interne ≥60 % bloquée',valid+' '+dup,{...validMeta});
     const oldText=valid;
     withHistory([make('DNS',{text:oldText,ts:1})],[],()=>{
-      expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta});
+      expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta},false);
       const hookOnly='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau. Cette première approche m’aide aussi à mieux distinguer les rôles des différents services réseau.';
       expectErrors('Accroche trop proche bloquée',hookOnly,{...validMeta});
     });
