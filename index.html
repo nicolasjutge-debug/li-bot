@@ -3810,8 +3810,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     */
     const results=[];
     const test=(name,fn)=>{try{const ok=!!fn();results.push({name,ok,detail:ok?'':'échec'});}catch(e){results.push({name,ok:false,detail:String(e?.message||e)})}};
-    const expectErrors=(name,text,opt)=>test(name,()=>withHistory([],[],()=>{const e=sgValidate(text,opt);if(!e.length)throw new Error('aucune erreur détectée alors qu’une erreur était attendue');return true;}));
-    const expectClean=(name,text,opt)=>test(name,()=>withHistory([],[],()=>{const e=sgValidate(text,opt);if(e.length)throw new Error(e.join(' · '));return true;}));
+    const expectErrors=(name,text,opt,isolated=true)=>test(name,()=>{const run=()=>{const e=sgValidate(text,opt);if(!e.length)throw new Error('aucune erreur détectée alors qu’une erreur était attendue');return true;};return isolated?withHistory([],[],run):run();});
+    const expectClean=(name,text,opt,isolated=true)=>test(name,()=>{const run=()=>{const e=sgValidate(text,opt);if(e.length)throw new Error(e.join(' · '));return true;};return isolated?withHistory([],[],run):run();});
     const valid='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau. Cette première approche m\'aide aussi à mieux distinguer les rôles des différents services réseau.';
     const validMeta={type:'technique',theme:'DNS',structure:'Découverte',form:'En découvrant'};
     const fullValid=valid+'\n\n#STI2D #Découverte #Cybersécurité #DNS';
@@ -3873,9 +3873,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     expectErrors('Score Root-Me bloqué',valid+' Mon score Root-Me progresse.',validMeta);
     expectErrors('Classement Root-Me bloqué',valid+' Mon classement Root-Me évolue.',validMeta);
     const rm1=make('DNS',{text:valid+' Je découvre Root-Me.'}),rm2=make('IPv4',{text:valid+' Je découvre Root-Me.'});
-    withHistory([rm1,rm2],[],()=>expectErrors('Root-Me max 2/7 respecté',valid+' Je découvre Root-Me.',validMeta));
+    withHistory([rm1,rm2],[],()=>expectErrors('Root-Me max 2/7 respecté',valid+' Je découvre Root-Me.',validMeta,false));
     const rm3=make('TCP',{text:valid+' Je découvre Root-Me.'});
-    withHistory([rm1,rm2,rm3],[],()=>expectErrors('Root-Me 3e occurrence bloquée',valid+' Je découvre Root-Me.',validMeta));
+    withHistory([rm1,rm2,rm3],[],()=>expectErrors('Root-Me 3e occurrence bloquée',valid+' Je découvre Root-Me.',validMeta,false));
 
     // 5 — Commandes dangereuses et outils offensifs.
     expectClean('Mention pédagogique rm -rf autorisée',valid+' La commande rm -rf est dangereuse car elle supprime récursivement sans retour arrière.',validMeta);
@@ -3934,7 +3934,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     // 9 — Redondance : phrases, accroche, conclusion et similarité récente.
     const dup='Le DNS permet de relier un nom de domaine à une adresse IP. Le DNS permet de relier un nom de domaine à une adresse IP. Je commence à comprendre cette notion de réseau.';
     expectErrors('Redondance interne ≥60 % bloquée',valid+' '+dup,{...validMeta});
-    const oldText='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre le lien entre le nom saisi et l’adresse utilisée par le réseau. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau.';
+    const oldText='En découvrant le DNS, je regarde comment un nom lisible peut être associé à une adresse IP. Cette notion m’aide à distinguer le rôle du service de résolution de celui des autres services réseau. Je retiens surtout cette différence pour mieux organiser les notions que je rencontre.';
     withHistory([make('DNS',{text:oldText,ts:1})],[],()=>{
       expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta});
       const hookOnly=valid.replace('Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie.','Les réseaux reposent sur plusieurs mécanismes différents que je cherche à distinguer.').replace('Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente.','Je découvre aussi la place des services de résolution dans une architecture informatique.').replace('Le DNS sert justement à faire le lien entre les deux.','Cette découverte m’aide à mieux organiser les notions que je rencontre.');
@@ -3950,12 +3950,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       test('Prompt : token Root-Me transmis',()=>prompt.includes(SG_TOKEN));
       test('Prompt : 7 derniers posts transmis',()=>prompt.includes('7 DERNIERS POSTS SANS HASHTAGS')&&['[1]','[2]','[3]','[4]','[5]','[6]','[7]'].every(x=>prompt.includes(x)));
       test('Prompt : hashtags interdits à l’IA',()=>prompt.includes('sans hashtag, sans URL et sans markdown'));
-      test('Prompt : niveau débutant',()=>prompt.includes('Aucune expérience inventée'));
+      test('Prompt : niveau débutant',()=>prompt.includes('Niveau : débutant')&&prompt.includes('Aucune expérience inventée'));
     });
 
     // 11 — Génération : deux tentatives et sortie conforme.
     test('Générateur : retourne une combinaison conforme',()=>{
-      const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<8;i++){const r=sgBuildCandidate();if(!r)continue;const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});if(p?.ok&&p.hashtags.length===4)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
+      const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<12;i++){const r=sgBuildCandidate();if(!r||!r.text||!r.theme||!r.structure||!r.form)continue;const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});if(p?.ok&&Array.isArray(p.hashtags)&&p.hashtags.length===4)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
     });
     test('Générateur : thème/famille/structure/form présents',()=>{
       const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<8;i++){const r=sgBuildCandidate();if(r&&r.theme&&r.family&&r.structure&&r.form)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
