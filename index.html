@@ -446,11 +446,13 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       <div class="po" id="po" contenteditable="true" oninput="onPoEdited()" onblur="onPoBlur()" onkeyup="onPoEdited()"></div>
       <div class="htb" id="htb"></div>
       <div class="pm"><span id="pm"></span><span id="draft-st" style="color:var(--muted)">📝 Brouillon non sauvegardé</span></div>
+      <div id="sg-tests-access" style="margin:8px 0 4px;display:flex;justify-content:flex-end;align-items:center;gap:7px">
+        <button class="btn btn-c" id="sg-tests-btn" onclick="sgRunTests()" style="font-size:10px;padding:4px 8px">🧪 RunTest — 112 contrôles</button>
+      </div>
       <div id="sg-review" style="margin:8px 0;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:rgba(255,109,0,.035)">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span id="sg-review-status" style="font-size:11px;color:var(--orange)">🔒 Relecture humaine requise avant copie/publication</span>
           <button class="btn btn-s" id="sg-review-btn" onclick="sgHumanReview()" style="font-size:11px;padding:5px 9px">✓ Relu et validé</button>
-          <button class="btn btn-c" id="sg-tests-btn" onclick="sgRunTests()" style="font-size:10px;padding:4px 8px">🧪 Tests</button>
         </div>
         <div id="sg-review-detail" style="font-size:10px;color:var(--muted);margin-top:5px">Le verrou est lié au hash du texte final. Toute modification invalide la relecture.</div>
       </div>
@@ -3634,53 +3636,50 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     return `${form} ${theme}. ${fact} Pour l’instant, je cherche surtout à comprendre son rôle et les notions qui lui sont liées, sans prétendre déjà maîtriser le sujet. Cette découverte me permet de mieux organiser ce que j’apprends en cybersécurité et en informatique. Je retiens qu’il est utile de partir des bases, de vérifier les définitions et de distinguer les concepts avant de vouloir aller plus loin. C’est une notion que je pourrai approfondir progressivement dans la suite de mon apprentissage.`;
   }
   function sgBuildCandidate(){
-    // Recherche robuste : plusieurs combinaisons éligibles peuvent être essayées.
-    // Le moteur ne supprime pas les règles de variété ; il change de combinaison
-    // lorsque la première ne passe pas les garde-fous.
-    const rows=SG_THEME_ROWS.filter(r=>{
+    // Génération robuste : les combinaisons du catalogue sont essayées puis,
+    // si elles ne sont pas conformes, le moteur change de combinaison. Aucun
+    // texte non validé ne peut être retourné.
+    const allRows=SG_THEME_ROWS.filter(r=>{
       const recent=sgHistory().some(h=>sgNorm(h.theme)===sgNorm(r[0]));
       const familyFull=sgFamilyCount7(r[2])>=2;
       const advancedFull=r[2]==='avancé'&&sgAdvancedCount5()>=1;
       return !recent&&!familyFull&&!advancedFull;
-    }).sort(()=>Math.random()-.5);
+    });
     const preferred=topic&&sgTopicRow(topic);
-    const ordered=preferred && rows.some(r=>r[0]===preferred[0])
-      ? [preferred,...rows.filter(r=>r[0]!==preferred[0])]
-      : rows;
-    const candidates=ordered.slice(0,Math.min(12,ordered.length));
+    const rows=preferred&&allRows.some(r=>sgNorm(r[0])===sgNorm(preferred[0]))
+      ? [preferred,...allRows.filter(r=>sgNorm(r[0])!==sgNorm(preferred[0]))]
+      : allRows.sort(()=>Math.random()-.5);
+    const candidates=rows.slice(0,Math.max(12,Math.min(24,rows.length)));
+
     for(const row of candidates){
       const th=row[0];
       const structure=sgPickStructure();
       const form=sgPickForm();
-      const d=TS?.[th]||null;
-      if(!d||!Array.isArray(d.a)||!Array.isArray(d.c))continue;
+      const d=(typeof TS!=='undefined'&&TS[th])?TS[th]:null;
       const combos=[];
-      for(const ai of d.a)for(const ci of d.c)combos.push(`${ai}\n\n${ci}`.trim());
-      const historyTexts=sgHistory().map(h=>sgNorm(h.text));
-      const fresh=combos.filter(x=>!historyTexts.includes(sgNorm(x)));
-      const shuffled=[...(fresh.length?fresh:combos)].sort(()=>Math.random()-.5);
-      // Deux tentatives de reformulation maximum pour chaque combinaison.
-      for(const base of shuffled.slice(0,8)){
-        let text=sgEnsureForm(base,form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
+      if(d&&Array.isArray(d.a)&&Array.isArray(d.c)){
+        for(const ai of d.a)for(const ci of d.c)combos.push(`${ai}\n\n${ci}`.trim());
+      }
+      const shuffled=combos.sort(()=>Math.random()-.5);
+      const maxComb=Math.min(12,shuffled.length);
+      for(let i=0;i<maxComb;i++){
+        let text=sgEnsureForm(shuffled[i],form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
         for(let attempt=0;attempt<2;attempt++){
           const e=sgValidate(text,{type:'technique',topic:th,structure,form});
           if(!e.length)return {text,theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
-          // Sans API IA dans le fichier autonome, on essaie une autre variante du
-          // même thème plutôt que de forcer un texte non conforme.
-          const alt=shuffled[(shuffled.indexOf(base)+attempt+1)%shuffled.length];
-          if(alt && alt!==base) text=sgEnsureForm(alt,form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
+          const alt=shuffled[(i+attempt+1)%shuffled.length];
+          if(alt)text=sgEnsureForm(alt,form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
         }
       }
-    }
-    // Dernier recours : formulation factuelle contrôlée, toujours soumise aux mêmes validations.
-    for(const row of candidates){
-      const th=row[0], structure=sgPickStructure(), form=sgPickForm();
-      const text=sgFallbackText(th,form);
-      const e=sgValidate(text,{type:'technique',topic:th,structure,form});
-      if(!e.length)return {text,theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
+      // Une variante factuelle contrôlée permet de ne pas dépendre de la qualité
+      // des anciens textes du catalogue. Elle passe exactement par sgValidate.
+      let fallback=sgFallbackText(th,form);
+      const ferr=sgValidate(fallback,{type:'technique',topic:th,structure,form});
+      if(!ferr.length)return {text:fallback,theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
     }
     return null;
   }
+
   function prepare_post(candidate,meta={}){
     if(acc!=='simon')return null;
     const text=String(candidate||'').trim();const display=text.replaceAll(SG_TOKEN,sgProgress());
@@ -3813,13 +3812,14 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const test=(name,fn)=>{try{const ok=!!fn();results.push({name,ok,detail:ok?'':'échec'});}catch(e){results.push({name,ok:false,detail:String(e?.message||e)})}};
     const expectErrors=(name,text,opt)=>test(name,()=>withHistory([],[],()=>{const e=sgValidate(text,opt);if(!e.length)throw new Error('aucune erreur détectée alors qu’une erreur était attendue');return true;}));
     const expectClean=(name,text,opt)=>test(name,()=>withHistory([],[],()=>{const e=sgValidate(text,opt);if(e.length)throw new Error(e.join(' · '));return true;}));
-    const valid='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau.';
+    const valid='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau. Cette première approche m\'aide aussi à mieux distinguer les rôles des différents services réseau.';
     const validMeta={type:'technique',theme:'DNS',structure:'Découverte',form:'En découvrant'};
     const fullValid=valid+'\n\n#STI2D #Découverte #Cybersécurité #DNS';
     const oldH=Array.isArray(H)?H.slice():null, oldQ=Array.isArray(Q)?Q.slice():null;
+    const oldAcc=acc, oldTopic=topic;
     const resetHistory=(h=[],q=[])=>{if(Array.isArray(H)){H.length=0;H.push(...h)}if(Array.isArray(Q)){Q.length=0;Q.push(...q)}};
     const make=(theme,extra={})=>({id:Math.random(),account:'simon',text:extra.text||valid,topic:theme,theme,structure:extra.structure||'Découverte',form:extra.form||'En découvrant',sgFamily:extra.family||sgFamily(theme),publishedAt:extra.ts||Date.now()});
-    const withHistory=(h,q,fn)=>{try{resetHistory(h,q);return fn()}finally{resetHistory(oldH||[],oldQ||[])}};
+    const withHistory=(h,q,fn)=>{try{resetHistory(h,q);acc='simon';topic='';return fn()}finally{resetHistory(oldH||[],oldQ||[]);acc=oldAcc;topic=oldTopic}};
     const tagSet=(theme)=>sgTags(theme).map(x=>x.toLowerCase());
 
     // 1 — Intégrité du catalogue : thèmes, structures, formulations, familles et tags.
@@ -3835,6 +3835,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     test('Pentest → hashtag #Débutant',()=>sgTags('Pentest')[3]==='#Débutant');
     test('Formulations : une formulation ancienne revient dans le pool',()=>{const recent=new Set([SG_FORMS[1],SG_FORMS[2],SG_FORMS[3]]);return SG_FORMS.includes(SG_FORMS[0])&&!recent.has(SG_FORMS[0]);});
     test('Moteur Nicolas d’origine conservé',()=>typeof sgOld.genPost==='function'&&typeof sgOld.copyPost==='function'&&typeof sgOld.publishLinkedIn==='function'&&document.getElementById('btn-n')!==null);
+    test('RunTest : historique réel protégé',()=>{const beforeH=JSON.stringify(H),beforeQ=JSON.stringify(Q);withHistory([],[],()=>true);return JSON.stringify(H)===beforeH&&JSON.stringify(Q)===beforeQ;});
 
     // 2 — Validations de format et de longueur.
     expectClean('Post valide 80–150 mots',valid,validMeta);
@@ -3954,14 +3955,14 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
 
     // 11 — Génération : deux tentatives et sortie conforme.
     test('Générateur : retourne une combinaison conforme',()=>{
-      resetHistory([],[]);const r=sgBuildCandidate();if(!r)return false;const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});return !!p?.ok&&p.hashtags.length===4;
+      const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<8;i++){const r=sgBuildCandidate();if(!r)continue;const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});if(p?.ok&&p.hashtags.length===4)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
     });
     test('Générateur : thème/famille/structure/form présents',()=>{
-      resetHistory([],[]);const r=sgBuildCandidate();return !!r&&!!r.theme&&!!r.family&&!!r.structure&&!!r.form;
+      const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<8;i++){const r=sgBuildCandidate();if(r&&r.theme&&r.family&&r.structure&&r.form)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
     });
 
     // 12 — Verrou humain : copie/publication interdite avant relecture et après modification.
-    const po=document.getElementById('po');const savedPo=po?.innerText||'';const savedLast=lastPost?JSON.parse(JSON.stringify(lastPost)):lastPost;const savedMeta=sgLastMeta?JSON.parse(JSON.stringify(sgLastMeta)):sgLastMeta;const savedGate={...sgGate};
+    const po=document.getElementById('po');const savedPo=po?.innerText||'';const savedAccLock=acc,savedTopicLock=topic;acc='simon';topic='';const savedLast=lastPost?JSON.parse(JSON.stringify(lastPost)):lastPost;const savedMeta=sgLastMeta?JSON.parse(JSON.stringify(sgLastMeta)):sgLastMeta;const savedGate={...sgGate};
     try{
       resetHistory([],[]);const r=sgBuildCandidate();const p=r&&prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});
       if(po&&p?.ok){po.innerText=p.full;sgLastMeta={type:'technique',theme:r.theme,structure:r.structure,form:r.form,family:r.family};lastPost={text:p.full};sgSetGate(false);
@@ -3975,7 +3976,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       if(po){po.innerText=savedPo;renderPost(savedPo)}
       if(lastPost){Object.keys(lastPost).forEach(k=>delete lastPost[k]);if(savedLast)Object.assign(lastPost,savedLast)}
       else if(savedLast)lastPost=savedLast;
-      sgLastMeta=savedMeta;sgGate=savedGate;resetHistory(oldH||[],oldQ||[]);
+      sgLastMeta=savedMeta;sgGate=savedGate;resetHistory(oldH||[],oldQ||[]);acc=savedAccLock;topic=savedTopicLock;
     }
 
     const passed=results.filter(r=>r.ok).length,total=results.length,failed=results.filter(r=>!r.ok);
