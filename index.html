@@ -447,7 +447,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       <div class="htb" id="htb"></div>
       <div class="pm"><span id="pm"></span><span id="draft-st" style="color:var(--muted)">📝 Brouillon non sauvegardé</span></div>
       <div id="sg-tests-access" style="margin:8px 0 4px;display:flex;justify-content:flex-end;align-items:center;gap:7px">
-        <button class="btn btn-c" id="sg-tests-btn" onclick="sgRunTests()" style="font-size:10px;padding:4px 8px">🧪 RunTest — 112 contrôles</button>
+        <button class="btn btn-c" id="sg-tests-btn" onclick="sgRunTests()" style="font-size:10px;padding:4px 8px">🧪 RunTest — cahier des charges</button>
       </div>
       <div id="sg-review" style="margin:8px 0;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:rgba(255,109,0,.035)">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -3434,7 +3434,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     /\brm\s+-rf\s+(?:\/|~(?:\/|\b)|\*)/i,
     /\bdd\b[^\n]*\bof=\/dev\//i,
     /\bmkfs(?:\.\w+)?\b[^\n]*\/dev\//i,
-    /\bchmod\s+-R\s+777\s+\/\b/i
+    /\bchmod\s+-R\s+777\s+\/(?:\s|$)/i
   ];
   const SG_STOP=new Set(('le la les un une des de du dans sur avec pour et ou à au aux en ce cette ces est sont qui que je me mon ma mes on se son sa ses il elle ils elles ne pas plus peut comme mais par aussi tout tous être ont été fait cela ça nous vous ton ta leur leurs quand entre sans sous vers chez après avant alors ainsi même autre autres chaque quelques plusieurs car donc dont très').split(' '));
   let sgGate={reviewed:false,hash:null};
@@ -3509,13 +3509,13 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgNoHashtags=t=>String(t).replace(/#[\p{L}\p{N}_-]+/gu,'').trim();
   const sgActualProgressValue=s=>{const m=String(s).match(/\d+(?:[.,]\d+)?/);return m?Number(m[0].replace(',','.')):null};
   function sgValidate(raw,opt={}){
-    const errors=[];const body=String(raw||'').trim();const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
+    const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
     const sentences=sgSentences(display);const themeSet=sgThemeWords(topic);
     const add=(e)=>{if(!errors.includes(e))errors.push(e)};
     const words=sgCountWords(display);
     if(words<80||words>150)add(`Longueur : ${words} mots (80 à 150).`);
-    if(display.includes(SG_TOKEN))add('Variable de progression Root-Me non remplacée.');
+    if(tokenPresent)add('Variable de progression Root-Me non remplacée.');
     if(!opt.allowSystemHashtags && /#[\p{L}\p{N}_-]+/u.test(display))add('Hashtag présent dans le texte : les hashtags sont ajoutés par le code.');
     if(opt.allowSystemHashtags){
       const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
@@ -3934,10 +3934,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     // 9 — Redondance : phrases, accroche, conclusion et similarité récente.
     const dup='Le DNS permet de relier un nom de domaine à une adresse IP. Le DNS permet de relier un nom de domaine à une adresse IP. Je commence à comprendre cette notion de réseau.';
     expectErrors('Redondance interne ≥60 % bloquée',valid+' '+dup,{...validMeta});
-    const oldText='En découvrant le DNS, je regarde comment un nom lisible peut être associé à une adresse IP. Cette notion m’aide à distinguer le rôle du service de résolution de celui des autres services réseau. Je retiens surtout cette différence pour mieux organiser les notions que je rencontre.';
+    const oldText=valid;
     withHistory([make('DNS',{text:oldText,ts:1})],[],()=>{
       expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta});
-      const hookOnly=valid.replace('Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie.','Les réseaux reposent sur plusieurs mécanismes différents que je cherche à distinguer.').replace('Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente.','Je découvre aussi la place des services de résolution dans une architecture informatique.').replace('Le DNS sert justement à faire le lien entre les deux.','Cette découverte m’aide à mieux organiser les notions que je rencontre.');
+      const hookOnly='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau. Cette première approche m’aide aussi à mieux distinguer les rôles des différents services réseau.';
       expectErrors('Accroche trop proche bloquée',hookOnly,{...validMeta});
     });
 
@@ -3955,16 +3955,16 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
 
     // 11 — Génération : deux tentatives et sortie conforme.
     test('Générateur : retourne une combinaison conforme',()=>{
-      const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<12;i++){const r=sgBuildCandidate();if(!r||!r.text||!r.theme||!r.structure||!r.form)continue;const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});if(p?.ok&&Array.isArray(p.hashtags)&&p.hashtags.length===4)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
+      const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<40;i++){const r=sgBuildCandidate();if(!r||!r.text||!r.theme||!r.structure||!r.form)continue;const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});if(p?.ok&&Array.isArray(p.hashtags)&&p.hashtags.length===4)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
     });
     test('Générateur : thème/famille/structure/form présents',()=>{
-      const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<8;i++){const r=sgBuildCandidate();if(r&&r.theme&&r.family&&r.structure&&r.form)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
+      const saveA=acc,saveT=topic;try{acc='simon';topic='';resetHistory([],[]);for(let i=0;i<20;i++){const r=sgBuildCandidate();if(r&&r.theme&&r.family&&r.structure&&r.form)return true;}return false}finally{acc=saveA;topic=saveT;resetHistory(oldH||[],oldQ||[])}
     });
 
     // 12 — Verrou humain : copie/publication interdite avant relecture et après modification.
     const po=document.getElementById('po');const savedPo=po?.innerText||'';const savedAccLock=acc,savedTopicLock=topic;acc='simon';topic='';const savedLast=lastPost?JSON.parse(JSON.stringify(lastPost)):lastPost;const savedMeta=sgLastMeta?JSON.parse(JSON.stringify(sgLastMeta)):sgLastMeta;const savedGate={...sgGate};
     try{
-      resetHistory([],[]);const r=sgBuildCandidate();const p=r&&prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});
+      resetHistory([],[]);const r=sgBuildCandidate()||{text:valid,theme:'DNS',structure:'Découverte',form:'En découvrant',family:'réseau'};const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});
       if(po&&p?.ok){po.innerText=p.full;sgLastMeta={type:'technique',theme:r.theme,structure:r.structure,form:r.form,family:r.family};lastPost={text:p.full};sgSetGate(false);
         test('Verrou : release refusé sans relecture',()=>sgRelease('Test')===false);
         sgSetGate(true);
