@@ -3703,7 +3703,19 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   function sgHumanReview(){
     if(acc!=='simon'){toast('La relecture verrouillée concerne le compte Simon.','in');return;}
     const text=(document.getElementById('po')?.innerText||'').trim();if(!text){toast('Aucun texte à relire.','er');return;}
-    const meta=sgLastMeta||{type:'technique',theme:topic};const errors=sgValidate(text,{...meta,allowSystemHashtags:true});
+    const meta=sgLastMeta||{type:'technique',theme:topic};
+    const expected=sgTags(meta.theme||topic);
+    const existing=[...text.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
+    let finalText=text;
+    if(existing.length===0){
+      finalText=(text+'\n\n'+expected.join(' ')).trim();
+      if(po){po.innerText=finalText;renderPost(finalText)}
+    }else if(existing.length===4&&existing.every((t,i)=>t.toLowerCase()===expected[i].toLowerCase())){
+      finalText=text;
+    }else{
+      toast('Relecture impossible : hashtags finaux non conformes.','er');sgSetGate(false);return;
+    }
+    const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true});
     if(errors.length){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
     sgSetGate(true);toast('✓ Relecture humaine enregistrée.','ok');
   }
