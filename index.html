@@ -3382,17 +3382,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const SG_BANNED=['#HackTheBox','#OpenToWork','#Analyste','#Pentest'];
   const SG_ADVANCED=new Set(['SIEM','SOC','Zero-day','Pentest']);
   const SG_FORMS=[
-    'En découvrant','En me renseignant sur','En lisant sur le sujet','Je découvre',
-    'Je commence à comprendre','Ce que je comprends pour l’instant','Une notion que je découvre',
-    'Une notion que je trouve intéressante','En cherchant à comprendre','Je poursuis ma découverte de',
-    'Ce sujet m’aide à comprendre','Une différence que je découvre','Un point que je retiens',
-    'Ce que je retiens de cette notion','Une notion qui mérite d’être comprise',
-    'En approfondissant cette notion','Je découvre progressivement','Une première chose que je comprends',
-    'Un concept que je commence à distinguer','Une notion que je cherche à mieux comprendre',
-    'En essayant de comprendre la différence','Ce sujet permet de mieux comprendre'
-  ];
+     'constat','contraste','observation générale','conséquence','détail concret','mise en contexte',
+     'exemple hypothétique','phrase courte','rythme court puis long','élément technique','problème général','distinction utile'
+   ];
   const SG_STRUCT={
-    'Découverte':['accroche','explication','ce que Simon comprend','conclusion'],
+    'Découverte':['accroche','explication','précision factuelle','conclusion'],
     'Question':['question','explication','exemple hypothétique','conclusion'],
     'Comparaison':['idée de départ','comparaison','explication','ce que Simon retient'],
     'Trois notions':['accroche','notion 1','notion 2','notion 3','conclusion'],
@@ -3506,9 +3500,14 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(selected && !sgHistory().some(h=>sgNorm(h.theme)===sgNorm(selected[0])) && sgFamilyCount7(selected[2])<2 && !(selected[2]==='avancé'&&sgAdvancedCount5()>=1)) return selected;
     return rows.length?rows[Math.floor(Math.random()*rows.length)]:null;
   };
-  const sgEnsureForm=(text,form,topic)=>{
-    const n=sgNorm(text);if(n.includes(sgNorm(form)))return text;
-    return `${form} ${String(topic).toLowerCase()} : ${text}`;
+  const sgEnsureForm=text=>text; // brief §4 : aucune formule d’accroche imposée
+  const sgBriefFam=t=>{
+    const S=sgSentences(sgNoHashtags(String(t))).map(x=>x.trim()).filter(Boolean),f=S[0]||'',l=S[S.length-1]||'';
+    const o=/^(?:en (?:d[ée]couvrant|me renseignant|lisant|cherchant|approfondissant|essayant)|je (?:d[ée]couvre|commence|poursuis|m[’']int[ée]resse|cherchais|pensais|crois)|(?:une?|ce) (?:notion|concept|terme|point|diff[ée]rence|premi[èe]re chose|sujet)[^.]{0,40}\b(?:je|m[’']aide)\b|ce (?:que je|qui m[’']int[ée]resse))/i.test(f)?'decouverte'
+      :/^(?:saviez-vous|que se passe)|\?\s*$/i.test(f)?'question'
+      :/^(?:le terme|l[’']expression|une? (?:vuln[ée]rabilit[ée]|attaque informatique)|il existe parfois)\b|\b(?:d[ée]signe|est souvent associ[ée]e?)\b/i.test(f)?'definition':'autre';
+    const c=/^(?:ce (?:que je (?:retiens|trouve)|qui m[’']int[ée]resse)|c[’']est (?:justement|un exemple qui montre|une notion que)|cela (?:montre|permet de comprendre)|cette (?:notion|d[ée]couverte) (?:montre|me permet|permet)|un bon rappel|[àa] retenir|je (?:continuerai|garderai|reviendrai))/i.test(l)?'bilan':'autre';
+    return {o,c};
   };
   const sgNoHashtags=t=>String(t).replace(/#[\p{L}\p{N}_-]+/gu,'').trim();
   const sgActualProgressValue=s=>{const m=String(s).match(/\d+(?:[.,]\d+)?/);return m?Number(m[0].replace(',','.')):null};
@@ -3560,7 +3559,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(/[\w.+-]+@[\w-]+\.[\w.-]+/.test(n)||/(?:\+33|0033|\b0)\s?[1-9](?:[\s.-]?\d{2}){4}\b/.test(n))add('Coordonnée personnelle interdite.');
     for(const name of sgNames())if(name&&n.includes(name))add(`Information protégée : « ${name} »`);
     if(type==='technique'){
-      const form=opt.form||sgLastMeta?.form;if(form&&!n.includes(sgNorm(form)))add(`La formulation assignée « ${form} » n’apparaît pas.`);
+      
       const structure=opt.structure||sgLastMeta?.structure;if(structure&&!SG_STRUCT[structure])add('Structure inconnue.');
       // Redondance interne : common words / significant words de la phrase la plus courte.
       for(let i=0;i<sentences.length;i++)for(let j=i+1;j<sentences.length;j++){
@@ -3576,13 +3575,22 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       const currentFamily=sgFamily(topic);if(currentFamily!=='autre'&&sgFamilyCount7(currentFamily)>=2)add(`Famille « ${currentFamily} » déjà utilisée 2 fois dans les 7 derniers posts.`);
       if(SG_ADVANCED.has(topic)&&sgAdvancedCount5()>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
     }
+    [/\b(?:mon|ma|mes) (?:professeurs?|profs?|enseignants?|stage|entreprise|tuteur)\b/i,/\bpendant (?:mon|ma|le) (?:stage|cours)\b/i,/\blors d[’']une mission\b/i,/\b(?:vu|appris|abordé|étudié) en cours\b/i].forEach(re=>{if(re.test(display))add('Contexte scolaire ou professionnel non confirmé (brief §1).')});
+    const bf=sgBriefFam(display),bh=history.filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).map(h=>sgBriefFam(h.text||''));
+    if(bf.o!=='autre'&&bh.some(x=>x.o===bf.o))add(`Accroche de même famille (${bf.o}) qu’un des 3 derniers posts.`);
+    if(bf.c!=='autre'&&bh.some(x=>x.c===bf.c))add(`Conclusion de même famille (${bf.c}) qu’un des 3 derniers posts.`);
     return [...new Set(errors)];
   }
   function sgContext(meta){return {type:meta?.type||'technique',theme:meta?.theme||topic||'Réseau',structure:meta?.structure||'',form:meta?.form||'',prog:sgProgress(),geo:sgGeo(),names:sgNames()}};
   function sgPrompt(meta){
     const hist=sgHistory().slice(-7).map((h,i)=>`[${i+1}] ${sgNoHashtags(h.text)}`).join('\n');
-    const role='Écris en français, à la première personne, comme Simon. Ton naturel, simple et crédible pour un lycéen de 17 ans : le post montre une progression d’apprentissage, pas une expertise. Évite le ton commercial, consultant ou expert, les phrases de motivation génériques, la dramatisation et le jargon inutile.';
-    return [role,`TYPE : ${meta.type}`,`THÈME : ${meta.theme}`,`STRUCTURE : ${meta.structure} (${(SG_STRUCT[meta.structure]||[]).join(' → ')})`,`FORMULATION À UTILISER : ${meta.form}`,`LONGUEUR : 80 à 150 mots`,`Écris uniquement le corps du post, sans hashtag, sans URL et sans markdown.`,
+    const brief=['Tu es le moteur éditorial des publications LinkedIn de Simon, lycéen débutant en cybersécurité. Français naturel, simple, pédagogique ; jamais expert, commercial ni sensationnaliste.',
+      'PRIORITÉS : 1 vérité éditoriale ; 2 niveau réel débutant ; 3 aucune expérience non confirmée ; 4 exactitude ; 5 diversité des angles ; 6 anti-redondance avec les 7 derniers posts ; 7 variété du vocabulaire. La variété ne justifie jamais d’inventer une expérience, une émotion, un cours, un professeur, un stage ou une situation vécue.',
+      'INTERDIT sauf si explicitement confirmé : expérience pro, stage, alternance, mission, échange avec un professeur, cours suivi, projet scolaire, pratique de Linux / TryHackMe / PortSwigger / CTF / pentest, audit, certification, SOC ; pas de « j’ai testé / utilisé / pratiqué / configuré / analysé / réalisé ». En cas de doute, choisis la formulation neutre et fidèle plutôt que l’originale.',
+      'ACCROCHE : différente des 7 derniers posts, sans « Je découvre / Je commence à comprendre / Une notion que… / Ce que je trouve intéressant » systématiques ; constat, contraste, conséquence, détail concret ou phrase courte, sans « je » ni définition obligatoires.',
+      'CONCLUSION : factuelle (constat, conséquence, précision, ouverture), jamais de bilan personnel artificiel (« Ce que je retiens », « Cela montre que », « À retenir », « Je garderai une fiche »). Une variante de vocabulaire d’une structure récente reste une redondance.',
+      'EXACTITUDE : formulations prudentes (notamment, peut, en général) ; exemples explicitement hypothétiques ; 1 emoji maximum.'].join('\n');
+    return [brief,`TYPE : ${meta.type}`,`THÈME : ${meta.theme}`,`STRUCTURE : ${meta.structure} (${(SG_STRUCT[meta.structure]||[]).join(' → ')})`,`TYPE D’ACCROCHE : ${meta.form}`,`LONGUEUR : 80 à 150 mots`,`Écris uniquement le corps du post, sans hashtag, sans URL et sans markdown.`,
       `Root-Me : si le post le justifie, utilise ${SG_TOKEN}. La valeur réelle sera fournie par le code au dernier moment (${sgProgress()}).`,`Niveau : débutant. Aucune expérience inventée.`,
       `Protection mineur : ne cite aucun nom protégé ni établissement non fourni.`,`7 DERNIERS POSTS SANS HASHTAGS :`,hist||'(aucun)'].join('\n');
   }
@@ -3606,7 +3614,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     'Traceroute':'Traceroute permet d’observer les différents sauts traversés par des paquets pour atteindre une destination réseau.',
     'ipconfig':'ipconfig affiche notamment des informations de configuration réseau sur les systèmes Windows.',
     'Commandes réseau':'Les commandes réseau permettent notamment d’observer ou de vérifier différents paramètres et communications d’un système.',
-    'Linux':'Linux est un système d’exploitation dont je découvre progressivement l’organisation et quelques notions d’administration.',
+    'Linux':'Linux est un système d’exploitation utilisé notamment sur de nombreux serveurs, avec une organisation des fichiers et des droits qui lui est propre.',
     'Terminal':'Le terminal permet d’interagir avec un système en utilisant des commandes plutôt qu’une interface graphique.',
     'Commandes Linux':'Les commandes Linux permettent d’effectuer différentes opérations sur le système depuis le terminal.',
     'Permissions Linux':'Les permissions Linux servent notamment à déterminer quelles actions différents utilisateurs peuvent effectuer sur des fichiers.',
@@ -3633,34 +3641,46 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     'SIEM':'Un SIEM centralise et corrèle notamment des événements issus de plusieurs sources afin de faciliter leur analyse.',
     'SOC':'Un SOC regroupe des activités de surveillance et d’analyse de la sécurité des systèmes d’information.',
     'Zero-day':'Une vulnérabilité zero-day est une vulnérabilité pour laquelle il existe une période où les défenses et les corrections disponibles peuvent être limitées.',
-    'Pentest':'Un pentest est une démarche autorisée qui cherche à évaluer la sécurité d’un système dans un périmètre défini, sans que cela implique une pratique personnelle de Simon.'
+    'Pentest':'Un pentest est une démarche autorisée qui cherche à évaluer la sécurité d’un système dans un périmètre défini.'
   };
   function sgFallbackText(theme,form){
-    // Gabarit modulaire : chaque appel assemble des phrases différentes, pour que deux posts de
-    // repli consécutifs ne dépassent plus le seuil de similarité (70 %) du module de garde-fous.
-    const fact=SG_FALLBACK_FACTS[theme]||`Le sujet ${theme} correspond à une notion informatique que je cherche à mieux comprendre.`;
-    const B=['Pour l’instant, je cherche surtout à comprendre son rôle et les notions qui lui sont liées, sans prétendre maîtriser le sujet.',
-      'Je lis encore beaucoup de définitions pour situer ce sujet dans l’ensemble de l’informatique et je note les termes que je connais mal.',
-      'Ce qui m’intéresse, c’est de relier cette notion à d’autres éléments d’un système plutôt que de la retenir isolément.',
-      'Je m’en tiens aux grandes lignes : à quoi cela sert, dans quel contexte cela apparaît et avec quels éléments cela fonctionne.',
-      'Ma compréhension reste partielle, mais elle m’aide déjà à mieux situer les termes que je croise en cherchant des informations.'];
-    const C=['Comprendre ce genre de base permet ensuite de lire plus facilement une documentation technique et de poser des questions plus précises.',
-      'En cybersécurité, les notions de base reviennent souvent, donc prendre le temps de les comprendre évite de rester en surface.',
-      'Je vois mieux pourquoi les fondamentaux sont recommandés avant de s’intéresser à des outils ou à des cas plus complexes.',
-      'Chaque notion comprise donne une vue d’ensemble un peu plus claire de ce qu’il faut connaître pour progresser dans ce domaine.',
-      'Cette découverte me permet de mieux organiser ce que j’apprends en cybersécurité et en informatique.',
-      'Cela m’aide à faire le lien entre des définitions, des schémas simples et des situations concrètes décrites dans les ressources que je lis.'];
-    const D=['C’est une notion que je pourrai approfondir progressivement dans la suite de mon apprentissage.',
-      'Prochaine étape : revoir les définitions, comparer avec des schémas simples et vérifier que je sais l’expliquer avec mes propres mots.',
-      'Je continue pas à pas, en vérifiant chaque définition avant de passer à la notion suivante.',
-      'Quelle ressource conseilleriez-vous pour bien démarrer sur ce sujet ?',
-      'Si vous avez une explication claire ou un schéma à recommander, je suis preneur.',
-      'L’objectif reste de construire des bases solides, sans brûler les étapes.',
-      'Je garderai une courte fiche de cette notion pour la retrouver facilement plus tard.',
-      'Je reviendrai sur ce point pour vérifier que ma compréhension est correcte.'];
+    // Brief §3/§14 : texte impersonnel (aucune pratique ni émotion inventée), accroche selon le type, conclusion factuelle.
+    const t=`« ${theme} »`;
+    const H={'constat':`${t} fait partie des notions de base qu’on croise tôt dans l’apprentissage de l’informatique.`,
+      'contraste':`Une notion peut se définir en une phrase et avoir pourtant des effets très concrets : c’est le cas de ${t}.`,
+      'observation générale':`En cybersécurité, beaucoup de sujets reposent sur quelques notions de base, dont ${t}.`,
+      'conséquence':`Passer à côté de la notion ${t} peut compliquer la lecture de nombreux sujets de sécurité.`,
+      'détail concret':`Derrière l’expression ${t}, il y a des mécanismes précis qu’on peut décrire simplement.`,
+      'mise en contexte':`Dans un système d’information, ${t} s’inscrit en général dans un ensemble plus large d’éléments et de règles.`,
+      'exemple hypothétique':`Imaginons qu’il faille expliquer ${t} à quelqu’un qui débute : par où commencer ?`,
+      'phrase courte':`${t}. Une notion de base, mais pas anodine.`,
+      'rythme court puis long':`${t}, c’est un mot court qui recouvre plusieurs idées qu’il vaut mieux distinguer dès le départ.`,
+      'élément technique':`Côté technique, ${t} se comprend mieux lorsqu’on isole son rôle précis dans un système.`,
+      'problème général':`Un système mal compris est plus difficile à protéger, et ${t} n’échappe pas à cette règle.`,
+      'distinction utile':`On confond parfois ${t} avec des notions voisines ; les distinguer aide à mieux les situer.`};
+    const fact=SG_FALLBACK_FACTS[theme]||`${t} correspond à une notion informatique qui mérite d’être définie avec précision.`;
+    const B=['Ce type de notion sert de point d’appui pour aborder ensuite des sujets plus avancés de l’informatique et de la sécurité.',
+      'Selon le contexte, la même notion peut intervenir à plusieurs niveaux d’un système, du poste utilisateur jusqu’au réseau.',
+      'Les définitions restent volontairement simples ici ; la documentation officielle apporte les détails et les exceptions.',
+      'Ce sujet figure souvent dans les ressources d’initiation, car il permet de poser un vocabulaire commun avant des cas plus techniques.',
+      'Il existe en général plusieurs façons de présenter cette notion, selon qu’on se place du côté de l’utilisateur ou de l’administrateur.'];
+    const C=['Une définition courte reste une simplification : elle donne un repère, pas une description de tous les cas possibles.',
+      'En cybersécurité, les notions de base reviennent souvent, ce qui justifie de bien les distinguer avant d’aborder les outils.',
+      'Comprendre le rôle exact d’un élément aide à repérer ce qui peut être protégé, surveillé ou limité à son niveau.',
+      'Certaines erreurs de configuration peuvent venir de notions de base mal comprises plutôt que de techniques sophistiquées.',
+      'Un même terme peut avoir un sens légèrement différent d’un outil ou d’un document à l’autre.'];
+    const E=['Les guides d’initiation publics permettent de vérifier ces définitions auprès de sources fiables.',
+      'Des exemples concrets et des schémas aident ensuite à fixer le vocabulaire et à situer chaque terme.',
+      'Les termes techniques gagnent à être replacés dans un contexte précis plutôt que retenus isolément.',
+      'Le niveau de détail utile dépend du contexte : usage personnel, entreprise ou administration d’un système.',
+      'Ces repères restent généraux et peuvent varier selon les systèmes et les outils utilisés.'];
+    const D=['Les notions de base restent le point de départ de la plupart des parcours en informatique et en cybersécurité.',
+      'Ce vocabulaire se retrouve ensuite dans les documentations, les formations et les offres liées au domaine.',
+      'Comprendre un concept avant de manipuler des outils réduit le risque de les utiliser sans savoir ce qu’ils font.',
+      'Un même sujet est souvent abordé sous plusieurs angles : technique, organisationnel et juridique.',
+      'Le sujet reste vaste : chaque notion ouvre vers d’autres termes à définir avant d’aller plus loin.'];
     const rnd=a=>a[Math.floor(Math.random()*a.length)];
-    const c1=rnd(C);let c2=rnd(C);while(c2===c1)c2=rnd(C);
-    return `${form} : ${theme}. ${fact} ${rnd(B)} ${c1} ${c2} ${rnd(D)}`;
+    return `${(H[form]||H['constat'])} ${fact} ${rnd(B)} ${rnd(C)} ${rnd(E)} ${rnd(D)}`;
   }
   function sgBuildCandidate(){
     // Génération robuste : les combinaisons du catalogue sont essayées puis,
@@ -3872,7 +3892,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
 
     // 1 — Intégrité du catalogue : thèmes, structures, formulations, familles et tags.
     test('Catalogue : 47 thèmes intégrés',()=>SG_THEME_ROWS.length===47);
-    test('Catalogue : 22 formulations',()=>SG_FORMS.length===22);
+    test('Catalogue : au moins 10 types d’accroche',()=>SG_FORMS.length>=10);
+    test('Brief : familles d’accroche et de conclusion',()=>sgBriefFam('Je découvre le DNS. Texte.').o==='decouverte'&&sgBriefFam('Texte. Ce que je retiens : un point.').c==='bilan'&&sgBriefFam('Le DNS associe des noms. Il sert aussi à autre chose.').o==='autre');
     test('Catalogue : 5 structures',()=>Object.keys(SG_STRUCT).length===5);
     test('Catalogue : chaque thème a un hashtag spécifique',()=>SG_THEME_ROWS.every(r=>/^#[\p{L}\p{N}_-]+$/u.test(r[1])));
     test('Catalogue : familles renseignées',()=>SG_THEME_ROWS.every(r=>['réseau','linux','sécurité','menaces','données','avancé'].includes(r[2])));
@@ -3994,7 +4015,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       const prompt=sgPrompt({type:'technique',theme:'DNS',structure:'Découverte',form:SG_FORMS[3]});
       test('Prompt : thème transmis',()=>prompt.includes('THÈME : DNS'));
       test('Prompt : structure transmise',()=>prompt.includes('STRUCTURE : Découverte'));
-      test('Prompt : formulation transmise',()=>prompt.includes('FORMULATION À UTILISER : '+SG_FORMS[3]));
+      test('Prompt : formulation transmise',()=>prompt.includes('TYPE D’ACCROCHE : '+SG_FORMS[3]));
       test('Prompt : token Root-Me transmis',()=>prompt.includes(SG_TOKEN));
       test('Prompt : 7 derniers posts transmis',()=>prompt.includes('7 DERNIERS POSTS SANS HASHTAGS')&&['[1]','[2]','[3]','[4]','[5]','[6]','[7]'].every(x=>prompt.includes(x)));
       test('Prompt : hashtags interdits à l’IA',()=>prompt.includes('sans hashtag, sans URL et sans markdown'));
