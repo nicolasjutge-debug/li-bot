@@ -2357,11 +2357,13 @@ function autoRefill(silent=false, extraAvoid=[]){
   // BUGFIX indépendance : la cible de 7 s'appliquait à Q.length TOUS COMPTES CONFONDUS —
   // si Simon avait déjà 7 posts, Nicolas ne recevait plus jamais de regénération automatique
   // tant que la file globale restait ≥7. Chaque compte doit maintenir SES PROPRES 7 posts.
-  while(Q.filter(x=>x.account===acc).length < QUEUE_TARGET){
+  let fails=0;
+  while(Q.filter(x=>x.account===acc).length < QUEUE_TARGET && fails<4){
     const r=genOnePost(extraAvoid);
-    if(r&&r.wasDup) dupCount++;
-    added++;
+    if(r&&r.post){ if(r.wasDup) dupCount++; added++; fails=0; } else fails++;
   }
+  const missingR=QUEUE_TARGET-Q.filter(x=>x.account===acc).length;
+  if(missingR>0) toast(`⚠️ ${QUEUE_TARGET-missingR}/${QUEUE_TARGET} posts en file — aucune variante conforme aux garde-fous pour le reste, réessaie dans un instant`,'er');
   if(added>0){
     saveAll();renderQ();updateStats();
     if(!silent){
@@ -2390,13 +2392,15 @@ function autoGen(){
     toast(`La file de ${PR[acc].nom} est déjà à ${QUEUE_TARGET} posts`,'in');
     return;
   }
-  let dupCount=0;
-  while(Q.filter(x=>x.account===acc).length<QUEUE_TARGET){
+  let dupCount=0,fails=0;
+  while(Q.filter(x=>x.account===acc).length<QUEUE_TARGET && fails<4){
     const r=genOnePost();
-    if(r&&r.wasDup) dupCount++;
+    if(r&&r.post){ if(r.wasDup) dupCount++; fails=0; } else fails++;
   }
+  const missing=QUEUE_TARGET-Q.filter(x=>x.account===acc).length;
   saveAll();renderQ();updateStats();rfTmr();
   if(dupCount>0) toast(`⚠️ Planning créé, mais ${dupCount} post${dupCount>1?'s':''} en doublon — stock de thèmes ${PR[acc].nom} épuisé, ajoute du contenu`,'er');
+  else if(missing>0) toast(`⚠️ ${QUEUE_TARGET-missing}/${QUEUE_TARGET} posts créés — aucune variante conforme aux garde-fous pour le reste, relance le planning dans un instant`,'er');
   else toast('Planning 7 posts créé ✓','ok');
 }
 
@@ -3442,7 +3446,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgOld={
     genPost:window.genPost, copyPost:window.copyPost, publishLinkedIn:window.publishLinkedIn,
     schedPost:window.schedPost, markAlreadyPublished:window.markAlreadyPublished,
-    onPoEdited:window.onPoEdited, restoreLastPost:window.restoreLastPost
+    onPoEdited:window.onPoEdited, restoreLastPost:window.restoreLastPost, genOnePost:window.genOnePost
   };
   const sgNorm=s=>String(s??'').normalize('NFKC').replace(/[’‘]/g,"'").toLowerCase().replace(/\s+/g,' ').trim();
   const sgHash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};
@@ -3511,7 +3515,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   function sgValidate(raw,opt={}){
     const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
-    const sentences=sgSentences(display);const themeSet=sgThemeWords(topic);
+    const sentences=sgSentences(sgNoHashtags(display));const themeSet=sgThemeWords(topic);
     const add=(e)=>{if(!errors.includes(e))errors.push(e)};
     const words=sgCountWords(display);
     if(words<80||words>150)add(`Longueur : ${words} mots (80 à 150).`);
@@ -3564,7 +3568,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       }
       // Similarité globale + accroche/conclusion avec chacun des 7 derniers posts.
       for(const h of history){
-        const hs=sgSentences(h.text),a=sgSig(sgNoHashtags(display)).filter(w=>!themeSet.has(w)),b=sgSig(sgNoHashtags(h.text)).filter(w=>!sgThemeWords(h.theme).has(w));
+        const hs=sgSentences(sgNoHashtags(h.text)),a=sgSig(sgNoHashtags(display)).filter(w=>!themeSet.has(w)),b=sgSig(sgNoHashtags(h.text)).filter(w=>!sgThemeWords(h.theme).has(w));
         if(a.length>=4&&b.length>=4){const A=new Set(a),B=new Set(b);let common=0;A.forEach(x=>B.has(x)&&common++);const sim=common/Math.min(A.size,B.size)*100;if(sim>=70)add(`Similarité ${Math.round(sim)} % avec un post récent.`)}
         if(sentences[0]&&hs[0]){const hookA=sgNorm(sentences[0]),hookB=sgNorm(hs[0]);if(hookA===hookB||sgOverlap(sentences[0],hs[0],themeSet)>=60)add(`Accroche trop proche d’un post récent : « ${sentences[0].slice(0,70)} »`);}
         if(sentences.at(-1)&&hs.at(-1)&&sgOverlap(sentences.at(-1),hs.at(-1),themeSet)>=60)add(`Conclusion trop proche d’un post récent : « ${sentences.at(-1).slice(0,70)} »`);
@@ -3607,7 +3611,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     'Commandes Linux':'Les commandes Linux permettent d’effectuer différentes opérations sur le système depuis le terminal.',
     'Permissions Linux':'Les permissions Linux servent notamment à déterminer quelles actions différents utilisateurs peuvent effectuer sur des fichiers.',
     'Utilisateurs et droits':'La gestion des utilisateurs et des droits permet de limiter les actions accessibles à chaque compte.',
-    'Processus et services':'Les processus correspondent à des programmes en cours d’exécution, tandis que les services assurent des fonctions qui peuvent fonctionner en arrière-plan.',
+    'Processus et services':'Les processus correspondent à des programmes qui s’exécutent sur le système, tandis que les services assurent des fonctions qui peuvent fonctionner en arrière-plan.',
     'Pare-feu':'Un pare-feu contrôle des communications réseau selon des règles définies et peut contribuer à réduire certaines communications indésirables.',
     'Sauvegardes':'Une sauvegarde permet de conserver une copie de données afin de pouvoir les restaurer après une perte ou un incident.',
     'Mots de passe':'Un mot de passe robuste et unique contribue à protéger un compte, surtout lorsqu’il est associé à d’autres mesures de sécurité.',
@@ -3632,8 +3636,31 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     'Pentest':'Un pentest est une démarche autorisée qui cherche à évaluer la sécurité d’un système dans un périmètre défini, sans que cela implique une pratique personnelle de Simon.'
   };
   function sgFallbackText(theme,form){
+    // Gabarit modulaire : chaque appel assemble des phrases différentes, pour que deux posts de
+    // repli consécutifs ne dépassent plus le seuil de similarité (70 %) du module de garde-fous.
     const fact=SG_FALLBACK_FACTS[theme]||`Le sujet ${theme} correspond à une notion informatique que je cherche à mieux comprendre.`;
-    return `${form} ${theme}. ${fact} Pour l’instant, je cherche surtout à comprendre son rôle et les notions qui lui sont liées, sans prétendre déjà maîtriser le sujet. Cette découverte me permet de mieux organiser ce que j’apprends en cybersécurité et en informatique. Je retiens qu’il est utile de partir des bases, de vérifier les définitions et de distinguer les concepts avant de vouloir aller plus loin. C’est une notion que je pourrai approfondir progressivement dans la suite de mon apprentissage.`;
+    const B=['Pour l’instant, je cherche surtout à comprendre son rôle et les notions qui lui sont liées, sans prétendre maîtriser le sujet.',
+      'Je lis encore beaucoup de définitions pour situer ce sujet dans l’ensemble de l’informatique et je note les termes que je connais mal.',
+      'Ce qui m’intéresse, c’est de relier cette notion à d’autres éléments d’un système plutôt que de la retenir isolément.',
+      'Je m’en tiens aux grandes lignes : à quoi cela sert, dans quel contexte cela apparaît et avec quels éléments cela fonctionne.',
+      'Ma compréhension reste partielle, mais elle m’aide déjà à mieux situer les termes que je croise en cherchant des informations.'];
+    const C=['Comprendre ce genre de base permet ensuite de lire plus facilement une documentation technique et de poser des questions plus précises.',
+      'En cybersécurité, les notions de base reviennent souvent, donc prendre le temps de les comprendre évite de rester en surface.',
+      'Je vois mieux pourquoi les fondamentaux sont recommandés avant de s’intéresser à des outils ou à des cas plus complexes.',
+      'Chaque notion comprise donne une vue d’ensemble un peu plus claire de ce qu’il faut connaître pour progresser dans ce domaine.',
+      'Cette découverte me permet de mieux organiser ce que j’apprends en cybersécurité et en informatique.',
+      'Cela m’aide à faire le lien entre des définitions, des schémas simples et des situations concrètes décrites dans les ressources que je lis.'];
+    const D=['C’est une notion que je pourrai approfondir progressivement dans la suite de mon apprentissage.',
+      'Prochaine étape : revoir les définitions, comparer avec des schémas simples et vérifier que je sais l’expliquer avec mes propres mots.',
+      'Je continue pas à pas, en vérifiant chaque définition avant de passer à la notion suivante.',
+      'Quelle ressource conseilleriez-vous pour bien démarrer sur ce sujet ?',
+      'Si vous avez une explication claire ou un schéma à recommander, je suis preneur.',
+      'L’objectif reste de construire des bases solides, sans brûler les étapes.',
+      'Je garderai une courte fiche de cette notion pour la retrouver facilement plus tard.',
+      'Je reviendrai sur ce point pour vérifier que ma compréhension est correcte.'];
+    const rnd=a=>a[Math.floor(Math.random()*a.length)];
+    const c1=rnd(C);let c2=rnd(C);while(c2===c1)c2=rnd(C);
+    return `${form} : ${theme}. ${fact} ${rnd(B)} ${c1} ${c2} ${rnd(D)}`;
   }
   function sgBuildCandidate(){
     // Génération robuste : les combinaisons du catalogue sont essayées puis,
@@ -3673,9 +3700,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       }
       // Une variante factuelle contrôlée permet de ne pas dépendre de la qualité
       // des anciens textes du catalogue. Elle passe exactement par sgValidate.
-      let fallback=sgFallbackText(th,form);
-      const ferr=sgValidate(fallback,{type:'technique',topic:th,structure,form});
-      if(!ferr.length)return {text:fallback,theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
+      for(let k=0;k<10;k++){
+        const fallback=sgFallbackText(th,form);
+        const ferr=sgValidate(fallback,{type:'technique',topic:th,structure,form});
+        if(!ferr.length)return {text:fallback,theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
+      }
     }
     return null;
   }
@@ -3777,10 +3806,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   window.genPost=sgGenerate;
   function sgGenOnePost(extraAvoid=[]){
     if(acc!=='simon')return sgOld.genOnePost(extraAvoid);
-    const result=sgBuildCandidate();
-    if(!result)return {post:null,wasDup:false};
-    const prepared=prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form});
-    if(!prepared?.ok)return {post:null,wasDup:false};
+    let result=null,prepared=null;
+    for(let attempt=0;attempt<3&&!(prepared&&prepared.ok);attempt++){
+      result=sgBuildCandidate();
+      prepared=result?prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form}):null;
+    }
+    if(!result||!prepared?.ok)return {post:null,wasDup:false};
     const mine=Q.filter(q=>q.account==='simon');
     const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
     const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:'original',topic:result.theme,label:TL.original,scheduledAt:base+48*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form};
