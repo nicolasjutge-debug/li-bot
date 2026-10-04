@@ -3483,7 +3483,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   };
   const sgAdvancedCount5=()=>sgHistory().slice(-5).filter(x=>SG_ADVANCED.has(x.theme)).length;
   const sgRootCount7=()=>sgHistory().slice(-7).filter(x=>/root[\s-]?me/i.test(x.text)).length;
-  const sgFamilyCount7=f=>sgHistory().slice(-7).filter(x=>(x.family||sgFamily(x.theme))===f).length;
+  const sgFamilyCount7=f=>{if(!f||f==='autre')return 0;return sgHistory().slice(-7).filter(x=>{const fam=x.family||sgFamily(x.theme);return fam&&fam!=='autre'&&fam===f}).length;};
   const sgRecentForm3=()=>sgHistory().slice(-3).map(x=>x.form).filter(Boolean);
   const sgRecentStruct2=()=>sgHistory().slice(-2).map(x=>x.structure).filter(Boolean);
   const sgPickForm=()=>{
@@ -3569,7 +3569,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
         if(sentences[0]&&hs[0]){const hookA=sgNorm(sentences[0]),hookB=sgNorm(hs[0]);if(hookA===hookB||sgOverlap(sentences[0],hs[0],themeSet)>=60)add(`Accroche trop proche d’un post récent : « ${sentences[0].slice(0,70)} »`);}
         if(sentences.at(-1)&&hs.at(-1)&&sgOverlap(sentences.at(-1),hs.at(-1),themeSet)>=60)add(`Conclusion trop proche d’un post récent : « ${sentences.at(-1).slice(0,70)} »`);
       }
-      if(sgFamilyCount7(sgFamily(topic))>=2)add(`Famille « ${sgFamily(topic)} » déjà utilisée 2 fois dans les 7 derniers posts.`);
+      const currentFamily=sgFamily(topic);if(currentFamily!=='autre'&&sgFamilyCount7(currentFamily)>=2)add(`Famille « ${currentFamily} » déjà utilisée 2 fois dans les 7 derniers posts.`);
       if(SG_ADVANCED.has(topic)&&sgAdvancedCount5()>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
     }
     return [...new Set(errors)];
@@ -3943,7 +3943,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     withHistory([make('DNS',{text:oldText,ts:1})],[],()=>{
       expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta},false);
       const hookOnly='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau. Cette première approche m’aide aussi à mieux distinguer les rôles des différents services réseau.';
-      expectErrors('Accroche trop proche bloquée',hookOnly,{...validMeta});
+      expectErrors('Accroche trop proche bloquée',hookOnly,{...validMeta},false);
     });
 
     // 10 — Prompt : contraintes transmises à l’IA, 7 derniers posts et absence de hashtags.
