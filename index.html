@@ -3500,7 +3500,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const rows=SG_THEME_ROWS.filter(r=>!sgHistory().some(h=>sgNorm(h.theme)===sgNorm(r[0])) && sgFamilyCount7(r[2])<2 && !(r[2]==='avancé'&&sgAdvancedCount5()>=1));
     const selected=topic&&sgTopicRow(topic)?sgTopicRow(topic):null;
     if(selected && !sgHistory().some(h=>sgNorm(h.theme)===sgNorm(selected[0])) && sgFamilyCount7(selected[2])<2 && !(selected[2]==='avancé'&&sgAdvancedCount5()>=1)) return selected;
-    return rows[Math.floor(Math.random()*rows.length)]||SG_THEME_ROWS[Math.floor(Math.random()*SG_THEME_ROWS.length)];
+    return rows.length?rows[Math.floor(Math.random()*rows.length)]:null;
   };
   const sgEnsureForm=(text,form,topic)=>{
     const n=sgNorm(text);if(n.includes(sgNorm(form)))return text;
