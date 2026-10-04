@@ -1507,7 +1507,7 @@ const HT={
 /* Choisit entre 2 et 4 hashtags : mélange de tags spécifiques au thème/occasion
    et de tags génériques du compte, tirés aléatoirement à chaque génération pour
    éviter que les posts se terminent toujours par le même bloc. */
-function pickHashtags(key,a){
+function pickHashtags0(key,a){
   const pool=(a==='simon'?HT.simon:HT.niko)||{};
   const specific=pool[key]||[];
   const all=[...new Set([...specific,...pool.generic])].filter(h=>{
@@ -1564,7 +1564,7 @@ const UNVALIDATED_EXPERIENCE_PATTERNS=[
   // 0 faux positif sur les 745 combinaisons existantes.
   /j['’](?:utilise|utilis|installe|install)[\s\S]{0,70}(?:linux|terminal|kali)/i
 ];
-const UNVALIDATED_HASHTAGS=['#PortSwigger','#TryHackMe','#Kali','#Pentest','#RedTeam','#EthicalHacking'];
+const UNVALIDATED_HASHTAGS=['#PortSwigger','#TryHackMe','#Kali','#Pentest','#RedTeam','#EthicalHacking','#HackTheBox','#OpenToWork','#Analyste'];
 // RÈGLE FERME : PortSwigger, TryHackMe, Kali et la pratique offensive ne doivent jamais
 // apparaître comme une expérience personnelle de Simon sans confirmation explicite.
 // Ces références peuvent être citées uniquement dans un contexte général de découverte,
@@ -1994,12 +1994,13 @@ function genPost(){
       const finalize=(intro,corps)=>(intro+'\n\n'+corps+(ctx?'\n\n'+ctx:'')).trim();
       const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===topic&&q.account===acc).map(q=>q.text);
       const combos=[];
-      d.a.forEach((ai,aIdx)=>d.c.forEach(ci=>combos.push({ai,aIdx,text:finalize(ai,ci)})));
+      buildCombos(d,topic,acc,finalize).forEach(c=>combos.push(c));
+      if(!combos.length){toast('⚠️ Aucun texte conforme (80–150 mots) pour ce thème','er');return;}
       let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
       if(acc==='simon') fresh=fresh.filter(c=>validateForReview(c.text,{autoCleanHashtags:true}).ok);
       const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
       if(freshNewIntro.length)fresh=freshNewIntro;
-      fresh=applyFamilyDiversity(fresh,topic,acc);
+      fresh=applyFamilyDiversity(fresh,topic,acc);if(acc==='simon')fresh=lenOK(preferCleanConcl(fresh));
       const chosen=fresh.length?pick(fresh):pick(combos); candidate=chosen.text; dup=!fresh.length;
       recordFamily(topic,chosen.aIdx,acc);
       candidate=(candidate+'\n\n'+pickHashtags(topic,acc)).trim();
@@ -2008,6 +2009,7 @@ function genPost(){
       dup=usedTexts.has(norm(candidate));
     }
     const vh=validateHashtags(candidate);
+    if(typ==='original'&&acc==='simon'&&!lenValid(candidate)){continue;}
     validation=validateGeneratedPost({text:candidate});
     if(!vh.ok||!validation.ok){
       continue;
@@ -2019,6 +2021,7 @@ function genPost(){
     text=candidate;isDup=dup;break;
   }
   if(!text||!validation?.ok){toast('⚠️ Génération refusée : contenu ou hashtag non conforme aux règles','er');return;}
+  if(typ==='original'&&acc==='simon')logHook(acc,text);
   lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc,originalText:text,previousVersions:[]};
   renderPost(text);
   if(!stats[acc])stats[acc]={total:0,sent:0};
@@ -2155,6 +2158,180 @@ function applyFamilyDiversity(fresh,topic,a){
   }
   return fresh;
 }
+/* ════ PROMPT MAÎTRE — familles STRUCTURELLES d'accroches ════
+   On mesure la logique de construction, pas les mots. 1re personne = refusée (sauf fait confirmé
+   Root-Me) ; famille OU famille proche présente dans les 3 derniers posts = accroche refusée.
+   Accroche refusée → on répare l'accroche seule et on GARDE le corps du texte TS (§5, §10, §18). */
+const HF_CLOSE={terme_expression_explication:['definition_directe'],definition_directe:['terme_expression_explication'],constat:['consequence'],consequence:['constat'],question:['probleme_enjeu'],probleme_enjeu:['question'],analogie:['scenario'],scenario:['analogie'],premiere_personne:['experience_confirmee'],experience_confirmee:['premiere_personne']};
+function hookFamily(h){
+  const s=String(h||'').trim().replace(/^[«"“]\s*/,''),n=s.split(/\s+/).filter(Boolean).length;
+  if(/root-?me/i.test(s))return 'experience_confirmee';
+  if(/\b(je|me|moi|mon|ma|mes)\b|\b[jm]['’]|\bça me|\bcela me/i.test(s))return 'premiere_personne';
+  if(/^(imaginons|prenons|supposons|dans une situation|dans un cas)/i.test(s))return 'scenario';
+  if(/^(on peut comparer|cela ressemble|ça ressemble|une façon simple de visualiser|c['’]est un peu comme|comme un |comme une )/i.test(s))return 'analogie';
+  if(/^(derrière|le terme|le mot|l['’]expression|un terme|une expression|ce terme|ce mot|ça s['’]appelle)/i.test(s))return 'terme_expression_explication';
+  if(/^(la difficulté|le défi|la question devient|l['’]enjeu|le vrai enjeu)/i.test(s))return 'probleme_enjeu';
+  if(/^(ce n['’]est pas|le problème n['’]est pas|on (pourrait )?(penser|croire|croit|pense)\b)|\bpourtant\b/i.test(s))return 'contraste';
+  if(/\?\s*$/.test(s)||/^(pourquoi|comment|que se passe|qu['’]est-ce|est-ce que|quel|quelle|et si)\b/i.test(s))return 'question';
+  if(/\b(désigne|correspond à|consiste à|signifie|veut dire)\b/i.test(s))return 'definition_directe';
+  if(/\b(mauvais(e)?|erreur|oubli|faille)\b[^.]{0,60}\b(peut|peuvent|entraîne|permet)/i.test(s))return 'consequence';
+  if(n<=10&&!/\bpeu(t|vent)\b/i.test(s))return 'phrase_courte';
+  return 'constat';
+}
+const HF_LOG={}; // compte → derniers textes générés mais pas encore en file/historique
+function logHook(a,t){const l=HF_LOG[a]||(HF_LOG[a]=[]);l.push(t);if(l.length>3)l.shift();}
+function bannedHookFams(a){
+  const q=Q.filter(x=>x.account===a&&x.type==='original').sort((x,y)=>x.scheduledAt-y.scheduledAt).map(x=>x.text);
+  const h=H.filter(x=>x.account===a&&x.type==='original').slice(0,3).reverse().map(x=>x.text);
+  const seen=new Set(),all=[];
+  [...h,...q,...(HF_LOG[a]||[])].forEach(t=>{const k=norm(t);if(!seen.has(k)){seen.add(k);all.push(t);}});
+  const ban=new Set();
+  all.slice(-3).forEach(t=>{const f=hookFamily(String(t).split('\n\n')[0]);ban.add(f);(HF_CLOSE[f]||[]).forEach(x=>ban.add(x));});
+  return ban;
+}
+const HF_REPAIR=['« {t} » : les bases, simplement.','Que recouvre « {t} » en cybersécurité ?','En cybersécurité, « {t} » désigne un domaine à part entière.','Un sujet comme « {t} » se comprend mieux étape par étape.','« {t} » paraît compliqué, pourtant les bases restent accessibles.','Le terme « {t} » revient souvent quand on parle de cybersécurité.','Un sujet comme « {t} » repose d\'abord sur quelques principes simples à poser.','On peut comparer « {t} » à un verrou : tout dépend de ce qu\'il protège.','Imaginons un utilisateur confronté à « {t} » sans en connaître les bases.','Une erreur sur « {t} » peut suffire à laisser une porte inutilement ouverte.'];
+function validHooks(d,topicName,a){
+  const all=d.a.map((ai,aIdx)=>({ai,aIdx}));
+  if(a!=='simon')return all;
+  const ban=bannedHookFams(a);
+  const ok=all.filter(x=>{const f=hookFamily(x.ai);return f!=='premiere_personne'&&!ban.has(f);});
+  if(ok.length)return ok;
+  return repairHooks(topicName,a); // jamais de famille récente réutilisée (§18) : liste vide = pas de combo
+}
+const CONCL_BAN=/^(ce que je (retiens|trouve)|cela montre que|c['’]est justement|cette notion montre|un bon rappel|à retenir|cela permet de comprendre|je continuerai|je garderai)/i;
+function preferCleanConcl(list){const ok=list.filter(c=>!CONCL_BAN.test((c.text.split('\n\n').pop()||'').trim()));return ok.length?ok:list;}
+/* ════ CORRECTIF — récupérer avant d'écarter (niveaux 1-3), jamais « je » → « on » ════
+   Phrase à la 1re personne non confirmée : réécrite en information générale/hypothèse (REPAIR, manuel),
+   dépouillée de son cadrage personnel (« Ce qui me frappe : X » → X), sinon supprimée. Corps écarté seulement si
+   plus de la moitié de son contenu repose sur un vécu non confirmé. Faits confirmés conservés (STI2D, alternance, Root-Me, débutant). */
+const FP_RE=/(?:^|[^a-zà-ÿ])(?:je|me|moi|mon|ma|mes)(?![a-zà-ÿ])|(?:^|[^a-zà-ÿ])[jm]['’]|\bon m['’]|\ben (?:cours|classe)\b|\bce week-end\b|\bcette semaine\b|\bhier\b|\bune mission\b/i;
+const CONF_RE=/terminale|sti2d|\bbts\b|\bsio\b|sisr|alternance|root-?me|débutant|cyberquest/i;
+const STRONG_RE=/\bj['’](?:ai|étais|avais)|je me suis|\bon m['’]|chez moi|\bmes (?:parents|camarades|profs|amis)|\bmon (?:prof|professeur|stage|entreprise|équipe)|\ben (?:cours|classe)\b|\bce week-end\b|une mission|\bhier\b/i;
+const ANA_RE=/^\s*(?:maintenant|depuis|résultat|du coup|donc|et |mais |en fait|sans surprise|ça|cela|ce |ces |cette |c['’]est|corrigé|aussi|alors|pourtant)/i;
+const REPAIR=[
+[/^L.ingénierie sociale me fascine/,"L'ingénierie sociale consiste à manipuler une personne plutôt qu'à attaquer directement un système technique."],
+[/^Ça me fait réfléchir à mes propres réflexes/,"Avant de donner une information sensible, une question simple s'impose : l'identité de la personne en face a-t-elle vraiment été vérifiée ?"],
+[/^On m.a appelé en se faisant passer/,"Imaginons un appel d'un faux « support technique » d'opérateur qui réclame un code reçu par SMS, soi-disant pour « vérifier l'identité ». La bonne réponse : raccrocher, puis rappeler soi-même le numéro officiel.\n\nUn code reçu par SMS valide une action. Il ne se communique jamais à un tiers, même à quelqu'un qui se présente comme un conseiller."],
+[/^Ça fait bizarre de vivre en vrai/,""],
+[/^J.ai commencé à utiliser un gestionnaire/,"Réutiliser le même mot de passe partout est l'une des erreurs les plus courantes : une seule fuite suffit alors à compromettre plusieurs comptes."],
+[/^Maintenant chaque compte a un mot de passe/,"Un gestionnaire de mots de passe permet d'avoir un mot de passe différent, long et généré automatiquement pour chaque compte, avec un seul mot de passe principal à retenir."],
+[/^C.est un des trucs les plus simples à mettre en place pour se protéger, et pourtant je ne le faisais pas/,"C'est l'un des gestes les plus simples à mettre en place pour se protéger, et pourtant beaucoup de personnes ne l'ont pas encore adopté."],
+[/^J.ai vérifié les mots de passe de mes parents/,"Vérifier régulièrement la solidité des mots de passe utilisés dans un foyer peut contribuer à limiter certains risques : ce sont souvent les mêmes partout, depuis des années."],
+[/^On a passé une soirée à tout changer/,"Changer ces mots de passe et installer un gestionnaire pour tout le foyer peut se faire en une seule séance."],
+[/^En regardant des exemples de mails de phishing/,"Certains mails de phishing sont très bien faits : logo, ton et mise en page imitent parfaitement une vraie organisation."],
+[/^Les signes que j.essaie de repérer/,"Les signes à repérer : une adresse d'expéditeur étrange, des fautes d'orthographe, et surtout un message qui met la pression pour agir vite (« votre compte sera bloqué dans 24 h », par exemple)."],
+[/^Je m.entraîne à repérer des faux mails/,"Les faux mails de phishing sont parfois très bien imités."],
+[/^Ce qui m.intéresserait de savoir/,"Une question reste ouverte : les techniques évoluent-elles vite, ou sont-ce toujours à peu près les mêmes ficelles qui reviennent ?"],
+[/^Le réflexe le plus simple que j.ai adopté/,"Le réflexe le plus simple contre le phishing : ne jamais cliquer depuis le mail ou le SMS, et retaper soi-même l'adresse du site dans le navigateur."],
+[/^Le terminal Linux, ça m.a clairement intimidé/,"Le terminal Linux peut intimider au premier abord : un écran noir, du texte, aucun bouton."],
+[/^En découvrant comment ça fonctionne/,"Les commandes sont souvent plus utiles qu'une interface graphique pour travailler directement avec un système."],
+[/^J.ai mis du temps à comprendre pourquoi autant/,"Beaucoup de personnes en cybersécurité utilisent une distribution comme Kali Linux plutôt que Windows."],
+[/^En me renseignant, j.ai découvert/,"Elle est fournie avec de nombreux outils de sécurité déjà installés, et le terminal permet d'enchaîner des actions bien plus vite qu'en cliquant partout."],
+[/^Ça me donne clairement envie de l.installer/,"L'installer dans une machine virtuelle est une façon courante de la découvrir sans toucher à son système principal."],
+[/^Je m.intéresse au pentest depuis quelques mois/,"Le pentest, ou test d'intrusion, consiste à chercher les failles d'un système avec l'autorisation de son propriétaire."],
+[/^Au début je pensais que pirater/,"Le pentest ne ressemble pas aux films, avec du code vert sur fond noir : c'est plutôt comme résoudre une enquête étape par étape."],
+[/^Je suis encore débutant, je lis beaucoup/,"Pour un débutant, les articles et les vidéos pédagogiques sont un bon point de départ pour comprendre comment ça marche."],
+[/^On me demande souvent ce qu.est le pentest/,"Une comparaison simple du pentest : c'est un peu comme tester si les portes et fenêtres d'une maison sont bien fermées, sauf que la maison est un site web ou un système informatique."],
+[/^Plus j.apprends, plus je me dis/,""],
+[/^Je pensais que .pirater légalement/,"« Pirater légalement » ne veut pas dire « ne pas se faire repérer » : c'est un cadre presque contractuel, proche de n'importe quelle prestation professionnelle."],
+[/^Ça m.a appris que ce métier/,"Ce métier demande autant de rigueur administrative que de technique pure."],
+[/^Ça change ma façon de voir le métier/,"La rigueur et la méthode comptent souvent plus que le génie technique pur, et la rigueur, ça s'apprend."],
+[/^Je garde ça en tête pour le jour/,""],
+[/^Je découvre la sécurité web en me renseignant sur PortSwigger/,""]
+];
+function flagged(x){return FP_RE.test(x)&&!(CONF_RE.test(x)&&!STRONG_RE.test(x));}
+function fixSentence(x){
+  const m=x.match(/^ce qui (?:me|m['’])[^:—]{0,80}[:—]\s*(.+)$/i);
+  if(m&&!/^(?:il|elle|ils|elles|ça|cela|ce|ces|cette|leur)\b/i.test(m[1])&&!flagged(m[1]))return m[1].charAt(0).toUpperCase()+m[1].slice(1);
+  return null;
+}
+function cleanBody(b){
+  if((/\binsa\b/i.test(b)&&!/accessibilit|pmr|fauteuil/i.test(b))||/ynov|epitech/i.test(b))return null;
+  let drop=0,tot=0,prev=false;
+  const out=b.split(/\n\n+/).map(p=>{
+    const r=REPAIR.find(e=>e[0].test(p));if(r){tot++;return r[1];}
+    const kept=[];
+    for(const x of (p.match(/[^.!?…]+(?:[.!?…]+|$)\s*/g)||[p])){
+      tot++;
+      if(!flagged(x)){if(prev&&ANA_RE.test(x)){drop++;continue;}kept.push(x);prev=false;continue;}
+      const g=fixSentence(x.trim());
+      if(g){kept.push(g+' ');prev=false;}else{drop++;prev=true;}
+    }
+    return kept.join('').trim();
+  }).filter(Boolean);
+  return drop>tot/2||!out.length?null:out.join('\n\n');
+}
+/* ════ PROMPT MAÎTRE v6 §5/§32 — accroches 1re personne non confirmées RÉÉCRITES dans la banque TS (et plus seulement filtrées) ════
+   Familles A–J variées ; jamais de simple « je »→« on ». Root-Me (expérience confirmée) conservé. Le validateur reste le garde-fou strict. */
+const HB=[
+t=>'Le terme « '+t+' » revient souvent quand on parle de cybersécurité.',
+t=>'« '+t+' » désigne un sujet de cybersécurité qui se comprend mieux en partant des bases.',
+t=>'Une erreur de configuration ou d\'usage autour de « '+t+' » peut avoir des effets en chaîne.',
+t=>'« '+t+' » paraît compliqué, pourtant les bases restent accessibles.',
+t=>'Que recouvre « '+t+' » en cybersécurité ?',
+t=>'L\'enjeu avec « '+t+' » : comprendre ce qu\'il faut protéger, et contre quoi.',
+t=>'On peut comparer la cybersécurité à la sécurité d\'une maison : « '+t+' » en est un élément parmi d\'autres.',
+t=>'Imaginons quelqu\'un qui découvre « '+t+' » pour la première fois : par où commencer ?',
+t=>'« '+t+' » : les bases, simplement.'];
+const HB_CQ=['CyberQuest est un outil d\'apprentissage ludique réalisé avec l\'aide de l\'IA.',
+'Apprendre la cybersécurité en jouant : c\'est l\'idée de CyberQuest, un projet réalisé avec l\'aide de l\'IA.',
+'Un outil d\'apprentissage ludique peut-il aider à retenir le vocabulaire de la cybersécurité ?',
+'CyberQuest : un projet d\'apprentissage, pas un produit professionnel.',
+'Imaginons un outil ludique pour réviser les notions de cybersécurité, réalisé avec l\'aide de l\'IA.'];
+(function(){let k=0;for(const th of Object.keys(TS)){const d=TS[th];
+  d.a=d.a.map((h,i)=>{if(hookFamily(h)!=='premiere_personne')return h;
+    if(AF[th])AF[th][i]='observation';
+    return th==='CyberQuest'?HB_CQ[i%HB_CQ.length]:HB[(k+i)%HB.length](th);});
+  k+=2;}})();
+const FB_BODIES=[
+"La cybersécurité repose sur trois idées de base : garder les informations confidentielles, s'assurer qu'elles ne sont pas modifiées par erreur ou par malveillance, et les garder disponibles quand on en a besoin.\n\nChaque mesure de protection, du mot de passe à la sauvegarde, sert l'une de ces trois idées.\n\nPour « {t} », on peut se poser les mêmes questions : que faut-il protéger, contre quel risque, et avec quelle règle simple ?\n\nLe vocabulaire technique vient ensuite, une fois ces repères posés.",
+"Un risque se décrit toujours avec trois éléments : ce qu'on veut protéger, ce qui peut mal tourner, et les chances que cela arrive.\n\nSur « {t} », cette grille évite de vouloir tout sécuriser en même temps : on commence par ce qui compte le plus, puis on ajoute des protections par étapes.\n\nCette démarche s'applique aussi bien à un compte personnel qu'à un réseau entier : seule la taille de ce qu'on protège change.\n\nUne protection simple et bien appliquée vaut souvent mieux qu'un dispositif complexe mal maîtrisé.",
+"Les attaques courantes exploitent rarement une faille exceptionnelle : elles profitent surtout d'un mot de passe faible, d'un logiciel pas à jour ou d'une consigne mal comprise.\n\nSur « {t} », les mêmes réflexes de base reviennent : mettre à jour, limiter les accès et vérifier avant d'agir. Un mot de passe différent par compte et la double authentification en font aussi partie.\n\nCes gestes ne demandent pas d'être expert. Ils demandent de la régularité, et ils réduisent déjà une grande partie des risques courants."];
+/* ════ PROMPT MAÎTRE DÉFINITIF — CTF/OSINT : repli factuel seul tant que les corps réparés ne sont pas relus (§20-21) ════ */
+const NO_TS=new Set(['CTF','OSINT']);
+const FB_TOPIC={
+CTF:["Un CTF (Capture The Flag) est un exercice de cybersécurité où il faut retrouver un « drapeau », une chaîne de caractères cachée dans un système volontairement vulnérable.\n\nLes défis couvrent plusieurs domaines : web, cryptographie, réseau, analyse de fichiers. Chacun demande de raisonner étape par étape plutôt que de connaître une solution toute faite.\n\nCes exercices se déroulent dans un cadre prévu pour cela, ce qui permet d'apprendre sans risque pour de vrais systèmes. Certaines compétitions se jouent en équipe, d'autres en solo, avec un classement à la clé."],
+OSINT:["L'OSINT (Open Source Intelligence) désigne la collecte d'informations accessibles publiquement : sites web, réseaux sociaux, registres officiels, images ou cartes en ligne.\n\nEn cybersécurité, ces données servent par exemple à cartographier ce qu'une organisation expose sans le savoir, avant même toute attaque. Recouper plusieurs sources permet souvent d'en apprendre plus que chacune prise séparément.\n\nLa règle de base : n'utiliser que des sources publiques, dans le respect de la loi et de la vie privée des personnes."]};
+function repairHooks(t,a){const ban=bannedHookFams(a);return HF_REPAIR.map(x=>x.split('{t}').join(t)).filter(h=>!ban.has(hookFamily(h))).map(ai=>({ai,aIdx:-1}));}
+function fixConcl(b){const P=b.split(/\n\n+/);if(P.length>=3&&CONCL_BAN.test(P[P.length-1].trim()))P.pop();return P.join('\n\n');}
+function concKey(t){const p=String(t).replace(/#\S+/g,' ').trim().split(/\n\n+/);return norm(p[p.length-1]||'').split(' ').slice(0,3).join(' ');}
+function recent3(a){
+  const q=Q.filter(x=>x.account===a&&x.type==='original').sort((x,y)=>x.scheduledAt-y.scheduledAt).map(x=>x.text);
+  const h=H.filter(x=>x.account===a&&x.type==='original').slice(0,3).reverse().map(x=>x.text);
+  const seen=new Set(),all=[];
+  [...h,...q,...(HF_LOG[a]||[])].forEach(t=>{const k=norm(t);if(!seen.has(k)){seen.add(k);all.push(t);}});
+  return all.slice(-3);
+}
+const STOPW=new Set('le la les un une des du de dans par pour sur avec sans est sont être peut peuvent plus pas ses leur leurs aux cet cette ces qui que'.split(' '));
+function selfRepeat(t){ // répétition de sens interne (§35) : deux phrases dont ≥60 % du vocabulaire utile coïncide
+  const S=String(t).replace(/#\S+/g,' ').split(/[.!?…:\n]+/).map(x=>new Set(x.toLowerCase().split(/[^a-zà-ÿ0-9]+/).filter(w=>w.length>3&&!STOPW.has(w)))).filter(z=>z.size>=4);
+  for(let i=0;i<S.length;i++)for(let j=i+1;j<S.length;j++){let n=0;S[i].forEach(w=>{if(S[j].has(w))n++;});if(n/Math.min(S[i].size,S[j].size)>=0.6)return true;}
+  return false;
+}
+const _CB=new Map();
+function tsBodies(d){if(!_CB.has(d))_CB.set(d,d.c.map(cleanBody).filter(Boolean).map(fixConcl));return _CB.get(d);}
+function wcount(t){return String(t).replace(/#\S+/g,' ').split(/\s+/).filter(Boolean).length;}
+function lenValid(t){const n=wcount(t);return n>=80&&n<=150;}
+function lenOK(l){return l.filter(c=>lenValid(c.text));}
+/* Ordre : TS réparé (sauf CTF/OSINT) → repli factuel → sinon aucun combo = génération refusée. Aucun contrôle désactivé. */
+function buildCombos(d,t,a,fin){
+  const out=[],mk=(hk,B)=>hk.forEach(({ai,aIdx})=>B.forEach(ci=>out.push({ai,aIdx,text:fin(ai,ci)})));
+  if(a!=='simon'){mk(validHooks(d,t,a),d.c);return out;}
+  const rc=new Set(recent3(a).map(concKey));
+  const okc=c=>lenValid(c.text)&&!CONCL_BAN.test((c.text.split('\n\n').pop()||'').trim())&&!rc.has(concKey(c.text))&&!selfRepeat(c.text);
+  let ok=[];
+  if(!NO_TS.has(t)){mk(validHooks(d,t,a),tsBodies(d));ok=out.filter(okc);}
+  if(!ok.length){out.length=0;mk(NO_TS.has(t)?repairHooks(t,a):validHooks(d,t,a),(FB_TOPIC[t]||[]).concat(FB_BODIES.map(x=>x.split('{t}').join(t))));ok=out.filter(okc);}
+  return ok;
+}
+function lastTag(t){const m=String(t).match(/#[^\s#]+/g);return m?m[m.length-1].toLowerCase():'';}
+function pickHashtags(topic,a){
+  let h=pickHashtags0(topic,a);
+  if(a!=='simon')return h;
+  const rec=new Set([...Q.filter(x=>x.account===a&&x.type==='original').slice(-3).map(x=>x.text),...H.filter(x=>x.account===a&&x.type==='original').slice(0,3).map(x=>x.text),...(HF_LOG[a]||[])].map(lastTag));
+  for(let i=0;i<8&&rec.has(lastTag(h));i++)h=pickHashtags0(topic,a);
+  return h;
+}
 function recordFamily(topic,aIdx,a){
   const list=recentFamilies[a]||(recentFamilies[a]=[]);
   list.push(familyOf(topic,aIdx));
@@ -2235,7 +2412,7 @@ function genOnePost(extraAvoid=[]){
       // pour ce même thème, tant qu'une alternative existe.
       const introsInQueue=Q.filter(q=>q.type==='original'&&q.topic===p.topic&&q.account===acc).map(q=>q.text);
       const combos=[];
-      d.a.forEach((ai,aIdx)=>d.c.forEach(ci=>combos.push({ai,aIdx,text:(ai+'\n\n'+ci).trim()})));
+      buildCombos(d,p.topic,acc,(ai,ci)=>(ai+'\n\n'+ci).trim()).forEach(c=>combos.push(c));
       // CORRECTION (mémoire éditoriale, §1/§5/§8 du prompt) : ce chemin de génération (planning
       // auto — genOnePost, utilisé par autoRefill/autoGen, LE plus utilisé d'après le bouton
       // "🤖 Planning automatique 7 posts") ne passait jusqu'ici par AUCUN contrôle de
@@ -2255,7 +2432,7 @@ function genOnePost(extraAvoid=[]){
       const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
       if(freshNewIntro.length) fresh=freshNewIntro;
       // Diversité de structure (consigne "VARIÉTÉ RÉELLE DES STRUCTURES") : voir applyFamilyDiversity.
-      fresh=applyFamilyDiversity(fresh,p.topic,acc);
+      fresh=applyFamilyDiversity(fresh,p.topic,acc);if(acc==='simon')fresh=lenOK(preferCleanConcl(fresh));
       if(!fresh.length) return null;
       const chosen=pick(fresh);
       return {text:(chosen.text+'\n\n'+pickHashtags(p.topic,acc)).trim(),aIdx:chosen.aIdx};
@@ -2313,13 +2490,14 @@ function genOnePost(extraAvoid=[]){
     const p=weightedTake(candidates);
     const result=freshTextFor(p);
     if(result){
-      if(acc==='simon' && !validateForReview(result.text,{autoCleanHashtags:true}).ok) continue;
+      if(acc==='simon' && (!validateForReview(result.text,{autoCleanHashtags:true}).ok || (p.type==='original'&&!lenValid(result.text)))) continue;
       // BUGFIX indépendance : la base ne doit dépendre que des posts DU MÊME compte, sinon
       // un profil très rempli retarde artificiellement l'échéance de l'autre.
       const mineQ = Q.filter(x=>x.account===acc);
       const base = mineQ.length ? Math.max(...mineQ.map(q=>q.scheduledAt)) : Date.now();
       post = {id:Date.now()+Math.floor(Math.random()*1000),text:result.text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
       if(p.type==='original'&&result.aIdx!=null) recordFamily(p.topic,result.aIdx,acc);
+      if(p.type==='original'&&acc==='simon')logHook(acc,result.text);
     }
   }
   let wasDup=false;
@@ -3474,11 +3652,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   };
   const sgFamily=topic=>sgTopicRow(topic)?.[2]||'autre';
   const sgSpecificTag=topic=>sgTopicRow(topic)?.[1]||'#Informatique';
-  const sgTags=topic=>{
-    const specific=sgSpecificTag(topic);
-    const fourth=(SG_FIXED.map(x=>x.toLowerCase()).includes(specific.toLowerCase())||SG_BANNED.some(x=>x.toLowerCase()===specific.toLowerCase()))?'#Informatique':specific;
-    return [...SG_FIXED,fourth];
-  };
+  const SG_ALT={'réseau':['#Réseau','#Informatique'],'linux':['#Linux','#Informatique'],'sécurité':['#SécuritéInformatique','#Informatique'],'menaces':['#SécuritéInformatique','#Informatique'],'données':['#RGPD','#DonnéesPersonnelles','#SécuritéInformatique'],'avancé':['#SécuritéInformatique','#Informatique']};
+  const sgTagPool=topic=>{const bad=x=>SG_FIXED.some(f=>f.toLowerCase()===x.toLowerCase())||SG_BANNED.some(b=>b.toLowerCase()===x.toLowerCase());const p=[...new Set([sgSpecificTag(topic),...(SG_ALT[sgFamily(topic)]||[])])].filter(x=>!bad(x));return p.length?p:['#Informatique'];};
+  const sgFourth=t=>{const m=String(t||'').match(/#[\p{L}\p{N}_-]+/gu)||[];return m.length>=4?m[3].toLowerCase():'';};
+  const sgRecent4=ex=>{const e=ex?sgNorm(sgNoHashtags(ex)):null;return sgHistory().filter(h=>!e||sgNorm(sgNoHashtags(h.text||''))!==e).slice(-3).map(h=>sgFourth(h.text)).filter(Boolean);};
+  const sgTags=(topic,ex)=>{const pool=sgTagPool(topic),rec=new Set(sgRecent4(ex));return [...SG_FIXED,pool.find(x=>!rec.has(x.toLowerCase()))||pool[0]];};
+  const sgTagsNoHist=topic=>[...SG_FIXED,sgTagPool(topic)[0]];
   const sgAdvancedCount5=()=>sgHistory().slice(-5).filter(x=>SG_ADVANCED.has(x.theme)).length;
   const sgRootCount7=()=>sgHistory().slice(-7).filter(x=>/root[\s-]?me/i.test(x.text)).length;
   const sgFamilyCount7=f=>{if(!f||f==='autre')return 0;return sgHistory().slice(-7).filter(x=>{const fam=x.family||sgFamily(x.theme);return fam&&fam!=='autre'&&fam===f}).length;};
@@ -3511,6 +3690,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   };
   const sgNoHashtags=t=>String(t).replace(/#[\p{L}\p{N}_-]+/gu,'').trim();
   const sgActualProgressValue=s=>{const m=String(s).match(/\d+(?:[.,]\d+)?/);return m?Number(m[0].replace(',','.')):null};
+  const sgFirstRaw=t=>String(t||'').trim().split(/\n\n/)[0].split(/(?<=[.!?…])\s+/)[0];
   function sgValidate(raw,opt={}){
     const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
@@ -3522,9 +3702,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(!opt.allowSystemHashtags && /#[\p{L}\p{N}_-]+/u.test(display))add('Hashtag présent dans le texte : les hashtags sont ajoutés par le code.');
     if(opt.allowSystemHashtags){
       const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
-      const expected=sgTags(topic).map(x=>x.toLowerCase());
+      const expected=[...SG_FIXED,...sgTagPool(topic)].map(x=>x.toLowerCase());
       if(tags.length!==4||new Set(tags.map(x=>x.toLowerCase())).size!==4||tags.some(x=>!expected.includes(x.toLowerCase())))add('Hashtags finaux non conformes : exactement 4 hashtags attendus.');
       if(SG_BANNED.some(b=>tags.some(t=>t.toLowerCase()===b.toLowerCase())))add('Hashtag interdit présent.');
+      if(opt.checkTagRepeat&&tags.length===4){const rec=new Set(sgRecent4(display)),pool=sgTagPool(topic).map(x=>x.toLowerCase());if(rec.has(tags[3].toLowerCase())&&pool.some(x=>!rec.has(x)))add('Quatrième hashtag identique à celui d’un des 3 derniers posts alors qu’une alternative pertinente existe (§31).');}
     }
     if(/(?:https?:\/\/|www\.|\b[a-z0-9-]+\.(?:com|org|fr|io|net|app|dev|eu)\b)/i.test(n))add('URL ou domaine interdit.');
     if(/^\s*#{1,6}\s|^\s*[-*+]\s|```|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|__[^_]+__/m.test(display))add('Markdown interdit.');
@@ -3579,6 +3760,14 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const bf=sgBriefFam(display),bh=history.filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).map(h=>sgBriefFam(h.text||''));
     if(bf.o!=='autre'&&bh.some(x=>x.o===bf.o))add(`Accroche de même famille (${bf.o}) qu’un des 3 derniers posts.`);
     if(bf.c!=='autre'&&bh.some(x=>x.c===bf.c))add(`Conclusion de même famille (${bf.c}) qu’un des 3 derniers posts.`);
+    /* PROMPT MAÎTRE DÉFINITIF — §13-14 familles d'accroche A–L (identique/proche vs 3 derniers), §28-29 INSA/Ynov/Epitech, §30 conclusions */
+    if(type==='technique'){
+      const hf=hookFamily(sgFirstRaw(display)),near=new Set([hf,...(HF_CLOSE[hf]||[])]);
+      history.filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).forEach(h=>{const f=hookFamily(sgFirstRaw(sgNoHashtags(h.text||'')));if(near.has(f))add(`Accroche : famille « ${hf} » identique ou proche (${f}) d’un des 3 derniers posts.`)});
+      if(CONCL_BAN.test((sentences.at(-1)||'').trim()))add('Conclusion : formule répétitive à éviter (§30).');
+      if(sentences.some(x=>flagged(x)))add('Première personne non confirmée (prompt maître §5).');
+    }
+    if(/ynov|epitech/i.test(display)||(/\binsa\b/i.test(display)&&!/accessibilit|pmr|fauteuil/i.test(display)))add('Contexte Ynov/Epitech/INSA non confirmé (§28-29).');
     return [...new Set(errors)];
   }
   function sgContext(meta){return {type:meta?.type||'technique',theme:meta?.theme||topic||'Réseau',structure:meta?.structure||'',form:meta?.form||'',prog:sgProgress(),geo:sgGeo(),names:sgNames()}};
@@ -3682,6 +3871,27 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const rnd=a=>a[Math.floor(Math.random()*a.length)];
     return `${(H[form]||H['constat'])} ${fact} ${rnd(B)} ${rnd(C)} ${rnd(E)} ${rnd(D)}`;
   }
+  /* PROMPT MAÎTRE v6 §15-16 — texte < 80 mots après nettoyage : on ENRICHIT avec une explication factuelle (jamais de remplissage, de vécu ni de « je »). */
+  const SG_TS_ALIAS={'Zero-day':'Zero Day','MFA / 2FA':'Authentification 2FA'};
+  const SG_ENR={
+   'Linux':["Linux désigne une famille de systèmes d'exploitation open source, répandue notamment sur les serveurs, qui représente beaucoup de ressources sous forme de fichiers rattachés à des utilisateurs et à des groupes.","Chaque fichier possède des droits de lecture, d'écriture et d'exécution, définis séparément pour son propriétaire, son groupe et les autres utilisateurs, ce qui permet de limiter les actions possibles."],
+   'Mots de passe':["Un mot de passe est d'autant plus difficile à deviner qu'il est long et unique : la longueur compte généralement davantage que l'ajout de quelques symboles.","Un gestionnaire de mots de passe peut générer et stocker un mot de passe différent pour chaque compte, protégé par un seul mot de passe principal."],
+   'Phishing':["Le phishing, ou hameçonnage, consiste à se faire passer pour un organisme de confiance afin d'inciter une personne à cliquer sur un lien, à ouvrir une pièce jointe ou à communiquer des identifiants.","Certains signaux peuvent alerter : une adresse d'expéditeur inhabituelle, un ton pressant, un lien dont la destination diffère du texte affiché ou une demande d'informations confidentielles."],
+   'Ingénierie sociale':["L'ingénierie sociale exploite des réflexes humains comme la confiance, l'urgence ou la volonté d'aider, plutôt qu'une faille technique, pour obtenir une information ou une action.","Un appel, un message ou une visite peuvent servir de support : vérifier l'identité de l'interlocuteur par un autre canal officiel reste une précaution simple."],
+   'Ransomware':["Un ransomware, ou rançongiciel, chiffre les fichiers d'un système puis réclame une somme d'argent en échange de la clé permettant de les récupérer.","Des sauvegardes régulières, conservées hors du réseau principal, et des mises à jour appliquées rapidement figurent parmi les mesures qui limitent l'impact de ce type d'attaque."],
+   'RGPD':["Le RGPD, ou Règlement général sur la protection des données, est un texte européen qui encadre la manière dont les organisations collectent, utilisent et conservent les données personnelles.","Il reconnaît notamment aux personnes un droit d'accès, de rectification et d'effacement de leurs données, et demande aux organisations de ne collecter que ce qui est nécessaire."],
+   'SIEM':["Un SIEM (Security Information and Event Management) collecte les journaux de nombreux équipements, les centralise et les met en relation pour faire apparaître des événements inhabituels.","Les alertes générées doivent ensuite être analysées : un SIEM peut produire de fausses alertes, d'où l'importance de règles de détection bien réglées."],
+   'SOC':["Un SOC (Security Operations Center) est une équipe, souvent équipée d'outils comme un SIEM, chargée de surveiller la sécurité d'un système d'information.","Lorsqu'une alerte est jugée sérieuse, le SOC l'analyse, détermine son ampleur puis coordonne la réponse, par exemple en isolant une machine concernée."],
+   'Pentest':["Un test d'intrusion, ou pentest, est une mission encadrée par un accord écrit qui définit précisément ce qui peut être testé, à quel moment et par quels moyens.","Il se conclut par un rapport qui décrit les faiblesses constatées, leur gravité et les corrections recommandées, afin d'aider l'organisation à les traiter."],
+   'Zero-day':["Une faille zero-day est une vulnérabilité inconnue de l'éditeur, ou sans correctif disponible, au moment où elle est exploitée.","Dans l'attente d'un correctif, des mesures comme la limitation des accès, la surveillance et la segmentation du réseau peuvent réduire l'exposition."],
+   'MFA / 2FA':["L'authentification à deux facteurs combine deux preuves d'identité de nature différente : quelque chose que l'on sait, comme un mot de passe, et quelque chose que l'on possède, comme un téléphone.","Même si un mot de passe est volé, le second facteur peut bloquer la connexion ; tous les facteurs n'offrent toutefois pas le même niveau de protection."]
+  };
+  function sgLenRepair(text,th){
+    const E=SG_ENR[th];if(!E||sgCountWords(text)>=80)return text;
+    const ps=text.split(/\n\n+/),h=ps.shift(),rest=ps.join("\n\n"),add=[];let out=text;
+    for(const e of E){add.push(e);out=[h,add.join(' '),rest].filter(Boolean).join("\n\n");if(sgCountWords(out)>=80)break;}
+    const n=sgCountWords(out);return n>=80&&n<=150?out:text;
+  }
   function sgBuildCandidate(){
     // Génération robuste : les combinaisons du catalogue sont essayées puis,
     // si elles ne sont pas conformes, le moteur change de combinaison. Aucun
@@ -3702,10 +3912,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       const th=row[0];
       const structure=sgPickStructure();
       const form=sgPickForm();
-      const d=(typeof TS!=='undefined'&&TS[th])?TS[th]:null;
+      const d=(typeof TS!=='undefined'&&(TS[th]||TS[SG_TS_ALIAS[th]]))?(TS[th]||TS[SG_TS_ALIAS[th]]):null;
       const combos=[];
       if(d&&Array.isArray(d.a)&&Array.isArray(d.c)){
-        for(const ai of d.a)for(const ci of d.c)combos.push(`${ai}\n\n${ci}`.trim());
+        for(const ai of d.a)for(const ci of (NO_TS.has(th)?[]:tsBodies(d)))combos.push(sgLenRepair((ai+"\n\n"+ci).trim(),th));
       }
       const shuffled=combos.sort(()=>Math.random()-.5);
       const maxComb=Math.min(12,shuffled.length);
@@ -3713,7 +3923,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
         let text=sgEnsureForm(shuffled[i],form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
         for(let attempt=0;attempt<2;attempt++){
           const e=sgValidate(text,{type:'technique',topic:th,structure,form});
-          if(!e.length)return {text,theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
+          if(!e.length)return {text,src:'ts',theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
           const alt=shuffled[(i+attempt+1)%shuffled.length];
           if(alt)text=sgEnsureForm(alt,form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
         }
@@ -3723,7 +3933,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       for(let k=0;k<10;k++){
         const fallback=sgFallbackText(th,form);
         const ferr=sgValidate(fallback,{type:'technique',topic:th,structure,form});
-        if(!ferr.length)return {text:fallback,theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
+        if(!ferr.length)return {text:fallback,src:'repli',theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
       }
     }
     return null;
@@ -3734,8 +3944,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const text=String(candidate||'').trim();const display=text.replaceAll(SG_TOKEN,sgProgress());
     const errors=sgValidate(display,{...meta,allowSystemHashtags:false});
     if(errors.length)return {ok:false,errors};
-    const tags=sgTags(meta.theme||sgLastMeta?.theme||topic);const full=(display+'\n\n'+tags.join(' ')).trim();
-    const finalErrors=sgValidate(full,{...meta,allowSystemHashtags:true});
+    const tags=sgTags(meta.theme||sgLastMeta?.theme||topic,display);const full=(display+'\n\n'+tags.join(' ')).trim();
+    const finalErrors=sgValidate(full,{...meta,allowSystemHashtags:true,checkTagRepeat:true});
     if(finalErrors.length)return {ok:false,errors:finalErrors};
     return {ok:true,text:display,raw:text,hashtags:tags,full,meta};
   }
@@ -3753,7 +3963,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(acc!=='simon'){toast('La relecture verrouillée concerne le compte Simon.','in');return;}
     const text=(document.getElementById('po')?.innerText||'').trim();if(!text){toast('Aucun texte à relire.','er');return;}
     const meta=sgLastMeta||{type:'technique',theme:topic};
-    const expected=sgTags(meta.theme||topic);
+    const expected=sgTags(meta.theme||topic,text);
     // Les hashtags sont gérés exclusivement par le code : on retire toute
     // version affichée puis on pose la liste canonique attendue. Cela évite
     // qu'un ancien rendu ou une variante de hashtag bloque la relecture.
@@ -3770,13 +3980,13 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const po=document.getElementById('po');let text=(po?.innerText||'').trim();if(!text){toast('Génère d’abord un post','er');return false;}
     const meta=sgLastMeta||{type:'technique',theme:topic,structure:'',form:''};
     let display=text.replaceAll(SG_TOKEN,sgProgress());
-    const releaseExpected=sgTags(meta.theme||topic);
+    const releaseExpected=sgTags(meta.theme||topic,text);
     const releaseBody=display.replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
     display=(releaseBody+'\n\n'+releaseExpected.join(' ')).trim();
     if(po&&po.innerText!==display){po.innerText=display;renderPost(display);}
     const errors=sgValidate(display,{...meta,allowSystemHashtags:true});
     if(errors.length){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · '),'er');return false;}
-    const expected=sgTags(meta.theme);const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
+    const expected=sgTags(meta.theme,display);const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
     if(tags.length===0){
       text=(display+'\n\n'+expected.join(' ')).trim();
       if(po){po.innerText=text;renderPost(text)}
@@ -3834,7 +4044,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(!result||!prepared?.ok)return {post:null,wasDup:false};
     const mine=Q.filter(q=>q.account==='simon');
     const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
-    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:'original',topic:result.theme,label:TL.original,scheduledAt:base+48*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form};
+    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:'original',topic:result.theme,label:TL.original,scheduledAt:base+48*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form,sgSrc:result.src};
     Q.push(post);
     if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;
     return {post,wasDup:false};
@@ -3880,7 +4090,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const test=(name,fn)=>{try{const ok=!!fn();results.push({name,ok,detail:ok?'':'échec'});}catch(e){results.push({name,ok:false,detail:String(e?.message||e)})}};
     const expectErrors=(name,text,opt,isolated=true)=>test(name,()=>{const run=()=>{const e=sgValidate(text,opt);if(!e.length)throw new Error('aucune erreur détectée alors qu’une erreur était attendue');return true;};return isolated?withHistory([],[],run):run();});
     const expectClean=(name,text,opt,isolated=true)=>test(name,()=>{const run=()=>{const e=sgValidate(text,opt);if(e.length)throw new Error(e.join(' · '));return true;};return isolated?withHistory([],[],run):run();});
-    const valid='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau. Cette première approche m\'aide aussi à mieux distinguer les rôles des différents services réseau.';
+    const valid='Le DNS permet notamment de comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Cette notion compte dans le réseau, car elle intervient avant de nombreux échanges. Cette première approche permet aussi de mieux distinguer les rôles des différents services réseau.';
     const validMeta={type:'technique',theme:'DNS',structure:'Découverte',form:'En découvrant'};
     const fullValid=valid+'\n\n#STI2D #Découverte #Cybersécurité #DNS';
     const oldH=Array.isArray(H)?H.slice():null, oldQ=Array.isArray(Q)?Q.slice():null;
@@ -3888,7 +4098,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const resetHistory=(h=[],q=[])=>{if(Array.isArray(H)){H.length=0;H.push(...h)}if(Array.isArray(Q)){Q.length=0;Q.push(...q)}};
     const make=(theme,extra={})=>({id:Math.random(),account:'simon',text:extra.text||valid,topic:theme,theme,structure:extra.structure||'Découverte',form:extra.form||'En découvrant',sgFamily:extra.family||sgFamily(theme),publishedAt:extra.ts||Date.now()});
     const withHistory=(h,q,fn)=>{try{resetHistory(h,q);acc='simon';topic='';return fn()}finally{resetHistory(oldH||[],oldQ||[]);acc=oldAcc;topic=oldTopic}};
-    const tagSet=(theme)=>sgTags(theme).map(x=>x.toLowerCase());
+    const tagSet=(theme)=>sgTagsNoHist(theme).map(x=>x.toLowerCase());
 
     // 1 — Intégrité du catalogue : thèmes, structures, formulations, familles et tags.
     test('Catalogue : 47 thèmes intégrés',()=>SG_THEME_ROWS.length===47);
@@ -3897,11 +4107,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     test('Catalogue : 5 structures',()=>Object.keys(SG_STRUCT).length===5);
     test('Catalogue : chaque thème a un hashtag spécifique',()=>SG_THEME_ROWS.every(r=>/^#[\p{L}\p{N}_-]+$/u.test(r[1])));
     test('Catalogue : familles renseignées',()=>SG_THEME_ROWS.every(r=>['réseau','linux','sécurité','menaces','données','avancé'].includes(r[2])));
-    test('Hashtags techniques : exactement 4',()=>SG_THEME_ROWS.every(r=>sgTags(r[0]).length===4));
-    test('Hashtags techniques : 3 fixes',()=>SG_THEME_ROWS.every(r=>sgTags(r[0]).slice(0,3).join('|')===SG_FIXED.join('|')));
-    test('Hashtags techniques : 4e spécifique et distinct',()=>SG_THEME_ROWS.every(r=>{const t=sgTags(r[0]);return t[3]!==t[0]&&t[3]!==t[1]&&t[3]!==t[2]}));
-    test('Hashtags interdits absents du générateur',()=>SG_THEME_ROWS.every(r=>!SG_BANNED.some(b=>sgTags(r[0]).some(t=>t.toLowerCase()===b.toLowerCase()))));
-    test('Pentest → hashtag #Débutant',()=>sgTags('Pentest')[3]==='#Débutant');
+    test('Hashtags techniques : exactement 4',()=>SG_THEME_ROWS.every(r=>sgTagsNoHist(r[0]).length===4));
+    test('Hashtags techniques : 3 fixes',()=>SG_THEME_ROWS.every(r=>sgTagsNoHist(r[0]).slice(0,3).join('|')===SG_FIXED.join('|')));
+    test('Hashtags techniques : 4e spécifique et distinct',()=>SG_THEME_ROWS.every(r=>{const t=sgTagsNoHist(r[0]);return t[3]!==t[0]&&t[3]!==t[1]&&t[3]!==t[2]}));
+    test('Hashtags interdits absents du générateur',()=>SG_THEME_ROWS.every(r=>!SG_BANNED.some(b=>sgTagsNoHist(r[0]).some(t=>t.toLowerCase()===b.toLowerCase()))));
+    test('Pentest → hashtag #Débutant',()=>sgTagsNoHist('Pentest')[3]==='#Débutant');
     test('Formulations : une formulation ancienne revient dans le pool',()=>{const recent=new Set([SG_FORMS[1],SG_FORMS[2],SG_FORMS[3]]);return SG_FORMS.includes(SG_FORMS[0])&&!recent.has(SG_FORMS[0]);});
     test('Moteur Nicolas d’origine conservé',()=>typeof sgOld.genPost==='function'&&typeof sgOld.copyPost==='function'&&typeof sgOld.publishLinkedIn==='function'&&document.getElementById('btn-n')!==null);
     test('RunTest : historique réel protégé',()=>{const beforeH=JSON.stringify(H),beforeQ=JSON.stringify(Q);withHistory([],[],()=>true);return JSON.stringify(H)===beforeH&&JSON.stringify(Q)===beforeQ;});
