@@ -3566,7 +3566,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       for(const h of history){
         const hs=sgSentences(h.text),a=sgSig(sgNoHashtags(display)).filter(w=>!themeSet.has(w)),b=sgSig(sgNoHashtags(h.text)).filter(w=>!sgThemeWords(h.theme).has(w));
         if(a.length>=4&&b.length>=4){const A=new Set(a),B=new Set(b);let common=0;A.forEach(x=>B.has(x)&&common++);const sim=common/Math.min(A.size,B.size)*100;if(sim>=70)add(`Similarité ${Math.round(sim)} % avec un post récent.`)}
-        if(sentences[0]&&hs[0]&&sgOverlap(sentences[0],hs[0],themeSet)>=60)add(`Accroche trop proche d’un post récent : « ${sentences[0].slice(0,70)} »`);
+        if(sentences[0]&&hs[0]){const hookA=sgNorm(sentences[0]),hookB=sgNorm(hs[0]);if(hookA===hookB||sgOverlap(sentences[0],hs[0],themeSet)>=60)add(`Accroche trop proche d’un post récent : « ${sentences[0].slice(0,70)} »`);}
         if(sentences.at(-1)&&hs.at(-1)&&sgOverlap(sentences.at(-1),hs.at(-1),themeSet)>=60)add(`Conclusion trop proche d’un post récent : « ${sentences.at(-1).slice(0,70)} »`);
       }
       if(sgFamilyCount7(sgFamily(topic))>=2)add(`Famille « ${sgFamily(topic)} » déjà utilisée 2 fois dans les 7 derniers posts.`);
