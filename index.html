@@ -3705,16 +3705,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const text=(document.getElementById('po')?.innerText||'').trim();if(!text){toast('Aucun texte à relire.','er');return;}
     const meta=sgLastMeta||{type:'technique',theme:topic};
     const expected=sgTags(meta.theme||topic);
-    const existing=[...text.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
-    let finalText=text;
-    if(existing.length===0){
-      finalText=(text+'\n\n'+expected.join(' ')).trim();
-      if(po){po.innerText=finalText;renderPost(finalText)}
-    }else if(existing.length===4&&existing.every((t,i)=>t.toLowerCase()===expected[i].toLowerCase())){
-      finalText=text;
-    }else{
-      toast('Relecture impossible : hashtags finaux non conformes.','er');sgSetGate(false);return;
-    }
+    // Les hashtags sont gérés exclusivement par le code : on retire toute
+    // version affichée puis on pose la liste canonique attendue. Cela évite
+    // qu'un ancien rendu ou une variante de hashtag bloque la relecture.
+    const bodyWithoutTags=text.replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+    const finalText=(bodyWithoutTags+'\n\n'+expected.join(' ')).trim();
+    if(po){po.innerText=finalText;renderPost(finalText)}
     const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true});
     if(errors.length){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
     sgSetGate(true);toast('✓ Relecture humaine enregistrée.','ok');
@@ -3724,7 +3720,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(acc!=='simon')return true;
     const po=document.getElementById('po');let text=(po?.innerText||'').trim();if(!text){toast('Génère d’abord un post','er');return false;}
     const meta=sgLastMeta||{type:'technique',theme:topic,structure:'',form:''};
-    const display=text.replaceAll(SG_TOKEN,sgProgress());
+    let display=text.replaceAll(SG_TOKEN,sgProgress());
+    const releaseExpected=sgTags(meta.theme||topic);
+    const releaseBody=display.replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+    display=(releaseBody+'\n\n'+releaseExpected.join(' ')).trim();
+    if(po&&po.innerText!==display){po.innerText=display;renderPost(display);}
     const errors=sgValidate(display,{...meta,allowSystemHashtags:true});
     if(errors.length){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · '),'er');return false;}
     const expected=sgTags(meta.theme);const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
