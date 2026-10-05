@@ -3599,6 +3599,35 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgPrec=x=>{const y=String(x).replace(/(?:^|\n)\s*\d+\s*[\/.)]\s*/g,' ').replace(/«[^»]*»|"[^"]*"|“[^”]*”/g,' ').replace(/\b(?:2FA|MFA|STI2D|IPv[46]|TCP\/IP|HTTP\/\d|802\.\d+|SHA-?\d+|AES-?\d*)\b/gi,' ');return /\d|millions?|milliards?|quelques (?:secondes|minutes|heures|jours)|amende|%/i.test(y);};
   const SG_CONCL_FAM=[['retenir',/^(?:ce que je retiens|à retenir|retenons|je retiens)/],['montre',/^(?:cela|ça|cette notion|cet exemple|ce point|c'est un exemple qui) (?:montre|illustre|rappelle)/],['comprendre',/^(?:cela|ça|cette notion|ce point) permet (?:de |d')(?:mieux )?comprendre/],['justement',/^(?:c'est )?justement/],['intérêt',/^(?:ce que je trouve|ce qui m'intéresse|ce qui est intéressant)/],['rappel',/^(?:un|le) (?:bon )?rappel/],['notion',/^c'est une notion que/],['apprendre',/^je (?:continuerai|garderai|poursuivrai|reviendrai)/]];
   const sgConclFam=t=>{const S=sgSentences(sgNoHashtags(String(t))),l=sgNorm(S[S.length-1]||'');const f=SG_CONCL_FAM.find(x=>x[1].test(l));return f?f[0]:'autre';};
+  // V7.2 — Contrôle strict « accroche trop proche » : comparaison dédiée aux accroches publiées uniquement.
+  const SG_HOOK_GENERIC=new Set('une un le la les des de du et en pour avec sans sur dans par au aux ce cette ces c est que qui quoi notion sécurité securite système systeme outil outils partie point exemple rappel idée idee sujet thème theme comprendre permet faire avoir être etre très tres plus comme quand comment pourquoi avec pour dans sur vers entre après apres avant nouveau nouvelle important importante'.split(/\s+/));
+  const sgHookTokens=t=>sgNorm(String(t||'')).replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(Boolean);
+  const sgHookNorm=t=>sgHookTokens(t).join(' ');
+  const sgHookNgrams=(tokens,n)=>{const out=[];for(let i=0;i<=tokens.length-n;i++){const g=tokens.slice(i,i+n).join(' ');if(g.split(' ').some(w=>!SG_HOOK_GENERIC.has(w)))out.push(g)}return out};
+  const sgHookLev=(a,b)=>{const A=[...a],B=[...b],d=Array.from({length:A.length+1},()=>Array(B.length+1).fill(0));for(let i=0;i<=A.length;i++)d[i][0]=i;for(let j=0;j<=B.length;j++)d[0][j]=j;for(let i=1;i<=A.length;i++)for(let j=1;j<=B.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(A[i-1]===B[j-1]?0:1));return d[A.length][B.length]};
+  function sgHookSimilarity(candidate,historical,theme=''){
+    const A=sgHookTokens(candidate),B=sgHookTokens(historical);if(A.length<3||B.length<3)return {score:0,commonNgrams:0,charScore:0,editScore:0,commonSegments:[]};
+    const na=sgHookNorm(candidate),nb=sgHookNorm(historical);if(na===nb)return {score:100,commonNgrams:Math.min(3,A.length-1,B.length-1),charScore:1,editScore:1,commonSegments:[na]};
+    const ngA=[...new Set([...sgHookNgrams(A,2),...sgHookNgrams(A,3)])],ngB=new Set([...sgHookNgrams(B,2),...sgHookNgrams(B,3)]),common=ngA.filter(x=>ngB.has(x));
+    const sigA=A.filter(w=>!SG_HOOK_GENERIC.has(w)&&!sgThemeWords(theme).has(w)),sigB=B.filter(w=>!SG_HOOK_GENERIC.has(w)&&!sgThemeWords(theme).has(w));
+    if(sigA.length<2||sigB.length<2)return {score:0,commonNgrams:common.length,charScore:0,editScore:0,commonSegments:common};
+    const edit=1-sgHookLev(na,nb)/Math.max(na.length,nb.length);const char=common.filter(x=>x.split(' ').length>=2).length/Math.max(1,Math.min(ngA.length,ngB.length));
+    const score=Math.round((Math.max(char,common.length>=2?.7:0)*.55+edit*.45)*100);
+    return {score,commonNgrams:common.length,charScore:char,editScore:edit,commonSegments:common.slice(0,8)};
+  }
+  function sgPublishedHookHistory(){
+    const seen=new Set(),out=[];
+    for(const h of sgHistory().filter(x=>x&&x.account==='simon'&&x.text&&x.H)){
+      const hook=sgFirstRaw(sgNoHashtags(h.text));const norm=sgHookNorm(hook);if(!norm||seen.has(norm))continue;seen.add(norm);out.push({...h,hook});
+    }
+    return out.sort((a,b)=>(Number(a.ts)||0)-(Number(b.ts)||0));
+  }
+  function sgCheckHookV72(candidate,theme=''){
+    const history=sgPublishedHookHistory();let best=null;
+    for(const h of history){const r=sgHookSimilarity(candidate,h.hook,theme);if(!best||r.score>best.score)best={...r,hook:h.hook};}
+    const decision=Boolean(best&&(best.score>=78&&((best.commonNgrams>=2&&best.charScore>=.55)||(best.commonNgrams>=1&&best.charScore>=.75&&best.editScore>=.62)||(best.editScore>=.82&&best.commonSegments.length>=1))));
+    return {decision,best,compared:history.length};
+  }
   function sgValidate(raw,opt={}){
     const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
@@ -3662,9 +3691,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       for(const h of history){
         const hs=sgSentences(sgNoHashtags(h.text)),a=sgSig(sgNoHashtags(display)).filter(w=>!themeSet.has(w)),b=sgSig(sgNoHashtags(h.text)).filter(w=>!sgThemeWords(h.theme).has(w));
         if(a.length>=4&&b.length>=4){const A=new Set(a),B=new Set(b);let common=0;A.forEach(x=>B.has(x)&&common++);const sim=common/Math.min(A.size,B.size)*100;if(sim>=70)add(`Similarité ${Math.round(sim)} % avec un post récent.`)}
-        if(sentences[0]&&hs[0]){const hookA=sgNorm(sentences[0]),hookB=sgNorm(hs[0]);if(hookA===hookB||sgOverlap(sentences[0],hs[0],themeSet)>=60)add(`Accroche trop proche d’un post récent : « ${sentences[0].slice(0,70)} »`);}
+
         if(sentences.at(-1)&&hs.at(-1)&&sgOverlap(sentences.at(-1),hs.at(-1),themeSet)>=60)add(`Conclusion trop proche d’un post récent : « ${sentences.at(-1).slice(0,70)} »`);
       }
+      const hookV72=sgCheckHookV72(sentences[0]||'',topic);
+      if(hookV72.decision&&hookV72.best)add(`Accroche trop proche d’un post récent : « ${hookV72.best.hook.slice(0,70)} »`);
       const currentFamily=sgFamily(topic);if(currentFamily!=='autre'&&sgFamilyCount7(currentFamily)>=2)add(`Famille « ${currentFamily} » déjà utilisée 2 fois dans les 7 derniers posts.`);
       if(SG_ADVANCED.has(topic)&&sgAdvancedCount5()>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
     }
