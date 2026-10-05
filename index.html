@@ -4375,7 +4375,10 @@ function check(t,prev){const e=[],ss=sents(t),b=body(t),tg=tagsOf(t),hook=ss[0]|
  if(/ynov|epitech|tryhackme|portswigger|hackthebox/i.test(b)||(/\binsa\b/i.test(b)&&!/accessibilit|pmr|fauteuil/i.test(b)))e.push(['contexte interdit',b.slice(0,80)]);
  if(/cyberquest/i.test(b)){if(!/apprentissage/i.test(b)||!/\bIA\b/.test(b))e.push(['CyberQuest',"formule « outil/projet d'apprentissage ludique réalisé avec l'aide de l'IA » absente"]);
   if(/gamifi|produit professionnel|solution (?:professionnelle|commerciale)|(?:tout|entièrement|développé) seul|\b(?:bug|quiz|score|défi|mini-défi)\b|session de test|week-end|difficulté|rencontr/i.test(b))e.push(['CyberQuest','expérience/présentation non confirmée']);}
- const hf=fam(hook);prev.forEach(p=>{const ph=sents(p)[0]||'',pf=fam(ph);if(close(hf,pf))e.push(['accroche famille',hf+'~'+pf+' | '+hook.slice(0,70)+'  <=  '+ph.slice(0,70)]);else if(first3(hook)===first3(ph))e.push(['accroche 3 mots',first3(hook)]);});
+ // V7.2 : le vérificateur indépendant doit utiliser exactement la même classification
+ // et les mêmes proximités que le générateur principal. Le vieux test « 3 mots » est supprimé :
+ // il rejetait artificiellement des accroches différentes partageant un début générique.
+ const hf=hookFamily(hook);prev.forEach(p=>{const ph=sents(p)[0]||'',pf=hookFamily(ph),near=new Set([hf,...(HF_CLOSE[hf]||[])]);if(near.has(pf))e.push(['accroche famille',hf+'~'+pf+' | '+hook.slice(0,70)+'  <=  '+ph.slice(0,70)]);});
  if(BAN_CONCL.test(concl.trim()))e.push(['conclusion interdite',concl.slice(0,70)]);
  prev.forEach(p=>{const pc=(sents(p).pop()||'');if(first3(concl)===first3(pc)||cfam(concl)===cfam(pc))e.push(['conclusion répétée',first3(concl)+' | '+cfam(concl)]);});
  const qt=(hook.match(/«\s*([^»]+?)\s*»/)||[])[1],nb=norm(ss.slice(1).join(' ')).replace(/-/g,' ');if(qt&&!norm(qt).replace(/-/g,' ').split(/\s+/).filter(w=>w.length>=3&&!STOP.has(w)).concat(norm(qt).replace(/-/g,' ')).some(x=>nb.includes(x.slice(0,Math.min(x.length,6)))))e.push(['cohérence accroche/corps','terme « '+qt+' » absent du corps']);
