@@ -439,6 +439,15 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <div class="fld" style="margin:0"><label style="font-size:10px">Zone candidature</label><input id="sg-geo" value="Rennes" placeholder="Rennes" style="padding:7px 8px;font-size:12px"></div>
       </div>
       <div class="fld" style="margin:7px 0 0"><label style="font-size:10px">Noms à protéger (séparés par des virgules)</label><input id="sg-names" placeholder="Lycée, professeur…" style="padding:7px 8px;font-size:12px"></div>
+      <div id="vi-box" style="margin-top:9px;padding-top:9px;border-top:1px dashed var(--border)">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">🔎 Vérificateur indépendant (V7 §50)</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-c" id="vi-run-full" onclick="window.viRun&&viRun(7)" style="flex:1 1 150px;min-height:42px;font-size:12px">▶ Campagne 1 050</button>
+          <button class="btn btn-c" id="vi-run-quick" onclick="window.viRun&&viRun(1)" style="flex:1 1 120px;min-height:42px;font-size:12px">⚡ Test rapide 150</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:5px;line-height:1.45">7 séries × 5 simulations × 30 générations. Ta file, ton historique et la synchro cloud sont mis de côté pendant le test, puis restaurés.</div>
+        <div id="vi-out"></div>
+      </div>
     </div>
     <button class="btn btn-p" onclick="genPost()">⚡ Générer le post</button>
     <div class="pw" id="pw">
@@ -827,7 +836,6 @@ const TS = {
       "Que recouvre « Pentest » en cybersécurité ?"
     ],
     "c": [
-      "1/ La patience compte plus que la technique — chercher longtemps avant de trouver a l'air d'être la norme, pas l'exception.\n\n2/ Noter ce qu'on ne comprend pas aide à avancer plus qu'à vouloir tout résoudre d'un coup.\n\n3/ La communauté a l'air hyper accessible pour un débutant qui pose des questions simples."
     ]
   },
   "SOC": {
@@ -835,7 +843,7 @@ const TS = {
       "Une erreur de configuration ou d'usage autour de « SOC » peut avoir des effets en chaîne.",
       "« SOC » paraît compliqué, pourtant les bases restent accessibles.",
       "Que recouvre « SOC » en cybersécurité ?",
-      "Un truc qui surprend avec le sujet : certaines attaques restent invisibles plusieurs mois avant d'être repérées.",
+      "Certaines attaques peuvent passer inaperçues un long moment avant d'être repérées.",
       "On peut comparer la cybersécurité à la sécurité d'une maison : « SOC » en est un élément parmi d'autres."
     ],
     "c": []
@@ -864,14 +872,14 @@ const TS = {
     "a": [
       "« Ransomware » : les bases, simplement.",
       "Le terme « Ransomware » revient souvent quand on parle de cybersécurité.",
-      "Une boulangerie bloquée 3 jours par un ransomware. Pas une multinationale, une boulangerie de quartier.",
+      "Imaginons une petite boulangerie dont les fichiers sont chiffrés par un ransomware : pas besoin d'être une multinationale pour être visé.",
       "Le pire dans les ransomwares, c'est que la faille de départ est souvent bête comme chou.",
       "« Ransomware » paraît compliqué, pourtant les bases restent accessibles."
     ],
     "c": [
-      "Trois constats reviennent souvent dans les ressources publiques consacrées aux ransomwares :\n\n1/ Ils touchent autant les petites structures que les grandes.\n\n2/ Le point d'entrée est souvent humain : un mail piégé, un mot de passe faible.\n\n3/ Les sauvegardes régulières comptent parmi les protections les plus efficaces, avant même les outils compliqués.\n\nDes bases simples, qui contribuent déjà à limiter l'impact d'une attaque.",
-      "Certaines entreprises payent la rançon et ne récupèrent même pas tous leurs fichiers. Ça remet les idées en place sur les ransomwares.\n\nAucune garantie, juste un pari risqué. Ça montre bien que prévenir coûte toujours moins cher que guérir, même en informatique.",
-      "Le conseil de base (sauvegarder ailleurs, régulièrement) existe depuis toujours, mais visiblement il est encore trop peu appliqué en vrai."
+      "Trois idées simples à retenir sur les ransomwares :\n\n1/ Ça peut toucher aussi bien les petites structures que les grandes.\n\n2/ Le point d'entrée est souvent humain : un mail, un mot de passe faible.\n\n3/ Les sauvegardes régulières comptent parmi les protections les plus efficaces, avant même les outils compliqués.\n\nDes bases simples, qui gagnent à être appliquées régulièrement.",
+      "Certaines entreprises qui paient la rançon ne récupèrent pas tous leurs fichiers.\n\nPayer n'assure rien : c'est un pari risqué. Prévenir, avec des sauvegardes et des mises à jour, est en général moins coûteux que réparer après coup.",
+      "Le conseil de base reste le même : sauvegarder régulièrement et conserver une copie hors du réseau principal, pour pouvoir restaurer ses données."
     ]
   },
   "Phishing": {
@@ -883,29 +891,28 @@ const TS = {
     ],
     "c": [
       "1/ Toujours vérifier l'adresse complète de l'expéditeur, pas juste le nom affiché.\n\n2/ Se méfier de toute urgence artificielle (« agissez immédiatement »).\n\n3/ Ne jamais cliquer depuis le mail, aller directement sur le site officiel.\n\nRien de très technique, juste de la méfiance saine.",
-      "Le réflexe le plus simple contre le phishing : ne jamais cliquer depuis le mail ou le SMS, et retaper soi-même l'adresse du site dans le navigateur.\n\nÇa prend un instant de plus et ça évite déjà pas mal de pièges, même les mieux imités."
+      "Le réflexe le plus simple contre le phishing : ne jamais cliquer depuis le mail ou le SMS, et retaper soi-même l'adresse du site dans le navigateur.\n\nCette précaution évite déjà pas mal de pièges, même les mieux imités."
     ]
   },
   "Zero Day": {
     "a": [
       "« Zero Day » paraît compliqué, pourtant les bases restent accessibles.",
       "Que recouvre « Zero Day » en cybersécurité ?",
-      "Une faille que personne ne connaît encore, même pas ceux qui ont créé le logiciel. Ça donne le vertige.",
+      "Une faille que personne ne connaît encore, même pas ceux qui ont créé le logiciel.",
       "Les zero day, c'est un peu la définition même de l'imprévu en cybersécurité.",
       "Imaginons quelqu'un qui découvre « Zero Day » pour la première fois : par où commencer ?"
     ],
     "c": [
       "Tant que personne ne le découvre, la porte semble sûre. Le jour où quelqu'un de malveillant le trouve avant les autres, c'est l'urgence.\n\nÇa montre que la sécurité, c'est jamais vraiment \"fini\".",
-      "Même les systèmes les mieux protégés peuvent avoir une faille que littéralement personne ne connaît encore.\n\nCe qui compte alors, c'est la vitesse de réaction une fois la faille découverte.",
-      "Un mur peut sembler solide alors qu'il cache une fissure que personne n'a encore repérée : une faille zero-day fonctionne un peu de la même façon.\n\nTant qu'elle reste inconnue de l'éditeur, aucun correctif n'existe, ce qui rend ce type de faille difficile à anticiper.",
-      "Le délai entre la découverte d\'une faille zero-day et la diffusion d\'un correctif varie beaucoup d\'un cas à l\'autre.\n\nLa réactivité compte donc autant que la prévention."
+      "Même les systèmes les mieux protégés peuvent avoir une faille que personne ne connaît encore.\n\nCe qui compte alors, c'est la vitesse de réaction une fois la faille découverte.",
+      "Entre la découverte d'une faille zero-day et la publication d'un correctif, les systèmes peuvent rester exposés pendant un certain délai.\n\nLa réactivité compte autant que la prévention."
     ]
   },
   "SIEM": {
     "a": [
       "L'enjeu avec « SIEM » : comprendre ce qu'il faut protéger, et contre quoi.",
       "On peut comparer la cybersécurité à la sécurité d'une maison : « SIEM » en est un élément parmi d'autres.",
-      "Regarder des logs défiler en direct, c'est très différent de juste lire une définition dans un cours."
+      "Un journal d'événements isolé et des journaux centralisés ne racontent pas la même histoire."
     ],
     "c": [
       "1/ Ça centralise des infos qui, séparées, ne veulent rien dire.\n\n2/ Ça sert autant à remonter le fil d'une attaque après coup qu'à la voir en direct.\n\n3/ Le plus dur n'est pas de voir les alertes, c'est de ne pas se noyer dedans.\n\nUn outil bien moins clinquant qu'un film de piratage, mais clairement utile."
@@ -945,7 +952,7 @@ const TS = {
       "On peut comparer la cybersécurité à la sécurité d'une maison : « Cryptographie » en est un élément parmi d'autres."
     ],
     "c": [
-      "1/ Chiffrer, c'est transformer un message pour le rendre illisible sans la bonne clé.\n\n2/ Il existe deux grandes familles : une clé unique partagée, ou une paire clé publique/clé privée.\n\n3/ C'est ce qui protège concrètement les mots de passe et les paiements en ligne.\n\nUn sujet exigeant, mais dont les principes de base restent accessibles.",
+      "1/ Chiffrer, c'est transformer un message pour le rendre illisible sans la bonne clé.\n\n2/ Il existe deux grandes familles : une clé unique partagée, ou une paire clé publique/clé privée.\n\n3/ Le chiffrement intervient par exemple dans la protection des échanges et des paiements en ligne.\n\nLe chiffrement reste l'une des bases de la protection des données.",
       "Deviner par force brute certaines clés de chiffrement modernes demanderait, en théorie, un temps considérable, même avec la puissance de calcul actuelle.\n\nCes mécanismes, invisibles au quotidien, reposent sur des calculs très difficiles à inverser sans la clé."
     ]
   },
@@ -958,7 +965,7 @@ const TS = {
       "« RGPD » : les bases, simplement."
     ],
     "c": [
-      "Le détail intéressant : la sanction ne venait pas d'un piratage, mais du simple fait de ne pas avoir mis en place les mesures de protection attendues.\n\nLe RGPD, ce n'est pas juste réagir après coup, c'est anticiper."
+      "Le RGPD ne vise pas seulement les piratages : une organisation peut aussi être sanctionnée si elle n'a pas mis en place les mesures de protection attendues.\n\nLe RGPD, ce n'est pas juste réagir après coup, c'est anticiper."
     ]
   },
   "Mots de passe": {
@@ -972,20 +979,20 @@ const TS = {
     "c": [
       "1/ Un gestionnaire de mots de passe pour ne plus réutiliser les mêmes.\n\n2/ Des phrases longues plutôt que des mots compliqués mais courts.\n\n3/ La double authentification partout où c'est possible.\n\nRien de très technique, mais ça change vraiment la donne.",
       "Vérifier régulièrement la solidité des mots de passe utilisés dans un foyer peut contribuer à limiter certains risques : ce sont souvent les mêmes partout, depuis des années.\n\nChanger ces mots de passe et installer un gestionnaire pour tout le foyer peut se faire en une seule séance.",
-      "\"123456\". \"password\". Toujours dans le top des mots de passe les plus utilisés au monde, encore aujourd'hui.\n\nAprès tout ce qu'on apprend sur les risques, ça montre que le problème n'est pas technique, il est humain."
+      "Les mots de passe « 123456 » ou « password » figurent régulièrement dans les listes des mots de passe les plus courants.\n\nLe risque ne vient pas d'abord de la technique, mais des habitudes : un mot de passe simple se devine vite."
     ]
   },
   "Authentification 2FA": {
     "a": [
       "« Authentification 2FA » : les bases, simplement.",
       "Un code reçu par appli en plus du mot de passe : voilà un truc simple qui protège vraiment beaucoup.",
-      "5 minutes par compte pour rendre un piratage beaucoup, beaucoup plus difficile. Le calcul est vite fait.",
+      "Quelques réglages suffisent souvent à rendre le piratage d'un compte beaucoup plus difficile.",
       "Une erreur de configuration ou d'usage autour de « Authentification 2FA » peut avoir des effets en chaîne.",
       "« Authentification 2FA » paraît compliqué, pourtant les bases restent accessibles."
     ],
     "c": [
-      "Peu de gens le savent : même si votre mot de passe fuite dans une base de données piratée ailleurs, la double authentification garde votre compte protégé sans le second facteur.",
-      "Exemple hypothétique : le mot de passe d'un utilisateur fuite dans une base de données piratée sur un autre site. Sans second facteur, la personne qui l'obtient peut se connecter au compte.\n\nAvec la 2FA, un code ou une validation supplémentaire est demandé, ce qui peut bloquer la connexion. C'est l'une des raisons pour lesquelles ce réglage est souvent recommandé."
+      "Même si un mot de passe fuite dans une base de données piratée, la double authentification peut empêcher l'accès au compte, car le second facteur reste nécessaire.\n\nC'est l'intérêt d'une deuxième vérification : un mot de passe seul ne suffit plus.",
+      "Imaginons un utilisateur dont le mot de passe a fuité dans une base de données piratée ailleurs. Grâce à la 2FA, la connexion reste bloquée sans le second facteur.\n\nSans ce deuxième verrou, le compte serait exposé : ce petit réglage ajoute une barrière supplémentaire."
     ]
   },
   "Ingénierie sociale": {
@@ -999,7 +1006,7 @@ const TS = {
     "c": [
       "En gros, plutôt que de pirater un système technique, l'attaquant manipule directement une personne pour qu'elle donne elle-même l'accès (un mot de passe, un clic sur un lien...).\n\nÇa montre bien que la technique seule ne suffit pas : le bon sens et la méfiance saine comptent tout autant.",
       "L'ingénierie sociale, c'est un peu comme un tour de magie : l'attaquant ne force rien, il détourne l'attention pour qu'on lui donne l'info nous-mêmes.\n\nUn faux technicien au téléphone, un mail qui joue sur l'urgence, une fausse demande d'un \"collègue\"... aucune technique compliquée, juste de la manipulation bien préparée.",
-      "Trois réflexes simples face à l'ingénierie sociale :\n\n1/ L'urgence est souvent le premier signal d'alerte.\n\n2/ Un vrai professionnel ne demande jamais un mot de passe par téléphone ou par mail.\n\n3/ Vérifier par un autre canal (rappeler soi-même le numéro officiel) est un geste simple qui évite bien des problèmes.\n\nDe la méfiance saine, rien de plus."
+      "Trois réflexes simples face à l'ingénierie sociale :\n\n1/ L'urgence est souvent le premier signal d'alerte.\n\n2/ Un vrai professionnel ne demande jamais un mot de passe par téléphone ou par mail.\n\n3/ Vérifier par un autre canal (rappeler soi-même le numéro officiel) évite bien des problèmes.\n\nDe la méfiance saine, rien de plus."
     ]
   },
   "VPN": {
@@ -1013,7 +1020,7 @@ const TS = {
     "c": [
       "Sur un réseau public, sans protection, certaines infos peuvent être plus facilement interceptées. Le VPN limite ce risque en chiffrant la connexion.\n\nUn petit réflexe en plus à prendre, surtout en déplacement.",
       "Avec un VPN activé, ce risque baisse fortement. Un réflexe simple à prendre en déplacement.",
-      "Avec un outil simple, on voit clairement la différence de ce qui est visible ou non par quelqu'un d'autre sur le même réseau.\n\nConvaincant à voir en vrai plutôt que juste lu dans un article.",
+      "Sur un réseau partagé, comme un Wi-Fi public, un VPN chiffre le trafic entre l'appareil et le serveur du VPN : ce qui circule devient plus difficile à lire pour les autres utilisateurs du même réseau.\n\nUn VPN ne rend pas pour autant anonyme, et il déplace la confiance vers le fournisseur du service.",
       "Le configurer une fois évite d'oublier de le faire au pire moment."
     ]
   },
@@ -1021,14 +1028,13 @@ const TS = {
     "a": [
       "L'enjeu avec « Sécurité IoT » : comprendre ce qu'il faut protéger, et contre quoi.",
       "On peut comparer la cybersécurité à la sécurité d'une maison : « Sécurité IoT » en est un élément parmi d'autres.",
-      "Une caméra connectée avec le mot de passe \"admin/admin\" jamais changé. Ça arrive plus souvent qu'on ne croit.",
+      "Une caméra connectée dont le mot de passe d'usine n'a jamais été changé : c'est une porte d'entrée facile à exploiter.",
       "« Sécurité IoT » : les bases, simplement.",
       "Le terme « Sécurité IoT » revient souvent quand on parle de cybersécurité."
     ],
     "c": [
-      "Trois choses ressortent clairement quand on creuse la sécurité des objets connectés :\n\n1/ Beaucoup gardent leur mot de passe d'usine, jamais changé par l'utilisateur.\n\n2/ Les mises à jour de sécurité sont souvent rares, voire inexistantes après quelques années.\n\n3/ Un seul objet mal protégé peut parfois servir de porte d'entrée vers tout le réseau de la maison.\n\nUn domaine à la croisée de mon bac STI2D et de la cybersécurité.",
-      "Rien de dramatique, mais ça montre bien qu'on pense rarement à sécuriser ce genre d'objets du quotidien.\n\nCorrigé depuis.",
-      "Des chercheurs en sécurité ont un jour réussi à s'introduire sur le réseau d'une entreprise en passant par... un aquarium connecté oublié dans le hall d'accueil.\n\nÇa paraît presque drôle, mais ça montre bien qu'un seul objet oublié suffit parfois à ouvrir la porte à tout le reste."
+      "Trois points à connaître sur la sécurité des objets connectés :\n\n1/ Certains objets gardent leur mot de passe d'usine, jamais changé par l'utilisateur.\n\n2/ Les mises à jour de sécurité peuvent devenir rares, voire inexistantes, avec le temps.\n\n3/ Un seul objet mal protégé peut parfois servir de porte d'entrée vers tout le réseau de la maison.\n\nUn domaine à la croisée de la filière STI2D et de la cybersécurité.",
+      "Imaginons un objet connecté oublié sur le réseau d'une entreprise, comme un thermomètre d'aquarium ou une caméra qui n'a jamais reçu de mise à jour.\n\nCe type d'appareil peut servir de point d'entrée vers le reste du réseau : un seul objet oublié peut suffire à ouvrir la porte."
     ]
   },
   "Sécurité mobile": {
@@ -1061,7 +1067,7 @@ const TS = {
     ],
     "c": [
       "1/ ls — afficher ce qu'il y a dans un dossier.\n\n2/ cd — se déplacer entre les dossiers.\n\n3/ cat — afficher le contenu d'un fichier.\n\n4/ grep — chercher un mot dans un fichier.\n\n5/ chmod — gérer qui a le droit de faire quoi sur un fichier.",
-      "Des commandes comme sudo rm -rf peuvent littéralement tout supprimer si on ne fait pas attention.\n\nUn réflexe simple à retenir avant même de vraiment commencer à pratiquer : comprendre d'abord, exécuter ensuite."
+      "Des commandes comme sudo rm -rf peuvent supprimer de nombreux fichiers sans retour possible si on ne fait pas attention.\n\nUn réflexe simple à garder en tête : comprendre d'abord, exécuter ensuite."
     ]
   },
   "Sécurité web": {
@@ -1073,7 +1079,7 @@ const TS = {
       "« Sécurité web » : les bases, simplement."
     ],
     "c": [
-      "1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ La plupart des failles web ne demandent pas d'outils compliqués, juste de la méthode et de la curiosité.",
+      "1/ Ne jamais faire confiance à ce qu'un utilisateur tape dans un formulaire, même le plus anodin.\n\n2/ Une faille XSS permet d'injecter du code qui s'exécute dans le navigateur d'un autre utilisateur.\n\n3/ Comprendre comment un site traite ce que saisissent les utilisateurs aide à repérer pourquoi certaines failles existent.",
       "Une faille XSS réussie sur un exercice d'entraînement : faire apparaître une popup en glissant du code dans un champ de recherche mal protégé.\n\nProchaine étape : comprendre comment on corrige ce genre de faille.",
       "Question pour les devs web qui passent par ici : vous êtes formés aux bonnes pratiques de sécurité pendant vos études, ou c'est surtout sur le tas que ça s'apprend ?"
     ]
@@ -1111,11 +1117,11 @@ const TS = {
       "Une erreur de configuration ou d'usage autour de « Sécurité réseaux sociaux » peut avoir des effets en chaîne.",
       "« Sécurité réseaux sociaux » paraît compliqué, pourtant les bases restent accessibles.",
       "Que recouvre « Sécurité réseaux sociaux » en cybersécurité ?",
-      "Sur les réseaux sociaux, l'arnaque la plus efficace reste souvent la plus simple : se faire passer pour quelqu'un que tu connais."
+      "Sur les réseaux sociaux, une arnaque simple peut suffire : se faire passer pour quelqu'un que l'on connaît."
     ],
     "c": [
       "1/ Ne jamais cliquer sur un lien reçu par message pour \"vérifier\" ou \"sauver\" son compte.\n\n2/ Activer la double authentification, même sur Instagram ou Discord, pas que sur les mails.\n\n3/ Se méfier même d'un message venant d'un compte connu — il peut avoir été piraté.",
-      "En creusant, on a compris qu'il avait cliqué sur un faux lien de \"cadeau\" envoyé par un compte piraté d'un autre ami. Classique, mais ça marche toujours.\n\nOn en a profité pour revoir ensemble les bases : mot de passe unique, double authentification, méfiance face aux liens trop beaux pour être vrais."
+      "Imaginons qu'un utilisateur reçoive un lien de « cadeau » envoyé par le compte piraté d'une connaissance : le message paraît fiable, car il vient d'un contact connu.\n\nC'est un schéma classique, car la confiance envers l'expéditeur fait baisser la vigilance. Les réflexes de base : un mot de passe unique, la double authentification et de la méfiance face aux liens trop beaux pour être vrais."
     ]
   },
   "CyberQuest": {
@@ -1127,7 +1133,6 @@ const TS = {
       "Imaginons un outil ludique pour réviser les notions de cybersécurité, réalisé avec l'aide de l'IA."
     ],
     "c": [
-      "Prochaine étape sur CyberQuest : ajouter un mini-défi sur le phishing, avec de faux mails à repérer."
     ]
   }
 };
@@ -2069,14 +2074,13 @@ function hookFamily(h){
   if(/(?<![a-zà-ÿ])(?:je|me|moi|mon|ma|mes)(?![a-zà-ÿ])|(?<![a-zà-ÿ])[jm]['’]|(?<![a-zà-ÿ])(?:ça|cela) me(?![a-zà-ÿ])/i.test(s))return 'premiere_personne';
   if(/\?/.test(s))return 'question'; // §8 : un vrai « ? » classe toujours l'accroche en F, même après « Imaginons… »
   if(/^(imaginons|prenons|supposons|dans une situation|dans un cas)/i.test(s))return 'scenario';
-  if(/^(on peut comparer|cela ressemble|ça ressemble|une façon simple de visualiser|c['’]est un peu comme|comme un |comme une )|\bun peu comme\b/i.test(s))return 'analogie';
-  if(/^(derrière|le terme|le mot|l['’]expression|un terme|une expression|ce terme|ce mot|ça s['’]appelle|sous l['’]appellation)/i.test(s))return 'terme_expression_explication';
-  if(/^(la difficulté|le défi|la question devient|l['’]enjeu|le vrai enjeu|le principal enjeu)/i.test(s))return 'probleme_enjeu';
-  if(/^(ce n['’]est pas|le problème n['’]est pas|on (pourrait )?(penser|croire|croit|pense)\b)|\bpourtant\b|\bne (?:se limite|signifie|veut) pas\b|\bplutôt que\b|\bcontrairement\b|\bau contraire\b|\bà l['’]inverse\b|\balors que\b|\btandis que\b/i.test(s))return 'contraste';
+  if(/^(on peut comparer|cela ressemble|ça ressemble|une façon simple de visualiser|c['’]est un peu comme|comme un |comme une )/i.test(s))return 'analogie';
+  if(/^(derrière|le terme|le mot|l['’]expression|un terme|une expression|ce terme|ce mot|ça s['’]appelle)/i.test(s))return 'terme_expression_explication';
+  if(/^(la difficulté|le défi|la question devient|l['’]enjeu|le vrai enjeu|le principal (?:enjeu|défi|problème)|l['’]enjeu principal)/i.test(s))return 'probleme_enjeu';
+  if(/^(ce n['’]est pas|le problème n['’]est pas|on (pourrait )?(penser|croire|croit|pense)\b)|\bpourtant\b/i.test(s))return 'contraste';
   if(/\?\s*$/.test(s)||/^(pourquoi|comment|que se passe|qu['’]est-ce|est-ce que|quel|quelle|et si)\b/i.test(s))return 'question';
-  if(/\b(désigne|correspond à|consiste à|signifie|veut dire)\b|\best une? notion\b/i.test(s))return 'definition_directe';
+  if(/\b(désigne|correspond à|consiste à|signifie|veut dire)\b/i.test(s))return 'definition_directe';
   if(/\b(mauvais(e)?|erreur|oubli|faille)\b[^.]{0,60}\b(peut|peuvent|entraîne|permet)/i.test(s))return 'consequence';
-  if(/^sans\b/i.test(s))return 'consequence';
   if(n<=10&&!/\bpeu(t|vent)\b/i.test(s))return 'phrase_courte';
   return 'constat';
 }
@@ -3452,7 +3456,7 @@ if(lsL(SK.timer,false)&&Q.length){document.getElementById('st-txt').textContent=
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').catch(()=>{});
 
 /* ═══════════════════════════════════════════════════════════════════════
-   GARDE-FOU SIMON v6 — intégré à l'interface historique
+   GARDE-FOU SIMON v7 (Prompt Maître V7) — intégré à l'interface historique
    La partie Nicolas conserve le moteur et l'interface d'origine.
    ═══════════════════════════════════════════════════════════════════════ */
 (function(){
@@ -3463,7 +3467,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const SG_ADVANCED=new Set(['SIEM','SOC','Zero-day','Pentest']);
   const SG_FORMS=[
      'constat','contraste','observation générale','conséquence','détail concret','mise en contexte',
-     'exemple hypothétique','phrase courte','rythme court puis long','élément technique','problème général','distinction utile'
+     'exemple hypothétique','phrase courte','rythme court puis long','élément technique','problème général','distinction utile','terme et expression','définition directe','analogie','question directe','enjeu','scénario'
    ];
   const SG_STRUCT={
     'Découverte':['accroche','explication','précision factuelle','conclusion'],
@@ -3594,11 +3598,73 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgActualProgressValue=s=>{const m=String(s).match(/\d+(?:[.,]\d+)?/);return m?Number(m[0].replace(',','.')):null};
   const sgFirstRaw=t=>String(t||'').trim().split(/\n\n/)[0].split(/(?<=[.!?…])\s+/)[0];
   const sgConclOpen=t=>{const S=sgSentences(sgNoHashtags(String(t)));return sgNorm(S[S.length-1]||'').replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(Boolean).slice(0,3).join(' ');};
-  const SG_IMPL=/sur le terrain|\b(?:cas|incidents?|campagnes?|attaques?)\b[^.]{0,40}\b(?:étudié|analysé|observé|rencontré|traité)e?s?\b|quelqu[’']un qui a |\b(?:la semaine dernière|hier|ce week-end|un matin|un soir)\b|ces derniers (?:temps|jours)/i;
-  const SG_EMO2=/vertige|impressionnant|surpris|inqui[eè]te|fait réfléchir|étonnant|fascinant|passionnant|angoissant|effrayant|fait peur|(?:le détail|ce|celui) qui (?:me |nous )?frappe/i;
-  const sgPrec=x=>{const y=String(x).replace(/(?:^|\n)\s*\d+\s*[\/.)]\s*/g,' ').replace(/«[^»]*»|"[^"]*"|“[^”]*”/g,' ').replace(/\b(?:2FA|MFA|STI2D|IPv[46]|TCP\/IP|HTTP\/\d|802\.\d+|SHA-?\d+|AES-?\d*)\b/gi,' ');return /\d|millions?|milliards?|quelques (?:secondes|minutes|heures|jours)|amende|%/i.test(y);};
   const SG_CONCL_FAM=[['retenir',/^(?:ce que je retiens|à retenir|retenons|je retiens)/],['montre',/^(?:cela|ça|cette notion|cet exemple|ce point|c'est un exemple qui) (?:montre|illustre|rappelle)/],['comprendre',/^(?:cela|ça|cette notion|ce point) permet (?:de |d')(?:mieux )?comprendre/],['justement',/^(?:c'est )?justement/],['intérêt',/^(?:ce que je trouve|ce qui m'intéresse|ce qui est intéressant)/],['rappel',/^(?:un|le) (?:bon )?rappel/],['notion',/^c'est une notion que/],['apprendre',/^je (?:continuerai|garderai|poursuivrai|reviendrai)/]];
   const sgConclFam=t=>{const S=sgSentences(sgNoHashtags(String(t))),l=sgNorm(S[S.length-1]||'');const f=SG_CONCL_FAM.find(x=>x[1].test(l));return f?f[0]:'autre';};
+
+  /* ═══ PROMPT MAÎTRE V7 — contrôles de fond §14-18, §22, §32, §35, §40-41. Textes comparés SANS accents (\b ne reconnaît pas « é » comme lettre). ═══ */
+  SG_SUSPICIOUS.push('j’ai observé','j’ai participé','j’ai découvert');
+  const sgAsc=s=>sgNorm(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const SG_HYPO=/\b(?:imaginons|supposons|prenons|par exemple|dans un scenario)\b/;
+  const SG_COND=/\b(?:si|lorsqu|quand|des qu)\b/;
+  const SG_V7_IMPLICIT=[
+    /\b(?:plusieurs|quelques|deux|trois|quatre|cinq|de nombreux)\s+(?:cas|exemples?|incidents?|attaques?|situations?|rapports?|dossiers?|sinistres?|affaires?)\b[^.\n]{0,80}\b(?:etudie|analyse|observe|rencontre|croise|examine|traite|lu|constate|vu)(?:e|s|es)?\b/,
+    /\b(?:ces derniers (?:temps|jours)|ces dernieres semaines|dernierement|cette semaine|ce mois-ci|l'autre jour|l'an dernier|hier|ce week-end)\b|\bil y a (?:quelques|plusieurs|\d+) (?:jours|semaines|mois)\b/,
+    /\bsur le terrain\b/,
+    /\b(?:quelqu'un|une personne|un proche|un ami|un collegue|un client)\s+qui\s+(?:a|ont|avait)\s+(?:evite|subi|perdu|recu|clique|failli|reussi|trouve|signale|recupere)\b/,
+    /\b(?:on|nous)\s+(?:a|avons|ont)\s+(?:vu|observe|constate|remarque|etudie|analyse|teste|rencontre)\b/,
+    /\b(?:reviennent|revient|ressortent?)\s+(?:tout le temps|toujours|systematiquement|a chaque fois)\b/,
+    /\b(?:une|cette)\s+(?:entreprise|societe|pme|mairie|clinique|collectivite|banque|universite|association|boulangerie)\b[^.\n]{0,60}\b(?:a|avait|ont)\s+(?:ete|subi|perdu|paye|recu|fait l'objet)\b/,
+    /\b(?:a l'air|ont l'air)\s+(?:hyper|tres|vraiment|d'etre)\b|\bhyper\s+\w+/,
+    /\bon (?:a|en a) (?:compris|decouvert|fini|du|pu|reussi|trouve|eu|fait|profite|revu)\b|\ben creusant\b|\bquand on creuse\b|\bcorrige depuis\b|\bressortent? clairement\b|\bvisiblement\b|\bplus souvent qu'on ne (?:croit|pense)\b/
+  ];
+  const SG_V7_EMOTION=/\b(?:donne le vertige|(?:fait|donne a) reflechir|c'est (?:vraiment |assez |plutot |tres )?(?:impressionnant|etonnant|surprenant|fascinant|incroyable|effrayant|inquietant|troublant|frappant|marquant|stupefiant|choquant|vertigineux|dingue)|(?:cela|ca) (?:m'|me )(?:a |ont )?(?:surpris|etonne|marque|frappe|inquiete|impressionne|fascine|interpelle|choque|surprend)|(?:le|ce) (?:detail|point|fait) (?:interessant|frappant|etonnant|surprenant|marquant|qui frappe)|ce qui (?:est|reste) (?:interessant|frappant|etonnant|surprenant)|passionnant|angoissant|(?:un truc )?qui surprend|une vraie satisfaction|remet les idees en place)\b/;
+  const SG_V7_PRECISE=[
+    /\bquelques\s+(?:secondes?|minutes?|heures?|jours?|semaines?|mois|instants?)\b/,
+    /\b(?:un|qu'un)\s+instant\s+de\s+plus\b|\b(?:ne\s+)?(?:demande|coute|prend|necessite)\s+(?:qu'|juste\s+|seulement\s+)?un\s+instant\b|\bclin d'(?:oeil|œil)\b|\ben un eclair\b/,
+    /\b\d+(?:[.,]\d+)?\s*(?:heures?|h|minutes?|min|secondes?|jours?|semaines?|mois)\b/,
+    /\b(?:une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|douze|vingt|trente|quarante|cent)\s+(?:heures?|minutes?|secondes?|jours?|semaines?|mois)\b/,
+    /\b(?:en|sous)\s+(?:quelques|moins de)\s+(?:heures?|minutes?|secondes?|jours?)\b|\bquelques\s+(?:heures?|minutes?|secondes?|jours?)\s+(?:suffisent|seulement)\b/,
+    /\d[\d\s.,]*\s*(?:€|euros?|dollars?|\$)|\b(?:milliers|centaines)\s+(?:de|d')/,
+    /\b\d[\d\s.,]*\s*(?:victimes|utilisateurs|comptes|entreprises|machines|ordinateurs|appareils)\b|\bnombre\s+(?:de\s+)?victimes\b/,
+    /\b(?:selon|d'apres)\s+(?:une|des|les|l')\s*(?:etude|etudes|statistiques?|rapport|rapports|enquete|sondage|chiffres)\b|\b(?:la majorite|la plupart) des (?:attaques|cyberattaques|incidents|failles)\b/,
+    /\bjusqu'a\s+\d/
+  ];
+  const SG_V7_FAKE_NEUTRAL=/\b(?:verifier|changer|modifier|configurer|aider|securiser|installer|activer|expliquer|tester|controler)\b[^.\n]{0,60}\b(?:ses|leurs)\s+(?:parents|proches|amis|camarades|grands-parents|voisins|collegues)\b/;
+  const SG_V7_WE=/\bnous\s+(?:avons|avions|sommes alles|nous sommes|etions)\b|\b(?:dans|sur|chez)\s+(?:notre|nos)\s+(?:reseau|classe|lycee|equipe|projet|entreprise|salle|atelier|etablissement|cours|laboratoire|maison|foyer|serveur)\b/;
+  const SG_V7_MYSTERY=/\b(?:la veille|ce matin-la|ce jour-la|tout a (?:commence|bascule)|personne ne s'y attendait|rien ne laissait presager|avait l'air solide)\b/;
+  const SG_V7_ABSOLUTE=/\b(?:litteralement|a coup sur|sans aucun doute|100\s*%|totalement (?:sur|securise|protege))\b/;
+  const SG_V7_ARTIFICIAL=/\b(?:et vous|vous aussi|qu'en pensez-vous|dites-moi|partagez|en commentaires?|restons en contact|a bientot)\b/;
+  const SG_STOP_ASC=new Set([...SG_STOP].map(sgAsc));
+  const SG_GEN=new Set(['notion','notions','informatique','systeme','systemes','sujet','sujets','chose','choses','information','simple','simples','base','bases','premier','premiere','mieux','role','roles','cybersecurite','exemple','exemples','permet','cette']);
+  const sgStem=s=>[...new Set(sgAsc(s).split(/[^a-z0-9]+/).filter(w=>w.length>=4&&!SG_STOP_ASC.has(w)&&!SG_GEN.has(w)).map(w=>w.slice(0,5)))];
+  const SG_CF=[['limite',/\b(?:toutefois|en revanche|ne (?:suffit|garantit|remplace|couvre) (?:pas|jamais)|n'est pas (?:suffisant|infaillible))\b/],['distinction',/\b(?:a ne pas confondre|ne se confond|se distingue|difference entre|distinguer|a distinguer)\b/],['consequence',/\b(?:par consequent|il en resulte|d'ou)\b/],['ouverture',/\b(?:reste a|pour aller plus loin|prochaine etape|d'autres notions)\b/],['rappel',/\b(?:principe de base|regle de base|repere a garder|rappel utile)\b/],['lien',/\b(?:est liee? a|va de pair)\b/],['pedagogique',/\b(?:pour (?:debuter|commencer|apprendre|s'initier)|vocabulaire)\b/],['perspective',/\b(?:plus largement|contexte plus large|au-dela)\b/],['synthese',/\b(?:en resume|en somme|pour resumer)\b/]];
+  const sgConclFunc=t=>{const raw=sgNoHashtags(String(t)).trim();if(/\?\s*$/.test(raw))return 'question';const S=sgSentences(raw),l=sgAsc(S[S.length-1]||'');const f=SG_CF.find(x=>x[1].test(l));return f?f[0]:'autre';};
+  function sgV7Check(display,topic,type){
+    const errs=[],add=e=>{if(!errs.includes(e))errs.push(e)};
+    const S=sgSentences(sgNoHashtags(display)),cut=s=>s.slice(0,70);
+    for(const s of S){
+      const x=sgAsc(s),hypo=SG_HYPO.test(x);
+      if(!hypo&&!SG_COND.test(x)&&SG_V7_IMPLICIT.some(r=>r.test(x)))add(`Vécu implicite ou cas non confirmé (§17) : « ${cut(s)} »`);
+      if(SG_V7_EMOTION.test(x))add(`Émotion personnelle non confirmée (§18) : « ${cut(s)} »`);
+      if(SG_V7_PRECISE.some(r=>r.test(x)))add(`Précision factuelle non nécessaire (§32) : « ${cut(s)} »`);
+      if(!hypo&&SG_V7_FAKE_NEUTRAL.test(x))add(`Fausse neutralisation d’un vécu (§16) : « ${cut(s)} »`);
+      if(SG_V7_WE.test(x))add(`« nous / notre » : expérience concrète non confirmée (§22) : « ${cut(s)} »`);
+      if(SG_V7_ABSOLUTE.test(x))add(`Formulation absolue non justifiée (§32) : « ${cut(s)} »`);
+    }
+    if(type==='technique'&&S.length>=3){
+      const tn=sgAsc(topic||''),th=sgStem(topic||''),h0=S[0],rest=S.slice(1).join(' '),hs=sgStem(h0),rs=new Set(sgStem(rest));
+      const hookLinked=hs.length<2||hs.some(w=>rs.has(w))||hs.some(w=>th.includes(w))||(tn&&sgAsc(h0).includes(tn)&&sgAsc(rest).includes(tn));
+      if(SG_V7_MYSTERY.test(sgAsc(h0))||!hookLinked)add('Accroche sans lien clair avec le contenu (§14, §40).');
+      const cl=S[S.length-1],body=S.slice(0,-1).join(' '),cs=sgStem(cl),bs=new Set(sgStem(body));
+      const conclLinked=cs.length<2||cs.some(w=>bs.has(w))||cs.some(w=>th.includes(w))||(tn&&sgAsc(cl).includes(tn)&&sgAsc(body).includes(tn));
+      if(!conclLinked)add('Conclusion sans lien clair avec le contenu (§41).');
+      if(SG_V7_ARTIFICIAL.test(sgAsc(cl)))add('Conclusion : ouverture artificielle ou promesse inventée (§41).');
+      const cf=sgConclFunc(display);
+      if(cf!=='autre')sgHistory().filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).forEach(h=>{if(sgConclFunc(h.text||'')===cf)add(`Conclusion : même fonction argumentative (${cf}) qu’un des 3 derniers posts (§34-35).`)});
+    }
+    return errs;
+  }
+  window.sgV7Check=sgV7Check;
   function sgValidate(raw,opt={}){
     const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
@@ -3639,10 +3705,6 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       if(type!=='projet')add('CyberQuest ne doit être cité que dans un post de type projet.');
       if(/\b(?:utilisateurs|clients|performance|solution professionnelle|produit commercial|développé seul|entièrement développé|créé seul)\b/i.test(display))add('CyberQuest : affirmation non confirmée.');
       if(/\b(?:battle isle|2048|ai nexus|aegis|shadow|nexus)\b/i.test(display))add('CyberQuest : rôle du composant non fourni par le code.');
-      // V7.1 §3 : jamais « application gamifiée », « produit / réalisation professionnel(le) » (sauf négation explicite), ni bug, score, quiz ou session de test inventés.
-      if(/gamifi/i.test(display))add('CyberQuest : présenté comme « gamifié » (V7.1 §3) — dire « outil d’apprentissage ludique ».');
-      if(/\b(?:produit|réalisation)\s+professionnel(?:le)?\b/i.test(display.replace(/\b(?:pas|ni|jamais)\s+(?:(?:un|une|de|d[’'])\s*)?(?:produit|réalisation)\s+professionnel(?:le)?\b/gi,' ')))add('CyberQuest : présenté comme un produit ou une réalisation professionnelle (V7.1 §3).');
-      if(/\b(?:bugs?|scores?|quiz|sessions? de test)\b/i.test(display))add('CyberQuest : bug, score, quiz ou session de test non confirmés (V7.1 §3).');
     }
     if(type==='candidature'){
       const geo=sgNorm(sgGeo());const cities=['rennes','paris','nantes','bretagne','lyon','brest','lorient','vannes','saint-malo','lille','toulouse'];
@@ -3677,13 +3739,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       const hf=hookFamily(sgFirstRaw(display)),near=new Set([hf,...(HF_CLOSE[hf]||[])]);
       history.filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).forEach(h=>{const f=hookFamily(sgFirstRaw(sgNoHashtags(h.text||'')));if(near.has(f))add(`Accroche : famille « ${hf} » identique ou proche (${f}) d’un des 3 derniers posts.`)});
       if(CONCL_BAN.test((sentences.at(-1)||'').trim()))add('Conclusion : formule répétitive à éviter (§30).');
-      if(sentences.some(x=>SG_IMPL.test(x)))add('Vécu implicite ou anecdote non confirmée (V7 §17).');
-      if(sentences.some(x=>SG_EMO2.test(x)))add('Émotion personnelle non confirmée (V7 §18).');
-      if(sentences.some(x=>!/root-?me/i.test(x)&&sgPrec(x)))add('Précision chiffrée non nécessaire (V7 §32).');
       {const co=sgConclOpen(display),cf=sgConclFam(display);history.filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).forEach(h=>{if(co&&co===sgConclOpen(h.text||''))add('Conclusion : même début qu’un des 3 derniers posts (§25).');if(cf!=='autre'&&cf===sgConclFam(h.text||''))add(`Conclusion : famille « ${cf} » déjà utilisée dans les 3 derniers posts (§24).`);});}
       if(sentences.some(x=>flagged(x)))add('Première personne non confirmée (prompt maître §5).');
     }
     if(/ynov|epitech/i.test(display)||(/\binsa\b/i.test(display)&&!/accessibilit|pmr|fauteuil/i.test(display)))add('Contexte Ynov/Epitech/INSA non confirmé (§28-29).');
+    sgV7Check(display,topic,type).forEach(add);
+    if(/cyberquest/i.test(display)&&/\b(?:application gamifi[ée]e|produit professionnel|r[ée]alisation professionnelle|bug|quiz|score|session de test|r[ée]sultats?|usage r[ée]el|prochaine [ée]tape|ajouter un|mini-d[ée]fi|bient[ôo]t)\b/i.test(display))add('CyberQuest : expérience ou présentation non confirmée (§5, §30).');
     return [...new Set(errors)];
   }
   function sgContext(meta){return {type:meta?.type||'technique',theme:meta?.theme||topic||'Réseau',structure:meta?.structure||'',form:meta?.form||'',prog:sgProgress(),geo:sgGeo(),names:sgNames()}};
@@ -3694,7 +3755,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       'INTERDIT sauf si explicitement confirmé : expérience pro, stage, alternance, mission, échange avec un professeur, cours suivi, projet scolaire, pratique de Linux / TryHackMe / PortSwigger / CTF / pentest, audit, certification, SOC ; pas de « j’ai testé / utilisé / pratiqué / configuré / analysé / réalisé ». En cas de doute, choisis la formulation neutre et fidèle plutôt que l’originale.',
       'ACCROCHE : différente des 7 derniers posts, sans « Je découvre / Je commence à comprendre / Une notion que… / Ce que je trouve intéressant » systématiques ; constat, contraste, conséquence, détail concret ou phrase courte, sans « je » ni définition obligatoires.',
       'CONCLUSION : factuelle (constat, conséquence, précision, ouverture), jamais de bilan personnel artificiel (« Ce que je retiens », « Cela montre que », « À retenir », « Je garderai une fiche »). Une variante de vocabulaire d’une structure récente reste une redondance.',
-      'EXACTITUDE : formulations prudentes (notamment, peut, en général) ; exemples explicitement hypothétiques ; 1 emoji maximum.'].join('\n');
+      'EXACTITUDE : formulations prudentes (notamment, peut, en général) ; exemples explicitement hypothétiques ; 1 emoji maximum.',
+      'V7 : aucun vécu implicite (cas « étudiés », anecdotes, « sur le terrain »), aucune émotion personnelle, aucune durée, montant ou chiffre non nécessaire ; accroche et conclusion clairement liées au contenu ; la conclusion remplit une fonction différente des 3 derniers posts.'].join('\n');
     return [brief,`TYPE : ${meta.type}`,`THÈME : ${meta.theme}`,`STRUCTURE : ${meta.structure} (${(SG_STRUCT[meta.structure]||[]).join(' → ')})`,`TYPE D’ACCROCHE : ${meta.form}`,`LONGUEUR : 80 à 150 mots`,`Écris uniquement le corps du post, sans hashtag, sans URL et sans markdown.`,
       `Root-Me : si le post le justifie, utilise ${SG_TOKEN}. La valeur réelle sera fournie par le code au dernier moment (${sgProgress()}).`,`Niveau : débutant. Aucune expérience inventée.`,
       `Protection mineur : ne cite aucun nom protégé ni établissement non fourni.`,`7 DERNIERS POSTS SANS HASHTAGS :`,hist||'(aucun)'].join('\n');
@@ -3748,90 +3810,67 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     'Zero-day':'Une vulnérabilité zero-day est une vulnérabilité pour laquelle il existe une période où les défenses et les corrections disponibles peuvent être limitées.',
     'Pentest':'Un pentest est une démarche autorisée qui cherche à évaluer la sécurité d’un système dans un périmètre défini.'
   };
+  const SG_ANALOGY={'réseau':'On peut comparer {t} au système postal : chaque élément a un rôle précis pour que le courrier arrive à bon port.','linux':'On peut comparer {t} à un règlement intérieur : il précise qui peut faire quoi, et à quel endroit.','sécurité':'On peut comparer {t} à la serrure d’une porte : elle n’a d’intérêt que si elle est bien choisie et bien utilisée.','menaces':'On peut comparer {t} à une porte laissée entrouverte : tout dépend de ce qui peut passer par là.','données':'On peut comparer {t} à un carnet d’adresses : son contenu concerne des personnes réelles, et son usage doit rester encadré.','avancé':'On peut comparer {t} à un diagnostic technique : il sert à repérer ce qui doit être corrigé, pas à tout régler d’un coup.'};
+  const SG_DEV={
+    'réseau':['Dans un réseau, chaque élément joue un rôle précis, et {t} s’inscrit dans cet ensemble de règles et d’équipements.','Un problème de communication peut avoir plusieurs origines, d’où l’intérêt de bien situer {t} parmi les autres éléments.','Les ressources d’initiation présentent généralement {t} à l’aide d’un schéma, car le sujet se comprend mieux visuellement.','Une même notion peut intervenir à plusieurs niveaux : sur un poste, dans un réseau local ou à l’échelle d’internet.'],
+    'linux':['Sous Linux, beaucoup d’actions reposent sur des fichiers, des droits et des commandes, et {t} s’inscrit dans cette logique.','Les distributions Linux partagent un socle commun, mais certains détails peuvent varier de l’une à l’autre.','Une commande ou un réglage mal compris peut avoir des effets importants, d’où l’intérêt de bien comprendre {t} avant de s’en servir.','Les pages de manuel et la documentation officielle restent les références pour vérifier le détail de {t}.'],
+    'sécurité':['En sécurité informatique, aucune mesure ne suffit seule : {t} s’ajoute à d’autres précautions.','Une mesure de sécurité n’a d’intérêt que si elle est bien configurée et réellement utilisée au quotidien.','{t} figure parmi les notions que l’on retrouve dans de nombreuses recommandations de sécurité destinées au grand public.','L’objectif est de réduire les risques et de limiter les conséquences d’un incident, pas de supprimer toute possibilité d’attaque.'],
+    'menaces':['{t} fait partie des menaces que les organisations comme les particuliers peuvent rencontrer.','Face à {t}, la prévention repose à la fois sur des outils et sur des habitudes : mises à jour, sauvegardes et vigilance.','Comprendre comment fonctionne {t} aide à reconnaître plus tôt les signes qui doivent alerter.','Les agences nationales de cybersécurité publient des fiches pratiques accessibles sur ce sujet.'],
+    'données':['Les données personnelles concernent des personnes réelles, ce qui explique que {t} fasse l’objet de règles précises.','Les organisations qui traitent des données doivent pouvoir expliquer à quoi elles servent et se limiter à ce qui est nécessaire.','La sécurité technique et le cadre juridique se complètent : l’une protège les données, l’autre définit des obligations.','Les autorités de protection des données publient des guides accessibles qui détaillent ces règles.'],
+    'avancé':['{t} relève d’un niveau plus avancé de la cybersécurité, présenté ici de façon théorique et générale.','Ces sujets s’appuient sur des notions de base, comme les réseaux, les systèmes et les journaux, qu’il vaut mieux comprendre d’abord.','Le vocabulaire y est dense, et une même notion peut recouvrir des pratiques différentes selon les organisations.','Ce domaine se découvre d’abord par la théorie, avant toute pratique encadrée.']
+  };
+  const SG_CONC=[
+    ['synthese',['En résumé, la notion de {t} se comprend d’abord par son rôle précis dans l’ensemble.','Pour résumer, situer correctement {t} suffit déjà à poser un premier repère solide.']],
+    ['limite',['Cette présentation reste volontairement simple : une définition courte ne couvre pas tous les cas liés à {t}.','Toutefois, la notion de {t} comporte des nuances que seule la documentation officielle détaille vraiment.']],
+    ['distinction',['Bien distinguer {t} des notions voisines évite de mélanger des rôles pourtant différents.','{t} est à ne pas confondre avec les éléments voisins, qui jouent un rôle différent dans l’ensemble.']],
+    ['consequence',['Par conséquent, mal situer la notion de {t} peut brouiller la compréhension de plusieurs sujets voisins.','D’où l’intérêt de poser une définition claire de {t} avant d’aborder des sujets plus techniques.']],
+    ['ouverture',['Pour aller plus loin, il reste à relier {t} aux autres éléments du même domaine.','La prochaine étape consiste à situer {t} par rapport à d’autres notions du même domaine.']],
+    ['rappel',['Rappel utile : la notion de {t} sert de repère, pas de description complète du sujet.','Un principe de base à garder en tête : comprendre {t} avant de chercher à l’appliquer.']],
+    ['lien',['La notion de {t} est liée à plusieurs éléments voisins, avec lesquels elle forme un ensemble cohérent.','{t} va de pair avec plusieurs éléments voisins du domaine, ce qui justifie de les étudier ensemble.']],
+    ['pedagogique',['Pour débuter, connaître le vocabulaire associé à {t} aide à lire une documentation sans se perdre.','Pour s’initier au domaine, le vocabulaire lié à {t} constitue un bon point de départ.']],
+    ['perspective',['Plus largement, {t} illustre la façon dont la cybersécurité repose sur des notions simples mais interdépendantes.','Au-delà de la définition, la notion de {t} s’inscrit dans un contexte plus large de protection des systèmes.']],
+    ['question',['Dans quels contextes la notion de {t} prend-elle des formes différentes ?','Si l’on devait expliquer {t} en une phrase, quels éléments faudrait-il garder ?']]
+  ];
   function sgFallbackText(theme,form){
-    // Brief §3/§14 : texte impersonnel (aucune pratique ni émotion inventée), accroche selon le type, conclusion factuelle.
-    const t=`« ${theme} »`;
-    // V7 §37 : chaque forme correspond à UNE famille (C,E,F,D,A,B,I,J,H,G,F,B) ; 2 variantes par forme.
+    // V7 §37/§39/§41 : texte impersonnel, accroche de famille variable, développement lié au domaine du thème, conclusion de fonction variable et liée au thème.
+    const t=`« ${theme} »`,fam=sgFamily(theme),rnd=a=>a[Math.floor(Math.random()*a.length)];
     const H={'constat':`${t} fait partie des notions de base qu’on croise tôt dans l’apprentissage de l’informatique.`,
       'contraste':`Une notion peut se définir en une phrase et avoir pourtant des effets très concrets : c’est le cas de ${t}.`,
-      'observation générale':`Que recouvre ${t} exactement en cybersécurité ?`,
-      'conséquence':`Une mauvaise compréhension de ${t} peut conduire à de mauvais réflexes de protection.`,
+      'observation générale':`En cybersécurité, beaucoup de sujets reposent sur quelques notions de base, dont ${t}.`,
+      'conséquence':`Passer à côté de la notion ${t} peut compliquer la lecture de nombreux sujets de sécurité.`,
       'détail concret':`Derrière l’expression ${t}, il y a des mécanismes précis qu’on peut décrire simplement.`,
-      'mise en contexte':`${t} correspond à une notion précise de l’informatique, qu’il vaut mieux définir simplement.`,
-      'exemple hypothétique':`Imaginons qu’il faille expliquer ${t} à quelqu’un qui débute, sans notion préalable.`,
-      'phrase courte':`${t} : un terme court, une idée précise.`,
-      'rythme court puis long':`Apprendre ${t}, c’est un peu comme apprendre le vocabulaire d’une langue : on commence par les mots de base.`,
-      'élément technique':`L’enjeu avec ${t} : comprendre ce qu’il faut protéger, et contre quoi.`,
-      'problème général':`Pourquoi faut-il bien comprendre ${t} avant d’aller plus loin en cybersécurité ?`,
-      'distinction utile':`${t} correspond à une notion à ne pas confondre avec les notions voisines.`};
-    const H2={'constat':`On croise ${t} très tôt dès qu’on s’intéresse à la sécurité informatique.`,
-      'contraste':`${t} ne se limite pas à un mot du vocabulaire : il décrit un mécanisme précis.`,
-      'observation générale':`À quoi sert ${t}, et dans quels cas en entend-on parler ?`,
-      'conséquence':`Sans bases solides sur ${t}, de nombreux sujets de sécurité restent difficiles à suivre.`,
-      'détail concret':`Sous l’appellation ${t} se cachent plusieurs éléments qu’il est utile de séparer.`,
-      'mise en contexte':`${t} désigne un élément ou un principe qu’on retrouve dans de nombreux systèmes d’information.`,
-      'exemple hypothétique':`Imaginons un utilisateur qui entend parler de ${t} sans en connaître le sens exact.`,
-      'phrase courte':`${t} : les bases, simplement.`,
-      'rythme court puis long':`On peut comparer ${t} à une brique : seule, elle ne suffit pas, mais elle prend son sens dans un ensemble.`,
-      'élément technique':`Le principal enjeu autour de ${t} concerne la bonne compréhension de son rôle dans un système.`,
-      'problème général':`Comment situer ${t} parmi les autres notions de la cybersécurité ?`,
-      'distinction utile':`${t} est une notion à distinguer de celles qui lui ressemblent.`};
+      'mise en contexte':`Dans un système d’information, ${t} s’inscrit en général dans un ensemble plus large d’éléments et de règles.`,
+      'exemple hypothétique':`Imaginons qu’il faille expliquer ${t} à quelqu’un qui débute : par où commencer ?`,
+      'phrase courte':`${t}. Une notion de base, mais pas anodine.`,
+      'rythme court puis long':`${t}, c’est un mot court qui recouvre plusieurs idées qu’il vaut mieux distinguer dès le départ.`,
+      'élément technique':`Côté technique, ${t} se comprend mieux lorsqu’on isole son rôle précis dans un système.`,
+      'problème général':`Un système mal compris est plus difficile à protéger, et ${t} n’échappe pas à cette règle.`,
+      'distinction utile':`On confond parfois ${t} avec des notions voisines ; les distinguer aide à mieux les situer.`,
+      'terme et expression':`Derrière le terme ${t} se trouve une notion que l’on peut décrire simplement.`,
+      'définition directe':`${t} désigne une notion de base que l’on retrouve dans de nombreux contextes informatiques.`,
+      'analogie':(SG_ANALOGY[fam]||SG_ANALOGY['avancé']).replace('{t}',t),
+      'question directe':`Pourquoi la notion de ${t} revient-elle aussi souvent dans les bases de la cybersécurité ?`,
+      'enjeu':`Le principal enjeu autour de ${t} est de bien comprendre son rôle avant d’aller plus loin.`,
+      'scénario':`Imaginons un utilisateur qui rencontre le terme ${t} sans en connaître les bases.`};
     const fact=SG_FALLBACK_FACTS[theme]||`${t} correspond à une notion informatique qui mérite d’être définie avec précision.`;
-    const B=['Ce type de notion sert de point d’appui pour aborder ensuite des sujets plus avancés de l’informatique et de la sécurité.',
-      'Selon le contexte, la même notion peut intervenir à plusieurs niveaux d’un système, du poste utilisateur jusqu’au réseau.',
-      'Les définitions restent volontairement simples ici ; la documentation officielle apporte les détails et les exceptions.',
-      'Ce sujet figure souvent dans les ressources d’initiation, car il permet de poser un vocabulaire commun avant des cas plus techniques.',
-      'Il existe en général plusieurs façons de présenter cette notion, selon qu’on se place du côté de l’utilisateur ou de l’administrateur.'];
-    const C=['Une définition courte reste une simplification : elle donne un repère, pas une description de tous les cas possibles.',
-      'En cybersécurité, les notions de base reviennent souvent, ce qui justifie de bien les distinguer avant d’aborder les outils.',
-      'Comprendre le rôle exact d’un élément aide à repérer ce qui peut être protégé, surveillé ou limité à son niveau.',
-      'Certaines erreurs de configuration peuvent venir de notions de base mal comprises plutôt que de techniques sophistiquées.',
-      'Un même terme peut avoir un sens légèrement différent d’un outil ou d’un document à l’autre.'];
-    const E=['Les guides d’initiation publics permettent de vérifier ces définitions auprès de sources fiables.',
-      'Des exemples concrets et des schémas aident ensuite à fixer le vocabulaire et à situer chaque terme.',
-      'Les termes techniques gagnent à être replacés dans un contexte précis plutôt que retenus isolément.',
-      'Le niveau de détail utile dépend du contexte : usage personnel, entreprise ou administration d’un système.',
-      'Ces repères restent généraux et peuvent varier selon les systèmes et les outils utilisés.'];
-    const D=['Les notions de base restent le point de départ de la plupart des parcours en informatique et en cybersécurité.',
-      'Ce vocabulaire se retrouve ensuite dans les documentations, les formations et les offres liées au domaine.',
-      'Comprendre un concept avant de manipuler des outils réduit le risque de les utiliser sans savoir ce qu’ils font.',
-      'Un même sujet est souvent abordé sous plusieurs angles : technique, organisationnel et juridique.',
-      'Le sujet reste vaste : chaque notion ouvre vers d’autres termes à définir avant d’aller plus loin.',
-      `Au fond, ${t} se comprend d’abord par son rôle : ce qu’il protège ou ce qu’il permet de faire.`,
-      `${t} s’aborde par étapes : définition, rôle, puis limites et cas particuliers.`,
-      `Reste une limite : ${t} ne couvre qu’une partie des risques, d’autres mesures restent nécessaires.`,
-      `Aucune notion ne protège seule : ${t} prend son sens avec des mesures complémentaires.`,
-      `Mal comprise, la notion ${t} peut conduire à de mauvais choix de protection.`,
-      `Une confusion autour de ${t} peut fausser l’analyse d’une configuration ou d’un incident.`,
-      `Mieux vaut distinguer ${t} des notions voisines avant d’en parler avec précision.`,
-      `Entre ${t} et les notions proches, les frontières comptent autant que les définitions.`,
-      'Pour aller plus loin, les guides publics d’initiation permettent de vérifier et de compléter ces repères.',
-      `D’autres aspects existent autour de ${t} ; ils s’abordent plus facilement une fois les bases posées.`,
-      'Le principe vaut pour bien des sujets : définir, situer, puis seulement approfondir.',
-      `${t} se relie à d’autres sujets de l’informatique : réseaux, systèmes, données ou comptes utilisateurs.`,
-      `Plus loin, ${t} croise d’autres thèmes comme l’identité numérique, les données ou les réseaux.`,
-      `Pour un débutant, ${t} reste un point d’entrée utile vers le vocabulaire de la cybersécurité.`,
-      'Des définitions claires facilitent ensuite la lecture des documentations techniques.',
-      `Une question reste ouverte : dans quels contextes ${t} joue-t-il le rôle le plus important ?`,
-      `Quelles autres notions faut-il connaître pour situer ${t} dans un système complet ?`,
-      `Les sources officielles restent la référence pour les détails et les cas particuliers de ${t}.`,
-      `Selon le contexte, ${t} peut prendre des formes différentes, d’où l’intérêt de le replacer dans son cadre.`,
-      'Sans ces bases, les sujets plus avancés deviennent plus difficiles à suivre.'];
-    const rnd=a=>a[Math.floor(Math.random()*a.length)];
-    return `${rnd([H[form]||H['constat'],H2[form]||H[form]||H['constat']])} ${fact} ${rnd(B)} ${rnd(C)} ${rnd(E)} ${rnd(D)}`;
+    const dev=[...(SG_DEV[fam]||SG_DEV['avancé'])].sort(()=>Math.random()-.5).slice(0,3).map(s=>s.replaceAll('{t}',t));
+    const recent=new Set(sgHistory().slice(-3).map(h=>sgConclFunc(h.text||'')));
+    const pool=SG_CONC.filter(c=>!recent.has(c[0]));
+    const concl=rnd(rnd(pool.length?pool:SG_CONC)[1]).replaceAll('{t}',t);
+    return [(H[form]||H['constat']),fact,...dev,concl].join(' ');
   }
   /* PROMPT MAÎTRE v6 §15-16 — texte < 80 mots après nettoyage : on ENRICHIT avec une explication factuelle (jamais de remplissage, de vécu ni de « je »). */
   const SG_TS_ALIAS={'Zero-day':'Zero Day','MFA / 2FA':'Authentification 2FA'};
   const SG_ENR={
-   'Linux':["Linux désigne à l'origine un noyau, puis par extension une famille de systèmes d'exploitation open source (les distributions), répandue notamment sur les serveurs.","Chaque fichier possède des droits de lecture, d'écriture et d'exécution, définis séparément pour son propriétaire, son groupe et les autres utilisateurs, ce qui permet de limiter les actions possibles."],
-   'Mots de passe':["Un mot de passe est d'autant plus difficile à deviner qu'il est long et imprévisible : la longueur compte généralement davantage que l'ajout de quelques symboles.","Utiliser un mot de passe différent par compte limite les conséquences d'une fuite, et un gestionnaire peut les générer et les stocker, protégés par un seul mot de passe principal."],
+   'Linux':["Linux désigne une famille de systèmes d'exploitation open source, répandue notamment sur les serveurs, qui représente beaucoup de ressources sous forme de fichiers rattachés à des utilisateurs et à des groupes.","Chaque fichier possède des droits de lecture, d'écriture et d'exécution, définis séparément pour son propriétaire, son groupe et les autres utilisateurs, ce qui permet de limiter les actions possibles."],
+   'Mots de passe':["Un mot de passe est d'autant plus difficile à deviner qu'il est long et unique : la longueur compte généralement davantage que l'ajout de quelques symboles.","Un gestionnaire de mots de passe peut générer et stocker un mot de passe différent pour chaque compte, protégé par un seul mot de passe principal."],
    'Phishing':["Le phishing, ou hameçonnage, consiste à se faire passer pour un organisme de confiance afin d'inciter une personne à cliquer sur un lien, à ouvrir une pièce jointe ou à communiquer des identifiants.","Certains signaux peuvent alerter : une adresse d'expéditeur inhabituelle, un ton pressant, un lien dont la destination diffère du texte affiché ou une demande d'informations confidentielles."],
    'Ingénierie sociale':["L'ingénierie sociale exploite des réflexes humains comme la confiance, l'urgence ou la volonté d'aider, plutôt qu'une faille technique, pour obtenir une information ou une action.","Un appel, un message ou une visite peuvent servir de support : vérifier l'identité de l'interlocuteur par un autre canal officiel reste une précaution simple."],
-   'Ransomware':["Un ransomware, ou rançongiciel, chiffre les fichiers d'un système puis réclame une rançon en échange d'une clé censée permettre de les récupérer.","Des sauvegardes régulières, conservées hors du réseau principal, et des mises à jour appliquées rapidement figurent parmi les mesures qui limitent l'impact de ce type d'attaque."],
-   'RGPD':["Le RGPD, ou Règlement général sur la protection des données, est un texte européen qui encadre la manière dont les organisations collectent, utilisent et conservent les données personnelles.","Il reconnaît notamment aux personnes un droit d'accès, de rectification et, dans certains cas, d'effacement de leurs données, et demande aux organisations de ne collecter que ce qui est nécessaire."],
+   'Ransomware':["Un ransomware, ou rançongiciel, chiffre les fichiers d'un système puis réclame une somme d'argent en échange de la clé permettant de les récupérer.","Des sauvegardes régulières, conservées hors du réseau principal, et des mises à jour appliquées rapidement figurent parmi les mesures qui limitent l'impact de ce type d'attaque."],
+   'RGPD':["Le RGPD, ou Règlement général sur la protection des données, est un texte européen qui encadre la manière dont les organisations collectent, utilisent et conservent les données personnelles.","Il reconnaît notamment aux personnes un droit d'accès, de rectification et d'effacement de leurs données, et demande aux organisations de ne collecter que ce qui est nécessaire."],
    'SIEM':["Un SIEM (Security Information and Event Management) collecte les journaux de nombreux équipements, les centralise et les met en relation pour faire apparaître des événements inhabituels.","Les alertes générées doivent ensuite être analysées : un SIEM peut produire de fausses alertes, d'où l'importance de règles de détection bien réglées."],
    'SOC':["Un SOC (Security Operations Center) est une équipe, souvent équipée d'outils comme un SIEM, chargée de surveiller la sécurité d'un système d'information.","Lorsqu'une alerte est jugée sérieuse, le SOC l'analyse, détermine son ampleur puis coordonne la réponse, par exemple en isolant une machine concernée."],
-   'Pentest':["Un test d'intrusion, ou pentest, est une démarche encadrée par un accord écrit qui définit précisément ce qui peut être testé, à quel moment et par quels moyens.","Il se conclut par un rapport qui décrit les faiblesses constatées, leur gravité et les corrections recommandées, afin d'aider l'organisation à les traiter."],
+   'Pentest':["Un test d'intrusion, ou pentest, est une mission encadrée par un accord écrit qui définit précisément ce qui peut être testé, à quel moment et par quels moyens.","Il se conclut par un rapport qui décrit les faiblesses constatées, leur gravité et les corrections recommandées, afin d'aider l'organisation à les traiter."],
    'Zero-day':["Une faille zero-day est une vulnérabilité inconnue de l'éditeur, ou sans correctif disponible, au moment où elle est exploitée.","Dans l'attente d'un correctif, des mesures comme la limitation des accès, la surveillance et la segmentation du réseau peuvent réduire l'exposition."],
    'MFA / 2FA':["L'authentification à deux facteurs combine deux preuves d'identité de nature différente : quelque chose que l'on sait, comme un mot de passe, et quelque chose que l'on possède, comme un téléphone.","Même si un mot de passe est volé, le second facteur peut bloquer la connexion ; tous les facteurs n'offrent toutefois pas le même niveau de protection."]
   };
@@ -4043,6 +4082,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const valid='Le DNS permet notamment de comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Cette notion compte dans le réseau, car elle intervient avant de nombreux échanges. Cette première approche permet aussi de mieux distinguer les rôles des différents services réseau.';
     const validMeta={type:'technique',theme:'DNS',structure:'Découverte',form:'En découvrant'};
     const fullValid=valid+'\n\n#STI2D #Découverte #Cybersécurité #DNS';
+    const vmid=x=>valid.replace(' Cette première approche permet aussi',' '+x.trim()+' Cette première approche permet aussi');
     const oldH=Array.isArray(H)?H.slice():null, oldQ=Array.isArray(Q)?Q.slice():null;
     const oldAcc=acc, oldTopic=topic;
     const resetHistory=(h=[],q=[])=>{if(Array.isArray(H)){H.length=0;H.push(...h)}if(Array.isArray(Q)){Q.length=0;Q.push(...q)}};
@@ -4092,11 +4132,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     expectErrors('Statistique millions bloquée',valid+' Cela concerne des millions de machines.',validMeta);
     expectErrors('Année non fournie bloquée',valid+' Cet événement date de 2024.',validMeta);
     expectErrors('Pourcentage différent de Root-Me bloqué',valid+' La progression est 31%.',validMeta);
-    expectClean('Pourcentage Root-Me configuré autorisé',valid+' Ma progression Root-Me est '+sgProgress()+'.',validMeta);
+    expectClean('Pourcentage Root-Me configuré autorisé',vmid(' Ma progression Root-Me est '+sgProgress()+'.'),validMeta);
     expectErrors('Token Root-Me non remplacé',valid.replace('DNS','{PROGRESSION_ROOT_ME} DNS'),validMeta);
 
     // 4 — Root-Me : fréquence, vocabulaire interdit et portée du mot « flag ».
-    expectClean('« flag » technique hors Root-Me autorisé',valid+' Le flag est un indicateur du protocole TCP.',validMeta);
+    expectClean('« flag » technique hors Root-Me autorisé',vmid(' Le flag est un indicateur du protocole TCP.'),validMeta);
     expectErrors('Flag dans Root-Me bloqué',valid+' Sur Root-Me, je cherche des flags.',{...validMeta,theme:'DNS'});
     expectErrors('Challenge Root-Me bloqué',valid+' Sur Root-Me, ce challenge est réussi.',validMeta);
     expectErrors('Score Root-Me bloqué',valid+' Mon score Root-Me progresse.',validMeta);
@@ -4107,7 +4147,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     withHistory([rm1,rm2,rm3],[],()=>expectErrors('Root-Me 3e occurrence bloquée',valid+' Je découvre Root-Me.',validMeta,false));
 
     // 5 — Commandes dangereuses et outils offensifs.
-    expectClean('Mention pédagogique rm -rf autorisée',valid+' La commande rm -rf est dangereuse car elle supprime récursivement sans retour arrière.',validMeta);
+    expectClean('Mention pédagogique rm -rf autorisée',vmid(' La commande rm -rf est dangereuse car elle supprime récursivement sans retour arrière.'),validMeta);
     expectErrors('rm -rf / bloqué',valid+' Ne lancez jamais rm -rf /.',validMeta);
     expectErrors('rm -rf ~ bloqué',valid+' La commande rm -rf ~ supprime récursivement le dossier personnel.',validMeta);
     expectErrors('rm -rf * bloqué',valid+' La commande rm -rf * supprime récursivement les éléments visés.',validMeta);
@@ -4122,19 +4162,6 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     expectClean('CyberQuest en type projet',valid.replace('DNS','CyberQuest'),{type:'projet',theme:'CyberQuest',structure:'Découverte',form:'En découvrant'});
     expectErrors('CyberQuest + utilisateurs bloqué',valid.replace('DNS','CyberQuest')+' Le projet a des utilisateurs.',{type:'projet',theme:'CyberQuest',structure:'Découverte',form:'En découvrant'});
     expectErrors('Composant CyberQuest sans rôle bloqué',valid.replace('DNS','CyberQuest')+' J’utilise Battle Isle.',{type:'projet',theme:'CyberQuest',structure:'Découverte',form:'En découvrant'});
-
-    // V7.1 — non-régression (§3 CyberQuest, §7.4 impressions personnelles, §8 durées vagues, §9 banque TS fiable à la source).
-    const cqMeta={type:'projet',theme:'CyberQuest',structure:'Découverte',form:'En découvrant'};
-    const cqBase=valid.replace('DNS','CyberQuest');
-    const errHas=(name,text,opt,frag)=>test(name,()=>withHistory([],[],()=>sgValidate(text,opt).some(e=>e.includes(frag))));
-    errHas('V7.1 §3 : CyberQuest « application gamifiée » bloqué',cqBase+' CyberQuest est une application gamifiée.',cqMeta,'gamifié');
-    errHas('V7.1 §3 : CyberQuest « produit professionnel » bloqué',cqBase+' CyberQuest est un produit professionnel.',cqMeta,'produit ou une réalisation professionnelle');
-    test('V7.1 §3 : « pas un produit professionnel » (négation explicite) non bloqué',()=>withHistory([],[],()=>!sgValidate(cqBase+' CyberQuest reste un projet d’apprentissage, pas un produit professionnel.',cqMeta).some(e=>e.includes('produit ou une réalisation professionnelle'))));
-    errHas('V7.1 §3 : CyberQuest bug / score / quiz / session de test inventés bloqués',cqBase+' Un bug corrigé pendant une session de test, avec un score et un quiz.',cqMeta,'bug, score, quiz');
-    errHas('V7.1 §8 : durée vague « quelques heures » bloquée',valid+' Le correctif est arrivé en quelques heures seulement.',validMeta,'Précision chiffrée');
-    errHas('V7.1 §8 : durée vague « quelques minutes » bloquée',valid+' Cette vérification prend quelques minutes.',validMeta,'Précision chiffrée');
-    errHas('V7.1 §7.4 : « le détail qui frappe » (impression personnelle) bloqué',valid+' Le détail qui frappe : la faille était connue.',validMeta,'Émotion personnelle');
-    test('V7.1 §9 : banque TS — aucun corps avec durée vague, impression personnelle ou vécu implicite',()=>{const bad=[];for(const [th,d] of Object.entries(TS))(d.c||[]).forEach((c,i)=>sgSentences(c).forEach(x=>{if(SG_IMPL.test(x)||SG_EMO2.test(x)||(!/root-?me/i.test(x)&&sgPrec(x)))bad.push(th+'#'+i)}));if(bad.length)throw new Error('corps TS à réparer : '+[...new Set(bad)].join(', '));return true;});
 
     // 7 — Candidature : géographie, CTA et coordonnées.
     const cand='Je recherche une alternance en cybersécurité à Rennes pour septembre 2027. Je suis lycéen en Terminale STI2D et je souhaite continuer à apprendre dans ce domaine. Je cherche une entreprise où je pourrai progresser avec un accompagnement adapté à mon niveau de débutant. Mon objectif est de découvrir progressivement le fonctionnement d’une équipe et de mieux comprendre les métiers de la cybersécurité. Je souhaite avancer sérieusement, tout en continuant ma formation et mes projets personnels. N’hésitez pas à m’écrire en message privé pour échanger sur mon projet et mon parcours.';
@@ -4226,6 +4253,42 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     test('V6 §8 : un « ? » classe l’accroche en F (question)',()=>hookFamily('Imaginons qu’un utilisateur reçoive un message : par où commencer ?')==='question'&&hookFamily('Comment un simple mot de passe peut-il devenir un point faible ?')==='question');
     test('V6 §25 : « Ce que je retiens… » ≈ « Ce que je retiens surtout… »',()=>sgConclOpen('Texte. Ce que je retiens de cette notion.')===sgConclOpen('Texte. Ce que je retiens surtout.')&&sgConclFam('A. Cela montre que X.')===sgConclFam('B. Cette notion montre que Y.'));
     test('V6 §29 : 4e hashtag répété refusé même sans alternative',()=>withHistory([make('DNS',{text:fullValid})],[],()=>sgValidate(fullValid.replace('Cette notion','Ce point'),{type:'technique',theme:'DNS',allowSystemHashtags:true,checkTagRepeat:true}).some(e=>/Quatrième hashtag/.test(e))));
+
+    // V7 — non-régression (§14-18, §19, §22, §26-29, §32, §35, §37, §41)
+    const e7=(name,text,rx,meta=validMeta)=>test(name,()=>withHistory([],[],()=>sgValidate(text,meta).some(e=>rx.test(e))));
+    const c7=(name,text,meta=validMeta)=>test(name,()=>withHistory([],[],()=>sgValidate(text,meta).length===0));
+    e7('V7 §17 : « cas étudiés ces derniers temps » = vécu implicite',vmid(' Plusieurs cas de ransomware étudiés ces derniers temps suivent le même schéma.'),/Vécu implicite/);
+    e7('V7 §17 : « trois cas étudiés » = vécu implicite',vmid(' Trois cas d’ingénierie sociale étudiés suivent le même schéma.'),/Vécu implicite/);
+    e7('V7 §17 : « quelqu’un qui a évité un piratage » = vécu implicite',vmid(' Quelqu’un qui a évité un piratage grâce à la double authentification le raconte.'),/Vécu implicite/);
+    e7('V7 §17 : « sur le terrain » = vécu implicite',vmid(' Ces bases restent peu appliquées sur le terrain.'),/Vécu implicite/);
+    c7('V7 §17 : scénario hypothétique explicite autorisé',vmid(' Imaginons qu’un utilisateur reçoive un SMS qui semble provenir d’un service de livraison.'));
+    e7('V7 §18 : « Ça donne le vertige » refusé',vmid(' Ça donne le vertige.'),/Émotion/);
+    e7('V7 §18 : « C’est impressionnant » refusé',vmid(' C’est impressionnant.'),/Émotion/);
+    e7('V7 §18 : « Cela m’a surpris » refusé',vmid(' Cela m’a surpris.'),/Émotion/);
+    e7('V7 §18 : « Ça fait réfléchir » refusé',vmid(' Ça fait réfléchir.'),/Émotion/);
+    e7('V7 §32 : durée précise refusée',vmid(' Une entreprise a été bloquée 3 jours.'),/Précision/);
+    e7('V7 §32 : « Quelques heures suffisent » refusé',vmid(' Quelques heures suffisent pour exploiter une faille.'),/Précision/);
+    e7('V7.2 §8 : « quelques minutes » refusé',vmid(' Cette vérification prend quelques minutes.'),/Précision/);
+    e7('V7.2 §8 : « un instant » refusé',vmid(' Cette précaution ne coûte qu’un instant.'),/Précision/);
+    e7('V7 §32 : montant refusé',vmid(' L’amende atteignait 50 000 €.'),/Précision/);
+    e7('V7 §32 : nombre précis de victimes refusé',vmid(' L’attaque a touché 2 000 utilisateurs.'),/Précision/);
+    c7('V7 §32 : formulation générale autorisée',vmid(' Une vulnérabilité non corrigée peut parfois être exploitée rapidement.'));
+    e7('V7 §16 : fausse neutralisation refusée',vmid(' On peut vérifier les mots de passe de ses parents.'),/Fausse neutralisation/);
+    c7('V7 §16 : formulation réellement générale autorisée',vmid(' Vérifier régulièrement la solidité des mots de passe utilisés dans un foyer peut contribuer à limiter certains risques.'));
+    c7('V7 §22 : « nos systèmes » de portée générale autorisé',vmid(' Nos systèmes informatiques reposent sur des couches logicielles et matérielles.'));
+    e7('V7 §22 : « dans notre réseau, nous avons configuré » refusé',vmid(' Dans notre réseau, nous avons configuré ce service.'),/nous \/ notre/);
+    e7('V7 §14 : accroche mystérieuse sans lien refusée',valid.replace(/^[^.]+\./,'Le mur avait l’air solide la veille.'),/Accroche sans lien/);
+    e7('V7 §41 : conclusion sans lien refusée',valid+' Les cerisiers fleurissent chaque printemps dans cette région.',/Conclusion sans lien/);
+    e7('V7 §41 : promesse artificielle refusée',valid+' Et vous, qu’en pensez-vous ?',/artificielle/);
+    e7('V7 §17 : « En creusant, on a compris… » (anecdote impersonnelle) refusé',vmid(' En creusant, on a compris qu’il avait cliqué sur un faux lien.'),/Vécu implicite/);
+    e7('V7 §5/§30 : CyberQuest « prochaine étape » (fonctionnalité non confirmée) refusé',valid.replace('DNS','CyberQuest')+' Prochaine étape : ajouter un mini-défi.',/CyberQuest/,{type:'projet',theme:'CyberQuest',structure:'Découverte',form:'En découvrant'});
+    test('V7 §35 : 10 fonctions de conclusion distinctes détectées',()=>new Set(['En résumé, la notion est claire.','Toutefois, cette définition ne couvre pas tous les cas.','Bien distinguer deux notions évite les erreurs.','Par conséquent, mal situer ce point brouille la lecture.','Pour aller plus loin, il reste à relier ces notions.','Rappel utile : un repère reste un repère.','Cette notion est liée à plusieurs autres éléments.','Pour débuter, le vocabulaire compte.','Plus largement, tout repose sur des bases.','Qu’en est-il des cas particuliers ?'].map(x=>sgConclFunc('Texte. '+x))).size===10);
+    const pA=valid.replace(/Cette première approche permet aussi[^.]*\./,'Toutefois, cette définition ne couvre pas tous les cas liés au DNS.'),pB=valid.replace(/Cette première approche permet aussi[^.]*\./,'Toutefois, une définition courte ne couvre pas toutes les nuances du DNS.');
+    test('V7 §35 : même fonction de conclusion qu’un des 3 derniers posts refusée',()=>withHistory([make('IPv4',{text:pA,ts:1})],[],()=>sgValidate(pB,validMeta).some(e=>/même fonction argumentative/.test(e))));
+    test('V7 §37 : ≥ 18 types d’accroche et 10 fonctions de conclusion de repli',()=>SG_FORMS.length>=18&&SG_CONC.length>=10);
+    test('V7 §37/§39 : chaque thème produit au moins un repli conforme',()=>withHistory([],[],()=>SG_THEME_ROWS.every(r=>{for(let k=0;k<40;k++){if(!sgValidate(sgFallbackText(r[0],sgPickForm()),{type:'technique',topic:r[0],structure:'Découverte',form:'x'}).length)return true}return false})));
+    test('V7 §19 : banque TS sans élément signalé par les contrôles V7',()=>Object.keys(TS).every(k=>[...TS[k].a,...TS[k].c].every(x=>sgV7Check(x,k,'bank').length===0)));
+    test('V7 §26-29 : SOC, Réseaux, Pentest, CTF, OSINT = repli factuel (aucun corps TS)',()=>['SOC','Réseaux','Pentest'].every(k=>TS[k].c.length===0)&&NO_TS.has('CTF')&&NO_TS.has('OSINT'));
     const passed=results.filter(r=>r.ok).length,total=results.length,failed=results.filter(r=>!r.ok);
     // Résultat lisible directement dans l'interface : aucune console développeur nécessaire.
     let panel=document.getElementById('sg-runtest-results');
@@ -4237,7 +4300,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     }
     const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const grouped={};results.forEach((r,i)=>{const m=r.name.match(/^([^:]+):/);const g=m?m[1]:'Contrôles';(grouped[g]??=[]).push({...r,i:i+1})});
-    panel.innerHTML=`<div style="font-weight:700;margin-bottom:6px">🧪 RunTest Simon — <span style="color:${failed.length?'var(--orange)':'var(--green)'}">${passed}/${total}</span></div>`+
+    panel.innerHTML=`<div style="font-weight:700;margin-bottom:6px">🧪 RunTest Simon V7 — <span style="color:${failed.length?'var(--orange)':'var(--green)'}">${passed}/${total}</span></div>`+
       `<div style="margin-bottom:8px;color:${failed.length?'var(--orange)':'var(--green)'}">${failed.length?`⚠️ ${failed.length} contrôle(s) à corriger.`:'✓ Tous les contrôles sont conformes.'}</div>`+
       Object.entries(grouped).map(([g,rs])=>`<details ${rs.some(r=>!r.ok)?'open':''} style="margin:3px 0"><summary>${esc(g)} — ${rs.filter(r=>r.ok).length}/${rs.length}</summary>`+
         rs.map(r=>`<div style="padding:2px 0;color:${r.ok?'var(--green)':'var(--orange)'}">${r.ok?'✓':'✗'} ${r.i}. ${esc(r.name)}${r.detail?` — ${esc(r.detail)}`:''}</div>`).join('')+`</details>`).join('');
@@ -4255,6 +4318,233 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   sgLoadSettings();sgRefreshUI();
 })();
 
+</script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   VÉRIFICATEUR INDÉPENDANT — prompt maître V7 §50-51 (campagne 7 séries × 5 simulations × 30 générations = 1 050)
+   Intégré à l'interface pour pouvoir être lancé sur iPhone / Safari, sans Node ni jsdom.
+   • Partie 1 : copie conforme des lignes 8-57 de verificateur_independant.js. Ces contrôles n'utilisent AUCUNE
+     fonction du générateur (validateur, familles, hashtags…).
+   • Partie 2 : le seul appel au générateur est genOnePost(), comme dans le script d'origine.
+   • Pendant la campagne, la file, l'historique, les posts rejetés/archivés, les stats et la synchro cloud sont mis à
+     l'abri puis restaurés (même en cas d'erreur) : aucune donnée réelle n'est modifiée, enregistrée ni envoyée au cloud.
+   • Script volontairement séparé du script principal : une erreur ici ne peut pas empêcher l'application de démarrer.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+/* ── 1. CONTRÔLES (copie conforme de verificateur_independant.js, lignes 8-57) ── */
+const TAG=/#[\p{L}\p{N}_-]+/gu,NL='(?<![\\p{L}\\p{N}_])',NR='(?![\\p{L}\\p{N}_])';
+const tagsOf=t=>t.match(TAG)||[],body=t=>t.replace(TAG,'').trim(),words=t=>body(t).split(/\s+/).filter(Boolean).length;
+const sents=t=>body(t).split(/(?<=[.!?…])\s+/).map(x=>x.trim()).filter(Boolean);
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const first3=s=>norm(s).replace(/[^a-z0-9' ]/g,' ').split(/\s+/).filter(Boolean).slice(0,3).join(' ');
+const FP=new RegExp(NL+'(?:je|me|moi|mon|ma|mes)'+NR+'|'+NL+'[jm][\'’]','iu');
+const NOUS=/(?:nous (?:avons|sommes|étions|avions|allons|utilisons)|dans notre |chez nous|notre (?:réseau|entreprise|classe|lycée|équipe|projet|cours)|nos (?:cours|tests|essais|expériences))/i;
+const IMP=[/sur le terrain/i,/\b(?:cas|incidents?|campagnes?|attaques?)\b[^.]{0,40}\b(?:étudié|analysé|observé|rencontré|traité)e?s?\b/i,/quelqu[’']un qui a /i,/\b(?:la semaine dernière|hier|ce week-end|l[’']autre jour|un matin|un soir)\b/i,/\ben (?:classe|cours|stage|entreprise)\b|à l[’']école|au lycée|\b(?:mon|un) (?:prof|professeur|enseignant)\b/i,/\b(?:lors d[’'](?:un|une)|pendant (?:un|une)) (?:atelier|cours|conférence|salon|forum|stage)\b/i,/ces derniers (?:temps|jours)/i,/situation vécue|expérience récente|personne qui a évité|lors d[’']une mission|\b(?:a|ont|avait|semble)\s+l[’']air\b/i];
+const EMO=/vertige|impressionnant|m[’']a surpris|m[’']inqui[eè]te|fait réfléchir|étonnant|fascinant|passionnant|effrayant|fait peur|m[’'](?:étonne|impressionne|fascine)|détail qui frappe/i;
+const DUR=/quelques (?:secondes|minutes|heures|jours|semaines|mois)|un instant|quelques instants|clin d[’']œil|en un éclair/i;
+const BAN_TAGS=['#hackthebox','#opentowork','#analyste','#pentest','#alternance2027','#rennes','#recherchealternance'];
+const BAN_CONCL=/^(?:ce que (?:je )?(?:retiens|trouve intéressant)|ce qui m[’']intéresse|cela montre que|cette notion (?:montre|permet de comprendre)|c[’']est un exemple qui montre|c[’']est justement|un bon rappel|à retenir|cela permet de comprendre|c[’']est une notion que|je continuerai|je garderai)/i;
+const CF=[['bilan',/^(?:ce que (?:je )?retien|à retenir|en résumé|en bref)/i],['montre',/^(?:cela|ceci|cette notion|ce (?:cas|point|exemple)|c[’']est un exemple)[^.]{0,12}(?:montre|illustre|rappelle|souligne)|^c[’']est justement|^un bon rappel/i],['permet',/^(?:cela|ceci|cette notion) permet de comprendre/i],['futur',/^je (?:continuerai|garderai|vais|compte)/i]];
+const cfam=c=>{for(const [n,r] of CF)if(r.test(c))return n;return first3(c).split(' ').slice(0,2).join(' ');};
+function fam(h){const h0=h.trim(),s=h0.replace(/^[«"“]\s*/,''),n=(s.match(/[\p{L}\p{N}'’-]+/gu)||[]).length;
+ if(/\?\s*[»"”)]*\s*$/.test(s))return 'F';
+ if(/^(?:imaginons|supposons|prenons le cas|admettons)/i.test(s)||/^(?:un|une) (?:utilisateur|employé|salarié|internaute|personne|étudiant|élève)[^.]{0,40}\b(?:reçoit|ouvre|clique|télécharge|constate|remarque)/i.test(s))return 'I';
+ if(/\b(?:on peut comparer|comparable à|ressemble à|un peu comme|à la manière d|c[’']est comme)/i.test(s))return 'H';
+ if(/^(?:derrière|le terme|l[’']expression|le mot|le sigle|sous l[’']appellation)/i.test(s))return 'A';
+ if(/^(?:le principal enjeu|l[’']enjeu|le défi|le (?:vrai )?problème|la difficulté|le risque|la question)/i.test(s))return 'G';
+ if(/\b(?:ne (?:signifie|veut|suffit|se limite|sont|est) pas|contrairement|au contraire|à l[’']inverse|et non|mais|pourtant|alors que|tandis que)\b/i.test(s))return 'E';
+ if(/\b(?:désigne|correspond à|consiste à|signifie)\b|(?<![cC][’'])\best (?:un|une) (?!peu\b)/i.test(s)&&!/\bpeut\b/.test(s))return 'B';
+ if(/\b(?:peut|peuvent) (?:avoir|entraîner|provoquer|permettre|conduire|exposer|limiter|réduire|fausser|compliquer)\b|\b(?:entraîne|provoque|expose|conduit à|permet de)\b|^(?:sans|une erreur|un oubli|une mauvaise|une simple|passer à côté)/i.test(s))return 'D';
+ return n<=8?'J':'C';}
+const CLOSE=[['A','B'],['C','D'],['F','G'],['H','I'],['K','L']],close=(a,b)=>a===b||CLOSE.some(p=>p.includes(a)&&p.includes(b));
+const STOP=new Set('dans pour avec sans plus tout tous cette cela comme mais être sont leur leurs elle elles nous vous ainsi aussi alors entre peut peuvent est une des les que qui quoi donc car'.split(' '));
+const kw=s=>norm(s).replace(/[^a-z ]/g,' ').split(/\s+/).filter(w=>w.length>=4&&!STOP.has(w)&&!/^(?:imaginons|expliquer|commencer|quelqu|debute|faille|notion|simple|simplement|base|bases|comprendre|partir|vraiment|souvent)$/.test(w));
+function check(t,prev){const e=[],ss=sents(t),b=body(t),tg=tagsOf(t),hook=ss[0]||'',concl=ss[ss.length-1]||'';
+ const w=words(t);if(w<80||w>150)e.push(['longueur',w+' mots']);if((t.match(/\p{Extended_Pictographic}/gu)||[]).length>1)e.push(['emoji >1','']);
+ if(tg.length!==4)e.push(['hashtags',tg.length+' hashtags']);else{
+  if(norm(tg.slice(0,3).join(' '))!=='#sti2d #decouverte #cybersecurite')e.push(['hashtags','3 premiers hashtags non standard']);
+  if(prev.some(p=>(tagsOf(p)[3]||'').toLowerCase()===tg[3].toLowerCase()))e.push(['4e hashtag répété',tg[3]]);}
+ if(tg.some(x=>BAN_TAGS.includes(x.toLowerCase())))e.push(['hashtag interdit',tg.join(' ')]);
+ for(const s of ss){const root=/root-?me|sti2d/i.test(s);
+  if(!root&&FP.test(s))e.push(['1re personne',s]);
+  if(NOUS.test(s))e.push(['nous/notre personnel',s]);
+  if(IMP.some(r=>r.test(s)))e.push(['vécu implicite',s]);
+  if(EMO.test(s))e.push(['émotion',s]);
+  if(DUR.test(s))e.push(['durée vague',s]);if(/\bmission\b/i.test(s))e.push(['mot « mission »',s]);
+  if(!root&&(/\d/.test(s.replace(/(?:^|\n)\s*\d+\s*[\/.)]\s*/g,' ').replace(/«[^»]*»|"[^"]*"|“[^”]*”/g,' ').replace(/\b(?:2FA|MFA|IPv[46]|TCP\/IP|HTTP\/\d|802\.\d+|SHA-?\d+|AES-?\d*|(?:32|128) bits)\b/g,''))||/millions?|milliards?|en quelques (?:secondes|minutes|heures)|quelques heures suffisent|amende|%/i.test(s)))e.push(['précision chiffrée',s]);}
+ if(/ynov|epitech|tryhackme|portswigger|hackthebox/i.test(b)||(/\binsa\b/i.test(b)&&!/accessibilit|pmr|fauteuil/i.test(b)))e.push(['contexte interdit',b.slice(0,80)]);
+ if(/cyberquest/i.test(b)){if(!/apprentissage/i.test(b)||!/\bIA\b/.test(b))e.push(['CyberQuest',"formule « outil/projet d'apprentissage ludique réalisé avec l'aide de l'IA » absente"]);
+  if(/gamifi|produit professionnel|solution (?:professionnelle|commerciale)|(?:tout|entièrement|développé) seul|\b(?:bug|quiz|score|défi|mini-défi)\b|session de test|week-end|difficulté|rencontr/i.test(b))e.push(['CyberQuest','expérience/présentation non confirmée']);}
+ const hf=fam(hook);prev.forEach(p=>{const ph=sents(p)[0]||'',pf=fam(ph);if(close(hf,pf))e.push(['accroche famille',hf+'~'+pf+' | '+hook.slice(0,70)+'  <=  '+ph.slice(0,70)]);else if(first3(hook)===first3(ph))e.push(['accroche 3 mots',first3(hook)]);});
+ if(BAN_CONCL.test(concl.trim()))e.push(['conclusion interdite',concl.slice(0,70)]);
+ prev.forEach(p=>{const pc=(sents(p).pop()||'');if(first3(concl)===first3(pc)||cfam(concl)===cfam(pc))e.push(['conclusion répétée',first3(concl)+' | '+cfam(concl)]);});
+ const qt=(hook.match(/«\s*([^»]+?)\s*»/)||[])[1],nb=norm(ss.slice(1).join(' ')).replace(/-/g,' ');if(qt&&!norm(qt).replace(/-/g,' ').split(/\s+/).filter(w=>w.length>=3&&!STOP.has(w)).concat(norm(qt).replace(/-/g,' ')).some(x=>nb.includes(x.slice(0,Math.min(x.length,6)))))e.push(['cohérence accroche/corps','terme « '+qt+' » absent du corps']);
+ const hk=new Set(qt?[]:kw(hook));if(hk.size&&!kw(ss.slice(1).join(' ')).some(x=>hk.has(x)||[...hk].some(y=>x.startsWith(y.slice(0,5)))))e.push(['cohérence accroche/corps',hook.slice(0,80)]);
+ if(new Set(ss.map(norm)).size<ss.length)e.push(['phrase dupliquée','']);
+ return {e,hf,concl};}
+/* ── 2. EXÉCUTION DE LA CAMPAGNE (seul appel au générateur : genOnePost) ── */
+const SIMS=5,GENS=30,SERIES_REF=7;
+let running=false,cancel=false,lastText='';
+const $=id=>document.getElementById(id);
+const esc=x=>String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const nf=x=>String(x).replace(/\B(?=(\d{3})+(?!\d))/g,'\u00a0');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const say=(m,t)=>{try{if(typeof toast==='function')toast(m,t||'in');}catch(e){}};
+const clearObj=o=>{Object.keys(o).forEach(k=>{delete o[k];});};
+const refill=(a,src)=>{a.length=0;for(let i=0;i<src.length;i++)a.push(src[i]);};
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+/* Tout ce dont le test a besoin existe-t-il dans l'application ? */
+const ready=()=>{try{return typeof window.genOnePost==='function'&&typeof window.saveAll==='function'&&Array.isArray(Q)&&Array.isArray(H)&&Array.isArray(RJ)&&Array.isArray(W)&&typeof acc==='string'&&typeof topic==='string'&&!!stats&&!!HF_LOG&&!!recentFamilies&&typeof syncBusy==='boolean';}catch(e){return false;}};
+
+/* Restauration de l'état réel. Le verrou (saveAll neutralisé + synchro cloud bloquée) n'est levé qu'APRÈS la restauration complète. */
+const restore=S=>{
+  refill(Q,S.Q);refill(H,S.H);refill(RJ,S.RJ);refill(W,S.W);
+  clearObj(stats);Object.assign(stats,S.stats);
+  clearObj(HF_LOG);Object.assign(HF_LOG,S.HF);
+  clearObj(recentFamilies);Object.assign(recentFamilies,S.RF);
+  acc=S.acc;topic=S.topic;syncBusy=S.busy;window.saveAll=S.save;
+};
+
+/* Même logique de notation que la boucle principale de verificateur_independant.js */
+function score(R,posts,keepSample){
+  let so=0;
+  posts.forEach((t,i)=>{
+    R.total++;
+    if(keepSample&&i<5&&t!=null)R.sample.push(t);
+    if(t==null){R.nul++;R.cnt['génération refusée']=(R.cnt['génération refusée']||0)+1;return;}
+    const prev=posts.slice(Math.max(0,i-3),i).filter(Boolean),r=check(t,prev);
+    R.concl.add(norm(r.concl));R.starts.add(first3(r.concl));R.hooks.add(norm(sents(t)[0]||''));R.fams[r.hf]=(R.fams[r.hf]||0)+1;
+    if(!r.e.length){R.ok++;so++;}
+    else{const seen=new Set();r.e.forEach(([k,d])=>{if(seen.has(k))return;seen.add(k);R.cnt[k]=(R.cnt[k]||0)+1;(R.ex[k]=R.ex[k]||[]).length<2&&R.ex[k].push(String(d).slice(0,130));});}
+  });
+  return so;
+}
+
+function overlay(total,nSeries){
+  const o=document.createElement('div');o.id='vi-overlay';
+  o.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:rgba(5,8,15,.93);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));';
+  o.innerHTML='<div style="width:100%;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px">'
+    +'<div style="font-weight:700;font-size:15px;color:var(--white);margin-bottom:4px">🔎 Vérificateur indépendant</div>'
+    +'<div id="vi-ov-step" style="font-size:12px;color:var(--cyan);margin-bottom:10px">Préparation…</div>'
+    +'<div style="height:8px;border-radius:6px;background:var(--border);overflow:hidden"><div id="vi-ov-bar" style="height:100%;width:0%;background:var(--grad);transition:width .2s"></div></div>'
+    +'<div id="vi-ov-n" style="font-size:11px;color:var(--muted);margin-top:8px">0 / '+nf(total)+' générations contrôlées</div>'
+    +'<div style="font-size:10px;color:var(--muted);margin-top:10px;line-height:1.5">Garde cet écran ouvert. Ta file, ton historique et la synchro cloud sont mis de côté pendant le test, puis restaurés automatiquement.</div>'
+    +'<button class="btn btn-s" id="vi-ov-cancel" style="width:100%;margin-top:12px;min-height:42px">✕ Annuler</button></div>';
+  document.body.appendChild(o);
+  $('vi-ov-cancel').onclick=function(){cancel=true;this.disabled=true;this.textContent='Arrêt en cours…';};
+  return{
+    update(s,m,R){
+      $('vi-ov-bar').style.width=Math.min(100,Math.round(R.total/total*100))+'%';
+      $('vi-ov-step').textContent='Série '+(s+1)+'/'+nSeries+' · simulation '+(m+1)+'/'+SIMS;
+      $('vi-ov-n').textContent=nf(R.total)+' / '+nf(total)+' générations contrôlées · '+nf(R.ok)+' conformes';
+    },
+    close(){o.remove();}
+  };
+}
+
+function reportText(R){
+  const L=[];
+  L.push('Vérificateur indépendant — prompt maître V7 §50-51');
+  L.push('Date : '+new Date().toLocaleString('fr-FR')+' · Durée : '+Math.round(R.ms/1000)+' s');
+  L.push('Navigateur : '+(navigator.userAgent||'?'));
+  L.push('Campagne : '+R.series+' série(s) × '+SIMS+' simulations × '+GENS+' générations = '+R.expected+(R.cancelled?' (interrompue)':''));
+  L.push('Séries (conformes/'+SIMS*GENS+') : '+R.bySeries.join('  '));
+  L.push('TOTAL conformes : '+R.ok+'/'+R.total+' (refus de génération : '+R.nul+')');
+  L.push("Diversité : conclusions distinctes "+R.concl.size+' | débuts de conclusion (3 mots) '+R.starts.size+' | accroches distinctes '+R.hooks.size+" | familles d'accroche "+JSON.stringify(R.fams));
+  Object.keys(R.cnt).sort((a,b)=>R.cnt[b]-R.cnt[a]).forEach(k=>L.push(' ✗ '+k+' '+R.cnt[k]+' → '+(R.ex[k]||[]).join(' || ')));
+  if(R.error)L.push('ERREUR : '+R.error);
+  return L.join('\n');
+}
+
+function render(R){
+  lastText=reportText(R);
+  const out=$('vi-out');if(!out)return;
+  const good=!R.cancelled&&!R.error&&R.nul===0&&R.ok===R.total&&R.total===R.expected;
+  const col=good?'var(--green)':'var(--orange)';
+  const kinds=Object.keys(R.cnt).sort((a,b)=>R.cnt[b]-R.cnt[a]);
+  const fams=Object.keys(R.fams).sort().map(k=>esc(k)+'\u00a0'+R.fams[k]).join(' · ');
+  const verdict=good?'✓ Toutes les générations sont conformes.'
+    :R.error?'⚠️ Erreur : '+esc(R.error)
+    :R.cancelled?'⏹ Campagne interrompue : '+nf(R.total)+' sur '+nf(R.expected)+' générations contrôlées.'
+    :'⚠️ '+nf(R.total-R.ok)+' génération(s) non conforme(s).';
+  out.innerHTML='<div style="margin-top:9px;padding:10px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.18);font-size:11px;line-height:1.5;max-height:420px;overflow:auto">'
+    +'<div style="font-weight:700;font-size:13px">🔎 Vérificateur indépendant — <span style="color:'+col+'">'+nf(R.ok)+'/'+nf(R.total)+'</span></div>'
+    +'<div style="color:'+col+';margin:2px 0 7px">'+verdict+'</div>'
+    +'<div style="color:var(--muted)">'+R.series+' série(s) × '+SIMS+' simulations × '+GENS+' générations · '+Math.round(R.ms/1000)+' s</div>'
+    +'<div style="margin:6px 0;display:flex;flex-wrap:wrap;gap:4px">'+R.bySeries.map((x,i)=>'<span style="padding:2px 6px;border-radius:6px;border:1px solid var(--border);color:'+(x==='150/150'?'var(--green)':'var(--orange)')+'">S'+(i+1)+'\u00a0'+esc(x)+'</span>').join('')+'</div>'
+    +'<div>Refus de génération : <b>'+R.nul+'</b></div>'
+    +'<div style="margin-top:4px">Diversité : '+nf(R.concl.size)+' conclusions distinctes · '+nf(R.starts.size)+' débuts de conclusion (3 mots) · '+nf(R.hooks.size)+' accroches distinctes</div>'
+    +'<div style="margin-top:4px;color:var(--muted)">Familles d\'accroche : '+fams+'</div>'
+    +(kinds.length?'<div style="margin-top:8px;font-weight:700;color:var(--orange)">Erreurs détectées</div>'+kinds.map(k=>'<div style="padding:3px 0;border-top:1px solid var(--border)">✗ '+esc(k)+' — <b>'+R.cnt[k]+'</b>'+((R.ex[k]||[]).length?'<div style="color:var(--muted);word-break:break-word">'+R.ex[k].map(esc).join('<br>')+'</div>':'')+'</div>').join(''):'')
+    +(R.sample.length?'<details style="margin-top:8px"><summary style="cursor:pointer">Aperçu : '+R.sample.length+' premiers posts (série 1, simulation 1)</summary>'+R.sample.map(t=>'<div style="white-space:pre-wrap;word-break:break-word;margin:6px 0;padding:6px;border-left:2px solid var(--cyan)">'+esc(t)+'</div>').join('')+'</details>':'')
+    +'<button class="btn btn-c" onclick="viCopy()" style="margin-top:9px;min-height:40px">📋 Copier le rapport</button></div>';
+  say(good?'🔎 Vérificateur : '+nf(R.ok)+'/'+nf(R.total)+' conformes ✓':R.cancelled?'🔎 Campagne interrompue':'⚠️ Vérificateur : '+nf(R.ok)+'/'+nf(R.total)+' conformes',good?'ok':'er');
+}
+
+async function copyReport(){
+  const t=lastText;if(!t)return;
+  try{await navigator.clipboard.writeText(t);say('Rapport copié 📋','ok');return;}catch(e){}
+  try{
+    const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px';
+    document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);
+    const ok=document.execCommand('copy');ta.remove();
+    say(ok?'Rapport copié 📋':'Copie impossible : sélectionne le texte à la main.',ok?'ok':'er');
+  }catch(e){say('Copie impossible.','er');}
+}
+
+async function run(nSeries){
+  nSeries=nSeries===1?1:SERIES_REF;
+  if(running)return;
+  if(!ready()){say('Vérificateur indisponible : application incomplète.','er');return;}
+  if(syncBusy){say('Synchronisation cloud en cours — réessaie dans un instant.','er');return;}
+  running=true;cancel=false;
+  const total=nSeries*SIMS*GENS,t0=Date.now();
+  const R={series:nSeries,expected:total,total:0,ok:0,nul:0,cnt:{},ex:{},concl:new Set(),starts:new Set(),hooks:new Set(),fams:{},bySeries:[],sample:[],cancelled:false,error:'',ms:0};
+  /* 1) mise à l'abri de l'état réel */
+  const S={acc:acc,topic:topic,Q:Q.slice(),H:H.slice(),RJ:RJ.slice(),W:W.slice(),stats:clone(stats),HF:clone(HF_LOG),RF:clone(recentFamilies),busy:syncBusy,save:window.saveAll};
+  const ov=overlay(total,nSeries);let wl=null,restored=false;
+  try{
+    /* écran allumé pendant le test (Safari iOS ≥ 16.4, sans bloquer si indisponible) */
+    try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(l=>{wl=l;if(!running){try{l.release();}catch(e){}}}).catch(()=>{});}catch(e){}
+    /* 2) verrou : rien ne peut enregistrer ni envoyer au cloud l'état de test */
+    window.saveAll=function(){};syncBusy=true;
+    /* 3) état « page neuve », comme dans le script d'origine (jsdom) */
+    RJ.length=0;W.length=0;clearObj(HF_LOG);recentFamilies.simon=[];recentFamilies.niko=[];
+    for(let s=0;s<nSeries&&!cancel;s++){
+      let so=0,sims=0;
+      for(let m=0;m<SIMS&&!cancel;m++){
+        acc='simon';topic='';Q.length=0;H.length=0;
+        const posts=[];
+        for(let i=0;i<GENS;i++){
+          let t=null;
+          try{const x=window.genOnePost();t=x&&x.post?x.post.text:null;}
+          catch(err){const k='exception génération';R.cnt[k]=(R.cnt[k]||0)+1;(R.ex[k]=R.ex[k]||[]).length<2&&R.ex[k].push(String(err&&err.message||err).slice(0,130));}
+          posts.push(t);
+        }
+        so+=score(R,posts,s===0&&m===0);sims++;
+        ov.update(s,m,R);
+        await wait(30); /* rend la main à Safari : l'écran se met à jour, le bouton Annuler répond */
+      }
+      if(sims)R.bySeries.push(so+'/'+sims*GENS);
+    }
+    R.cancelled=cancel;
+  }catch(err){R.error=String(err&&err.message||err);}
+  finally{
+    try{restore(S);restored=true;}catch(err){R.error=(R.error?R.error+' · ':'')+'Restauration impossible ('+String(err&&err.message||err)+') : recharge la page, tes données enregistrées sont intactes.';}
+    running=false;
+    try{if(wl)wl.release();}catch(e){}
+    ov.close();
+  }
+  R.ms=Date.now()-t0;
+  render(R);
+}
+
+window.viRun=run;
+window.viCopy=copyReport;
+window.viCheck=check; /* exposé pour les tests de non-régression */
+})();
 </script>
 </body>
 </html>
