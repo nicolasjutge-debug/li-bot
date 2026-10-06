@@ -3544,6 +3544,49 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
             ...q.map(x=>({text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.scheduledAt||x.ts||0,src:'q'}))]
       .filter(x=>x.text).sort((a,b)=>a.ts-b.ts).slice(-7);
   };
+  /* V7.2 — comparateur de proximité rédactionnelle. Il ne confond pas sujet commun,
+     vocabulaire générique ou structure grammaticale avec une réutilisation de formulation. */
+  const SG_HOOK_GENERIC=new Set(('une un le la les des de du dans sur avec pour et ou à au aux en ce cette ces est sont qui que je me mon ma mes on se son sa ses il elle ils elles ne pas plus peut comme mais par aussi tout tous être ont été fait cela ça nous vous ton ta leur leurs quand entre sans sous vers chez après avant alors ainsi même autre autres chaque quelques plusieurs car donc dont très petit petite jour rappel notion sécurité informatique cybersécurité système fichier fichiers accès droits droit permettre permet simple simplement niveau partie forme idée point chose exemple besoin utilisateur utilisateurs aujourd hui aujourd’hui voici voilà notamment également vraiment juste encore toujours').split(' '));
+  const sgHookTokens=s=>sgWords(String(s)).filter(w=>!SG_HOOK_GENERIC.has(w));
+  const sgHookNorm=s=>sgHookTokens(s).join(' ');
+  const sgHookNgrams=(tokens,n=3)=>{const out=[];for(let i=0;i<=tokens.length-n;i++)out.push(tokens.slice(i,i+n).join(' '));return out};
+  const sgHookLevenshtein=(a,b)=>{const A=String(a),B=String(b);if(A===B)return 0;if(!A.length)return B.length;if(!B.length)return A.length;let prev=Array.from({length:B.length+1},(_,i)=>i);for(let i=1;i<=A.length;i++){const cur=[i];for(let j=1;j<=B.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(A[i-1]===B[j-1]?0:1));prev=cur}return prev[B.length]};
+  const sgV72Similarity=(candidate,historical)=>{
+    const A=sgHookTokens(candidate),B=sgHookTokens(historical);
+    if(!A.length||!B.length)return {score:0,charScore:0,editScore:0,commonNgrams:0,commonWords:0};
+    const na=A.join(' '),nb=B.join(' ');
+    if(na===nb)return {score:100,charScore:1,editScore:1,commonNgrams:Math.max(0,Math.min(A.length,B.length)-2),commonWords:Math.min(A.length,B.length)};
+    const ca=sgHookNgrams(A,3),cb=new Set(sgHookNgrams(B,3));
+    let commonNgrams=0;for(const x of ca)if(cb.has(x))commonNgrams++;
+    const sa=new Set(A),sb=new Set(B);let commonWords=0;for(const x of sa)if(sb.has(x))commonWords++;
+    const charScore=1-sgHookLevenshtein(na,nb)/Math.max(na.length,nb.length);
+    const editScore=1-sgHookLevenshtein(A.join(' '),B.join(' '))/Math.max(A.length,B.length);
+    const ngramScore=commonNgrams/Math.max(1,Math.min(ca.length,sgHookNgrams(B,3).length));
+    const wordScore=commonWords/Math.max(1,Math.min(sa.size,sb.size));
+    const score=Math.round((charScore*.45+ngramScore*.35+wordScore*.20)*100);
+    return {score,charScore,editScore,commonNgrams,commonWords};
+  };
+  const sgPublishedHookHistory=()=>{
+    const seen=new Set(),out=[];
+    const h=(typeof H!=='undefined'?H:[]).filter(x=>x&&x.account==='simon'&&x.text);
+    for(const x of h){
+      const first=sgFirstRaw(sgNoHashtags(x.text));
+      const key=sgHookNorm(first);
+      if(!key||seen.has(key))continue;
+      seen.add(key);out.push({text:first,ts:x.publishedAt||x.ts||0});
+    }
+    return out.sort((a,b)=>a.ts-b.ts);
+  };
+  const sgCheckHookV72=(candidate,theme='')=>{
+    const cand=String(candidate||'').trim();
+    const history=sgPublishedHookHistory();
+    let closest=null;
+    for(const h of history){const r=sgV72Similarity(cand,h.text);if(!closest||r.score>closest.score)closest={...r,text:h.text};}
+    if(!closest)return {decision:false,score:0,threshold:84,count:0,closest:null,common:[]};
+    const exact=sgHookNorm(cand)===sgHookNorm(closest.text);
+    const decision=exact || (closest.score>=84 && ((closest.commonNgrams>=2&&closest.charScore>=.55) || (closest.commonNgrams>=1&&closest.charScore>=.75&&closest.editScore>=.62) || (closest.editScore>=.90&&closest.commonWords>=4)));
+    return {decision,score:closest.score,threshold:84,count:history.length,closest:closest.text,common:closest.commonNgrams};
+  };
   const sgRecentPublished=()=>sgHistory().filter(x=>x.src==='h');
   const sgProgress=()=>{const el=document.getElementById('sg-prog');return (el?.value||'30 %').trim()||'30 %'};
   const sgGeo=()=>{const el=document.getElementById('sg-geo');return (el?.value||'Rennes').trim()||'Rennes'};
@@ -3599,35 +3642,6 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgPrec=x=>{const y=String(x).replace(/(?:^|\n)\s*\d+\s*[\/.)]\s*/g,' ').replace(/«[^»]*»|"[^"]*"|“[^”]*”/g,' ').replace(/\b(?:2FA|MFA|STI2D|IPv[46]|TCP\/IP|HTTP\/\d|802\.\d+|SHA-?\d+|AES-?\d*)\b/gi,' ');return /\d|millions?|milliards?|quelques (?:secondes|minutes|heures|jours)|amende|%/i.test(y);};
   const SG_CONCL_FAM=[['retenir',/^(?:ce que je retiens|à retenir|retenons|je retiens)/],['montre',/^(?:cela|ça|cette notion|cet exemple|ce point|c'est un exemple qui) (?:montre|illustre|rappelle)/],['comprendre',/^(?:cela|ça|cette notion|ce point) permet (?:de |d')(?:mieux )?comprendre/],['justement',/^(?:c'est )?justement/],['intérêt',/^(?:ce que je trouve|ce qui m'intéresse|ce qui est intéressant)/],['rappel',/^(?:un|le) (?:bon )?rappel/],['notion',/^c'est une notion que/],['apprendre',/^je (?:continuerai|garderai|poursuivrai|reviendrai)/]];
   const sgConclFam=t=>{const S=sgSentences(sgNoHashtags(String(t))),l=sgNorm(S[S.length-1]||'');const f=SG_CONCL_FAM.find(x=>x[1].test(l));return f?f[0]:'autre';};
-  // V7.2 — Contrôle strict « accroche trop proche » : comparaison dédiée aux accroches publiées uniquement.
-  const SG_HOOK_GENERIC=new Set('une un le la les des de du et en pour avec sans sur dans par au aux ce cette ces c est que qui quoi notion sécurité securite système systeme outil outils partie point exemple rappel idée idee sujet thème theme comprendre permet faire avoir être etre très tres plus comme quand comment pourquoi avec pour dans sur vers entre après apres avant nouveau nouvelle important importante petit jour jours bon bonne simple simplement aujourd’hui aujourd hui quotidien du jour'.split(/\s+/));
-  const sgHookTokens=t=>sgNorm(String(t||'')).replace(/[^\p{L}\p{N}\s]/gu,' ').split(/\s+/).filter(Boolean);
-  const sgHookNorm=t=>sgHookTokens(t).join(' ');
-  const sgHookNgrams=(tokens,n)=>{const out=[];for(let i=0;i<=tokens.length-n;i++){const g=tokens.slice(i,i+n).join(' ');if(g.split(' ').some(w=>!SG_HOOK_GENERIC.has(w)))out.push(g)}return out};
-  const sgHookLev=(a,b)=>{const A=[...a],B=[...b],d=Array.from({length:A.length+1},()=>Array(B.length+1).fill(0));for(let i=0;i<=A.length;i++)d[i][0]=i;for(let j=0;j<=B.length;j++)d[0][j]=j;for(let i=1;i<=A.length;i++)for(let j=1;j<=B.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(A[i-1]===B[j-1]?0:1));return d[A.length][B.length]};
-  function sgHookSimilarity(candidate,historical,theme=''){
-    const A=sgHookTokens(candidate),B=sgHookTokens(historical);if(A.length<3||B.length<3)return {score:0,commonNgrams:0,charScore:0,editScore:0,commonSegments:[]};
-    const na=sgHookNorm(candidate),nb=sgHookNorm(historical);if(na===nb)return {score:100,commonNgrams:Math.min(3,A.length-1,B.length-1),charScore:1,editScore:1,commonSegments:[na]};
-    const ngA=[...new Set([...sgHookNgrams(A,2),...sgHookNgrams(A,3)])],ngB=new Set([...sgHookNgrams(B,2),...sgHookNgrams(B,3)]),common=ngA.filter(x=>ngB.has(x));
-    const sigA=A.filter(w=>!SG_HOOK_GENERIC.has(w)&&!sgThemeWords(theme).has(w)),sigB=B.filter(w=>!SG_HOOK_GENERIC.has(w)&&!sgThemeWords(theme).has(w));
-    if(sigA.length<2||sigB.length<2)return {score:0,commonNgrams:common.length,charScore:0,editScore:0,commonSegments:common};
-    const edit=1-sgHookLev(na,nb)/Math.max(na.length,nb.length);const char=common.filter(x=>x.split(' ').length>=2).length/Math.max(1,Math.min(ngA.length,ngB.length));
-    const score=Math.round((Math.max(char,common.length>=2?.7:0)*.55+edit*.45)*100);
-    return {score,commonNgrams:common.length,charScore:char,editScore:edit,commonSegments:common.slice(0,8)};
-  }
-  function sgPublishedHookHistory(){
-    const seen=new Set(),out=[];
-    for(const h of sgHistory().filter(x=>x&&x.account==='simon'&&x.text&&x.H)){
-      const hook=sgFirstRaw(sgNoHashtags(h.text));const norm=sgHookNorm(hook);if(!norm||seen.has(norm))continue;seen.add(norm);out.push({...h,hook});
-    }
-    return out.sort((a,b)=>(Number(a.ts)||0)-(Number(b.ts)||0));
-  }
-  function sgCheckHookV72(candidate,theme=''){
-    const history=sgPublishedHookHistory();let best=null;
-    for(const h of history){const r=sgHookSimilarity(candidate,h.hook,theme);if(!best||r.score>best.score)best={...r,hook:h.hook};}
-    const decision=Boolean(best&&(best.score>=78&&((best.commonNgrams>=2&&best.charScore>=.55)||(best.commonNgrams>=1&&best.charScore>=.75&&best.editScore>=.62)||(best.editScore>=.82&&best.commonSegments.length>=1))));
-    return {decision,best,compared:history.length};
-  }
   function sgValidate(raw,opt={}){
     const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
@@ -3687,31 +3701,39 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       for(let i=0;i<sentences.length;i++)for(let j=i+1;j<sentences.length;j++){
         const r=sgOverlap(sentences[i],sentences[j],themeSet);if(r>=60)add(`Redondance ${Math.round(r)} % : « ${sentences[i].slice(0,60)} » ≈ « ${sentences[j].slice(0,60)} »`);
       }
-      // Similarité globale + accroche/conclusion avec chacun des 7 derniers posts.
+      // Contrôle du CORPS : on conserve la barrière anti-doublon, mais elle ne se base plus
+      // sur le seul vocabulaire commun du thème. Une forte proximité de formulation est requise.
       for(const h of history){
-        const hs=sgSentences(sgNoHashtags(h.text)),a=sgSig(sgNoHashtags(display)).filter(w=>!themeSet.has(w)),b=sgSig(sgNoHashtags(h.text)).filter(w=>!sgThemeWords(h.theme).has(w));
-        if(a.length>=4&&b.length>=4){const A=new Set(a),B=new Set(b);let common=0;A.forEach(x=>B.has(x)&&common++);const sim=common/Math.min(A.size,B.size)*100;if(sim>=70)add(`Similarité ${Math.round(sim)} % avec un post récent.`)}
-
-        if(sentences.at(-1)&&hs.at(-1)&&sgOverlap(sentences.at(-1),hs.at(-1),themeSet)>=60)add(`Conclusion trop proche d’un post récent : « ${sentences.at(-1).slice(0,70)} »`);
+        const a=sgHookTokens(sgNoHashtags(display)),b=sgHookTokens(sgNoHashtags(h.text));
+        if(a.length>=6&&b.length>=6){
+          const r=sgV72Similarity(display,h.text);
+          if(r.score>=88&&((r.commonNgrams>=4&&r.charScore>=.62)||(r.commonNgrams>=3&&r.charScore>=.76&&r.editScore>=.62)||(r.editScore>=.91&&r.commonWords>=8)))add(`Similarité du corps trop élevée (${r.score} %) avec un post récent.`);
+        }
       }
+      // V7.2 — ACCROCHE : uniquement les accroches réellement publiées (H), dédoublonnées.
       const hookV72=sgCheckHookV72(sentences[0]||'',topic);
-      if(hookV72.decision&&hookV72.best)add(`Accroche trop proche d’un post récent : « ${hookV72.best.hook.slice(0,70)} »`);
+      if(hookV72.decision)add(`Accroche trop proche d’un post publié : « ${(hookV72.closest||'').slice(0,70)} »`);
+      // V7.2 — CONCLUSION : même principe de proximité réelle, sans rejet sur une famille
+      // grammaticale ou sur les seuls mots techniques du sujet.
+      const currentConclusion=sentences.at(-1)||'';
+      if(currentConclusion){
+        let best=null;
+        for(const h of sgPublishedHookHistory()){
+          const hs=sgSentences(sgNoHashtags(h.text));const oldConclusion=hs.at(-1)||'';
+          if(!oldConclusion)continue;
+          const r=sgV72Similarity(currentConclusion,oldConclusion);if(!best||r.score>best.score)best={...r,text:oldConclusion};
+        }
+        if(best&&best.score>=84&&((best.commonNgrams>=2&&best.charScore>=.55)||(best.commonNgrams>=1&&best.charScore>=.75&&best.editScore>=.62)||(best.editScore>=.90&&best.commonWords>=4)))add(`Conclusion trop proche d’un post publié : « ${best.text.slice(0,70)} »`);
+      }
       const currentFamily=sgFamily(topic);if(currentFamily!=='autre'&&sgFamilyCount7(currentFamily)>=2)add(`Famille « ${currentFamily} » déjà utilisée 2 fois dans les 7 derniers posts.`);
       if(SG_ADVANCED.has(topic)&&sgAdvancedCount5()>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
     }
     [/\b(?:mon|ma|mes) (?:professeurs?|profs?|enseignants?|stage|entreprise|tuteur)\b/i,/\bpendant (?:mon|ma|le) (?:stage|cours)\b/i,/\blors d[’']une mission\b/i,/\b(?:vu|appris|abordé|étudié) en cours\b/i].forEach(re=>{if(re.test(display))add('Contexte scolaire ou professionnel non confirmé (brief §1).')});
-    const bf=sgBriefFam(display),bh=history.filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).map(h=>sgBriefFam(h.text||''));
-    if(bf.o!=='autre'&&bh.some(x=>x.o===bf.o))add(`Accroche de même famille (${bf.o}) qu’un des 3 derniers posts.`);
-    if(bf.c!=='autre'&&bh.some(x=>x.c===bf.c))add(`Conclusion de même famille (${bf.c}) qu’un des 3 derniers posts.`);
-    /* PROMPT MAÎTRE DÉFINITIF — §13-14 familles d'accroche A–L (identique/proche vs 3 derniers), §28-29 INSA/Ynov/Epitech, §30 conclusions */
     if(type==='technique'){
-      const hf=hookFamily(sgFirstRaw(display)),near=new Set([hf,...(HF_CLOSE[hf]||[])]);
-      history.filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).forEach(h=>{const f=hookFamily(sgFirstRaw(sgNoHashtags(h.text||'')));if(near.has(f))add(`Accroche : famille « ${hf} » identique ou proche (${f}) d’un des 3 derniers posts.`)});
       if(CONCL_BAN.test((sentences.at(-1)||'').trim()))add('Conclusion : formule répétitive à éviter (§30).');
       if(sentences.some(x=>SG_IMPL.test(x)))add('Vécu implicite ou anecdote non confirmée (V7 §17).');
       if(sentences.some(x=>SG_EMO2.test(x)))add('Émotion personnelle non confirmée (V7 §18).');
       if(sentences.some(x=>!/root-?me/i.test(x)&&sgPrec(x)))add('Précision chiffrée non nécessaire (V7 §32).');
-      {const co=sgConclOpen(display),cf=sgConclFam(display);history.filter(h=>sgNorm(sgNoHashtags(h.text||''))!==sgNorm(display)).slice(-3).forEach(h=>{if(co&&co===sgConclOpen(h.text||''))add('Conclusion : même début qu’un des 3 derniers posts (§25).');if(cf!=='autre'&&cf===sgConclFam(h.text||''))add(`Conclusion : famille « ${cf} » déjà utilisée dans les 3 derniers posts (§24).`);});}
       if(sentences.some(x=>flagged(x)))add('Première personne non confirmée (prompt maître §5).');
     }
     if(/ynov|epitech/i.test(display)||(/\binsa\b/i.test(display)&&!/accessibilit|pmr|fauteuil/i.test(display)))add('Contexte Ynov/Epitech/INSA non confirmé (§28-29).');
@@ -4211,7 +4233,14 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     withHistory([make('DNS',{text:oldText,ts:1})],[],()=>{
       expectErrors('Similarité ≥70 % avec un récent bloquée',valid,{...validMeta},false);
       const hookOnly='En découvrant le DNS, je cherche surtout à comprendre comment un nom de domaine peut être associé à une adresse IP. Cette notion permet de mieux comprendre ce qui se passe avant même qu’une connexion soit établie. Pour un débutant, la différence entre le nom que l’on saisit et l’adresse réellement utilisée n’est pas forcément évidente. Le DNS sert justement à faire le lien entre les deux. Je commence à mieux comprendre pourquoi cette notion compte dans le réseau. Cette première approche m’aide aussi à mieux distinguer les rôles des différents services réseau.';
-      expectErrors('Accroche trop proche bloquée',hookOnly,{...validMeta},false);
+      expectErrors('V7.2 : accroche réellement réutilisée bloquée',hookOnly,{...validMeta},false);
+      const genericHook='Un petit rappel sur les permissions. Cette notion permet de mieux comprendre les accès à un fichier. Pour un débutant, ces droits peuvent sembler simples. Une mauvaise configuration peut toutefois modifier les possibilités offertes à un utilisateur. Le sujet reste important pour comprendre la sécurité d’un système. Cette première approche permet de distinguer les accès selon les besoins.';
+      const thematicOnly='Les permissions Linux définissent les accès aux fichiers. Cette notion de sécurité informatique concerne les utilisateurs et les droits associés. Un fichier peut être lu ou modifié selon la configuration retenue. Cela permet de limiter certaines actions et de mieux organiser les accès sur un système. Le principe est utile pour comprendre les bases de la sécurité Linux. Une configuration adaptée évite des droits inutiles.';
+      withHistory([make('Permissions Linux',{text:genericHook,ts:1})],[],()=>expectClean('V7.2 : formulation générique/thématique seule acceptée',thematicOnly,{...validMeta,theme:'Permissions Linux'},false));
+      const technicalOnly=valid.replace('DNS','Linux');
+      withHistory([make('Linux',{text:technicalOnly,ts:1})],[],()=>expectClean('V7.2 : nom technique seul accepté',technicalOnly,{...validMeta,theme:'Linux'},false));
+      const qOnly=make('DNS',{text:valid,ts:1});
+      withHistory([], [qOnly],()=>expectClean('V7.2 : Q ne compte pas pour l’accroche',hookOnly,{...validMeta},false));
     });
 
     // 10 — Prompt : contraintes transmises à l’IA, 7 derniers posts et absence de hashtags.
