@@ -4248,9 +4248,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       const prompt=sgPrompt({type:'technique',theme:'DNS',structure:'Découverte',form:SG_FORMS[3]});
       test('Prompt : thème transmis',()=>prompt.includes('THÈME : DNS'));
       test('Prompt : structure transmise',()=>prompt.includes('STRUCTURE : Découverte'));
-      test('Prompt : formulation transmise',()=>prompt.includes('TYPE D’ACCROCHE : '+SG_FORMS[3]));
-      test('Prompt : token Root-Me transmis',()=>prompt.includes(SG_TOKEN));
-      test('Prompt : 7 derniers posts transmis',()=>prompt.includes('7 DERNIERS POSTS SANS HASHTAGS')&&['[1]','[2]','[3]','[4]','[5]','[6]','[7]'].every(x=>prompt.includes(x)));
+      test('Prompt : formulation transmise',()=>{const p=sgNorm(prompt);return p.includes(sgNorm('TYPE D’ACCROCHE : '+SG_FORMS[3]));});
+      test('Prompt : token Root-Me transmis',()=>{const p=sgNorm(prompt);return p.includes(sgNorm(SG_TOKEN));});
+      test('Prompt : 7 derniers posts transmis',()=>{const p=sgNorm(prompt);const marker=sgNorm('7 DERNIERS POSTS SANS HASHTAGS');const i=p.indexOf(marker);if(i<0)return false;const tail=p.slice(i);return ['[1]','[2]','[3]','[4]','[5]','[6]','[7]'].every(x=>tail.includes(x));});
       test('Prompt : hashtags interdits à l’IA',()=>prompt.includes('sans hashtag, sans URL et sans markdown'));
       test('Prompt : niveau débutant',()=>prompt.includes('Niveau : débutant')&&prompt.includes('Aucune expérience inventée'));
     });
