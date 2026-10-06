@@ -4241,7 +4241,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       const technicalHistory='Linux est présent dans de nombreux environnements informatiques et peut être utilisé pour différents usages. Les commandes du terminal permettent notamment d’administrer des ressources et de consulter des informations sur le système. Une même notion peut donc être abordée sous plusieurs angles selon le contexte. Cette présentation reste générale et ne suppose aucune pratique personnelle.';
       withHistory([make('Linux',{text:technicalHistory,ts:1})],[],()=>expectClean('V7.2 : nom technique seul accepté',technicalOnly,{...validMeta,theme:'Linux'},false));
       const qOnly=make('DNS',{text:valid.replace('Je commence à mieux comprendre pourquoi cette notion compte dans le réseau.','Le lien entre ces éléments reste essentiel avant de nombreux échanges.'),ts:1});
-      const hookOnlyNeutral=hookOnly.replace('je cherche surtout à comprendre','il devient plus simple de comprendre');
+      const hookOnlyNeutral=hookOnly.replace('je cherche surtout à comprendre','il devient plus simple de comprendre').replace('Je commence à mieux comprendre pourquoi cette notion compte dans le réseau.','Cette notion compte dans le réseau avant de nombreux échanges.').replace('Cette première approche m’aide aussi à mieux distinguer les rôles des différents services réseau.','Cette première approche permet aussi de mieux distinguer les rôles des différents services réseau.');
       withHistory([], [qOnly],()=>expectClean('V7.2 : Q ne compte pas pour l’accroche',hookOnlyNeutral,{...validMeta},false));
     });
 
