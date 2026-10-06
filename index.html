@@ -3701,13 +3701,19 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       for(let i=0;i<sentences.length;i++)for(let j=i+1;j<sentences.length;j++){
         const r=sgOverlap(sentences[i],sentences[j],themeSet);if(r>=60)add(`Redondance ${Math.round(r)} % : « ${sentences[i].slice(0,60)} » ≈ « ${sentences[j].slice(0,60)} »`);
       }
-      // Contrôle du CORPS : on conserve la barrière anti-doublon, mais elle ne se base plus
-      // sur le seul vocabulaire commun du thème. Une forte proximité de formulation est requise.
+      // Contrôle du CORPS V7.2 : aucune décision sur un simple score global.
+      // Rejet uniquement si le texte reprend réellement plusieurs séquences consécutives
+      // et une formulation quasi identique. Les mots génériques et le thème seuls ne suffisent pas.
       for(const h of history){
         const a=sgHookTokens(sgNoHashtags(display)),b=sgHookTokens(sgNoHashtags(h.text));
-        if(a.length>=6&&b.length>=6){
+        if(a.length>=10&&b.length>=10){
           const r=sgV72Similarity(display,h.text);
-          if(r.score>=88&&((r.commonNgrams>=4&&r.charScore>=.62)||(r.commonNgrams>=3&&r.charScore>=.76&&r.editScore>=.62)||(r.editScore>=.91&&r.commonWords>=8)))add(`Similarité du corps trop élevée (${r.score} %) avec un post récent.`);
+          const na=sgHookNgrams(a,3), nb=new Set(sgHookNgrams(b,3));
+          let c3=0;for(const x of na)if(nb.has(x))c3++;
+          const exact=r.score===100;
+          const quasi= r.score>=96 && r.charScore>=.90 && r.editScore>=.90 && c3>=6;
+          const veryClose= r.score>=94 && r.charScore>=.94 && r.editScore>=.88 && c3>=8 && r.commonWords>=12;
+          if(exact||quasi||veryClose)add(`Similarité du corps trop élevée (${r.score} %) avec un post récent.`);
         }
       }
       // V7.2 — ACCROCHE : uniquement les accroches réellement publiées (H), dédoublonnées.
