@@ -3484,8 +3484,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     ['Phishing','#Phishing','menaces'],['Ingénierie sociale','#IngenierieSociale','menaces'],['Malware','#Malware','menaces'],
     ['Ransomware','#Ransomware','menaces'],['Vulnérabilités','#Vulnérabilité','menaces'],['RGPD','#RGPD','données'],
     ['Données personnelles','#DonnéesPersonnelles','données'],['Confidentialité','#DonnéesPersonnelles','données'],
-    ['SIEM','#SIEM','avancé'],['SOC','#SOC','avancé'],['Zero-day','#ZeroDay','avancé'],['Pentest','#Débutant','avancé']
+    ['SIEM','#SIEM','avancé'],['SOC','#SOC','avancé'],['Zero-day','#ZeroDay','avancé'],['Pentest','#Débutant','avancé'],
+    ['CyberQuest','#CyberQuest','sécurité'],['Accessibilité numérique','#Accessibilité','données']
   ];
+  const SG_PROJECT_TOPICS=new Set(['CyberQuest','Accessibilité numérique']);
   const SG_THEME=new Map(SG_THEME_ROWS.map(x=>[x[0],x]));
   const SG_ALIASES=new Map([['Réseaux','Réseau'],['Zero Day','Zero-day'],['Vulnérabilité','Vulnérabilités'],['MFA/2FA','MFA / 2FA']]);
   const SG_OFFENSIVE=/\b(?:nmap|sqlmap|metasploit|msfconsole|hydra|hashcat|payload|reverse shell|burp suite|burpsuite|nikto|gobuster|ffuf|john the ripper)\b/i;
@@ -3984,6 +3986,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     // si elles ne sont pas conformes, le moteur change de combinaison. Aucun
     // texte non validé ne peut être retourné.
     const allRows=SG_THEME_ROWS.filter(r=>{
+      if(SG_PROJECT_TOPICS.has(r[0]))return false;
       const recent=sgHistory().some(h=>sgNorm(h.theme)===sgNorm(r[0]));
       const familyFull=sgFamilyCount7(r[2])>=2;
       const advancedFull=r[2]==='avancé'&&sgAdvancedCount5()>=1;
@@ -4042,12 +4045,13 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const po=document.getElementById('po');const text=(po?.innerText||'').trim();
     sgGate={reviewed:Boolean(reviewed),hash:reviewed?sgHash(text):null};
     const btn=document.getElementById('sg-review-btn'),st=document.getElementById('sg-review-status'),detail=document.getElementById('sg-review-detail');
-    if(btn)btn.textContent=reviewed?'✓ Relecture validée — recliquer après modification':'✓ Relu et validé';
+    if(btn){btn.textContent=reviewed?'✓ Relecture validée':'✓ Relu et validé';btn.disabled=Boolean(reviewed);btn.setAttribute('aria-disabled',String(Boolean(reviewed)));btn.title=reviewed?'Relecture déjà validée. Modifie le texte pour pouvoir relire à nouveau.':'Valider la relecture du texte actuel.';}
     if(st){st.textContent=reviewed?'🔓 Relecture humaine validée':'🔒 Relecture humaine requise avant copie/publication';st.style.color=reviewed?'var(--green)':'var(--orange)'}
     if(detail)detail.textContent=reviewed?'Le verrou est lié au hash du texte final. Une modification, même minime, invalide la validation.':'Le verrou est lié au hash du texte final. Toute modification invalide la relecture.';
     ['save-draft-btn'].forEach(id=>{});
   }
   function sgHumanReview(){
+    if(sgGate.reviewed){toast('Relecture déjà validée. Modifie le texte pour réactiver le bouton.','in');return;}
     if(acc!=='simon'){toast('La relecture verrouillée concerne le compte Simon.','in');return;}
     const text=(document.getElementById('po')?.innerText||'').trim();if(!text){toast('Aucun texte à relire.','er');return;}
     const meta=sgLastMeta||{type:'technique',theme:topic};
@@ -4122,17 +4126,39 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     toast('Post généré ✓ · '+result.theme+' · '+result.structure,'ok');
   }
   window.genPost=sgGenerate;
+  function sgBuildPersonalCandidate(){
+    // Faits confirmés uniquement : CyberQuest a été développé avec l’aide de l’IA ;
+    // Simon a participé à un projet d’accessibilité PMR. Aucun détail de réalisation n’est ajouté.
+    const choices=[
+      {theme:'CyberQuest',family:'sécurité',text:'CyberQuest est un projet que j’ai développé avec l’aide de l’intelligence artificielle. Cette expérience me donne un sujet concret pour réfléchir à la place de l’IA dans un projet numérique. Un outil peut aider à avancer, mais il ne remplace pas le besoin de comprendre ce que l’on construit ni de vérifier les résultats proposés. Il reste important de garder un regard critique sur les suggestions obtenues et de faire attention à ce qui est réellement confirmé.\n\nParler d’un projet, ce n’est donc pas seulement présenter son idée : c’est aussi reconnaître la part de l’accompagnement utilisé et les limites de ce qu’on peut affirmer. CyberQuest me permet d’aborder ces questions sans prétendre tout maîtriser.'},
+      {theme:'Accessibilité numérique',family:'données',text:'J’ai participé à un projet autour de l’accessibilité pour les personnes à mobilité réduite. Ce sujet rappelle qu’un service numérique ou un espace ne se pense pas uniquement du point de vue de la personne qui le conçoit. Les besoins des personnes concernées doivent aussi compter dans les choix réalisés.\n\nL’accessibilité n’est pas un détail ajouté à la fin : elle fait partie des questions à considérer dès la réflexion sur un projet. Cette approche invite à écouter les usages et à éviter de supposer qu’une solution convient à tout le monde. Je peux parler de ma participation à ce projet, sans prétendre représenter à moi seul l’expérience de toutes les personnes concernées.'}
+    ];
+    const history=sgHistory().slice(-7).map(x=>sgNorm(sgNoHashtags(x.text||''))).join(' ');
+    const choicesFresh=choices.filter(c=>!history.includes(sgNorm(c.theme)));
+    const pool=(choicesFresh.length?choicesFresh:choices).sort(()=>Math.random()-.5);
+    for(const c of pool){
+      const meta={type:'projet',theme:c.theme,structure:'Observation',form:'constat'};
+      const errors=sgValidate(c.text,meta);
+      if(!errors.length)return {...c,...meta,src:'personnel'};
+    }
+    return null;
+  }
   function sgGenOnePost(extraAvoid=[]){
     if(acc!=='simon')return sgOld.genOnePost(extraAvoid);
     let result=null,prepared=null;
+    const mine=Q.filter(q=>q.account==='simon');
+    const personalDue=(mine.length+1)%7===0;
+    if(personalDue){
+      result=sgBuildPersonalCandidate();
+      prepared=result?prepare_post(result.text,{type:result.type,theme:result.theme,structure:result.structure,form:result.form}):null;
+    }
     for(let attempt=0;attempt<3&&!(prepared&&prepared.ok);attempt++){
       result=sgBuildCandidate();
       prepared=result?prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form}):null;
     }
     if(!result||!prepared?.ok)return {post:null,wasDup:false};
-    const mine=Q.filter(q=>q.account==='simon');
     const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
-    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:'original',topic:result.theme,label:TL.original,scheduledAt:base+48*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form,sgSrc:result.src};
+    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:result.type==='projet'?'projet':'original',topic:result.theme,label:TL.original,scheduledAt:base+48*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form,sgSrc:result.src};
     Q.push(post);
     if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;
     return {post,wasDup:false};
@@ -4190,7 +4216,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const tagSet=(theme)=>sgTagsNoHist(theme).map(x=>x.toLowerCase());
 
     // 1 — Intégrité du catalogue : thèmes, structures, formulations, familles et tags.
-    test('Catalogue : 47 thèmes intégrés',()=>SG_THEME_ROWS.length===47);
+    test('Catalogue : 49 thèmes intégrés',()=>SG_THEME_ROWS.length===49);
+    test('Thèmes personnels exclus du générateur technique',()=>SG_PROJECT_TOPICS.size===2&&[...SG_PROJECT_TOPICS].every(t=>SG_THEME.has(t)));
     test('Catalogue : au moins 10 types d’accroche',()=>SG_FORMS.length>=10);
     test('Brief : familles d’accroche et de conclusion',()=>sgBriefFam('Je découvre le DNS. Texte.').o==='decouverte'&&sgBriefFam('Texte. Ce que je retiens : un point.').c==='bilan'&&sgBriefFam('Le DNS associe des noms. Il sert aussi à autre chose.').o==='autre');
     test('Catalogue : 5 structures',()=>Object.keys(SG_STRUCT).length===5);
@@ -4202,6 +4229,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     test('Hashtags interdits absents du générateur',()=>SG_THEME_ROWS.every(r=>!SG_BANNED.some(b=>sgTagsNoHist(r[0]).some(t=>t.toLowerCase()===b.toLowerCase()))));
     test('Pentest → hashtag #Débutant',()=>sgTagsNoHist('Pentest')[3]==='#Débutant');
     test('Formulations : une formulation ancienne revient dans le pool',()=>{const recent=new Set([SG_FORMS[1],SG_FORMS[2],SG_FORMS[3]]);return SG_FORMS.includes(SG_FORMS[0])&&!recent.has(SG_FORMS[0]);});
+    test('Verrou de relecture : bouton désactivable après validation',()=>document.getElementById('sg-review-btn')!==null&&'disabled' in document.getElementById('sg-review-btn'));
     test('Moteur Nicolas d’origine conservé',()=>typeof sgOld.genPost==='function'&&typeof sgOld.copyPost==='function'&&typeof sgOld.publishLinkedIn==='function'&&document.getElementById('btn-n')!==null);
     test('RunTest : historique réel protégé',()=>{const beforeH=JSON.stringify(H),beforeQ=JSON.stringify(Q);withHistory([],[],()=>true);return JSON.stringify(H)===beforeH&&JSON.stringify(Q)===beforeQ;});
 
