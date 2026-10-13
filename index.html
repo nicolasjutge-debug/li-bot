@@ -3543,7 +3543,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
             ...q.map(x=>({text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.scheduledAt||x.ts||0,src:'q'}))]
       .filter(x=>x.text).sort((a,b)=>a.ts-b.ts).slice(-7);
   };
-  /* V7.2 — comparateur de proximité rédactionnelle. Il ne confond pas sujet commun,
+  /* V7.3 — comparateur de proximité rédactionnelle. Il ne confond pas sujet commun,
      vocabulaire générique ou structure grammaticale avec une réutilisation de formulation. */
   const SG_HOOK_GENERIC=new Set(('une un le la les des de du dans sur avec pour et ou à au aux en ce cette ces est sont qui que je me mon ma mes on se son sa ses il elle ils elles ne pas plus peut comme mais par aussi tout tous être ont été fait cela ça nous vous ton ta leur leurs quand entre sans sous vers chez après avant alors ainsi même autre autres chaque quelques plusieurs car donc dont très petit petite jour rappel notion sécurité informatique cybersécurité système fichier fichiers accès droits droit permettre permet simple simplement niveau partie forme idée point chose exemple besoin utilisateur utilisateurs aujourd hui aujourd’hui voici voilà notamment également vraiment juste encore toujours').split(' '));
   const sgHookTokens=s=>sgWords(String(s)).filter(w=>!SG_HOOK_GENERIC.has(w));
@@ -3553,13 +3553,16 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgV72Similarity=(candidate,historical)=>{
     const A=sgHookTokens(candidate),B=sgHookTokens(historical);
     if(!A.length||!B.length)return {score:0,charScore:0,editScore:0,commonNgrams:0,commonWords:0};
+    // Les mots génériques sont exclus des n-grammes, mais pas de la mesure globale :
+    // sinon deux corps dont seuls les mots-outils diffèrent obtiennent artificiellement 100 %.
+    const fullA=sgWords(sgNoHashtags(candidate)).join(' '),fullB=sgWords(sgNoHashtags(historical)).join(' ');
+    if(fullA===fullB)return {score:100,charScore:1,editScore:1,commonNgrams:Math.max(0,Math.min(A.length,B.length)-2),commonWords:Math.min(A.length,B.length)};
     const na=A.join(' '),nb=B.join(' ');
-    if(na===nb)return {score:100,charScore:1,editScore:1,commonNgrams:Math.max(0,Math.min(A.length,B.length)-2),commonWords:Math.min(A.length,B.length)};
     const ca=sgHookNgrams(A,3),cb=new Set(sgHookNgrams(B,3));
     let commonNgrams=0;for(const x of ca)if(cb.has(x))commonNgrams++;
     const sa=new Set(A),sb=new Set(B);let commonWords=0;for(const x of sa)if(sb.has(x))commonWords++;
-    const charScore=1-sgHookLevenshtein(na,nb)/Math.max(na.length,nb.length);
-    const editScore=1-sgHookLevenshtein(A.join(' '),B.join(' '))/Math.max(A.length,B.length);
+    const charScore=1-sgHookLevenshtein(fullA,fullB)/Math.max(fullA.length,fullB.length);
+    const editScore=1-sgHookLevenshtein(sgWords(sgNoHashtags(candidate)),sgWords(sgNoHashtags(historical)))/Math.max(sgWords(sgNoHashtags(candidate)).length,sgWords(sgNoHashtags(historical)).length);
     const ngramScore=commonNgrams/Math.max(1,Math.min(ca.length,sgHookNgrams(B,3).length));
     const wordScore=commonWords/Math.max(1,Math.min(sa.size,sb.size));
     const score=Math.round((charScore*.45+ngramScore*.35+wordScore*.20)*100);
@@ -4063,8 +4066,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const finalText=(bodyWithoutTags+'\n\n'+expected.join(' ')).trim();
     if(po){po.innerText=finalText;renderPost(finalText)}
     const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true});
-    if(errors.length){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
-    sgSetGate(true);toast('✓ Relecture humaine enregistrée.','ok');
+    const similarityOnlyPersonal = sgHasConfirmedPersonalContext(finalText) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
+    if(errors.length && !similarityOnlyPersonal){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
+    sgSetGate(true);
+    if(similarityOnlyPersonal) toast('✓ Relecture enregistrée. Similarité détectée : copie autorisée pour correction, publication/programmation à refaire après correction.','in');
+    else toast('✓ Relecture humaine enregistrée.','ok');
   }
   window.sgHumanReview=sgHumanReview;
   function sgRelease(action){
@@ -4077,7 +4083,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     display=(releaseBody+'\n\n'+releaseExpected.join(' ')).trim();
     if(po&&po.innerText!==display){po.innerText=display;renderPost(display);}
     const errors=sgValidate(display,{...meta,allowSystemHashtags:true});
-    if(errors.length){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · '),'er');return false;}
+    const similarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(display) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
+    if(errors.length && !similarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · '),'er');return false;}
+    if(similarityOnlyPersonal) toast('⚠️ Copie autorisée uniquement pour corriger ce post personnel similaire. Ne pas publier ni programmer avant correction.','in');
     const expected=sgTags(meta.theme,display);const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
     if(tags.length===0){
       text=(display+'\n\n'+expected.join(' ')).trim();
@@ -4096,7 +4104,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(!sgGate.reviewed|| (reviewedHash!==finalHash && reviewedHash!==bodyHash)){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
     // Revalidation finale : progression et historique sont relus juste avant la sortie.
     const finalErrors=sgValidate(text,{...meta,allowSystemHashtags:true});
-    if(finalErrors.length){sgSetGate(false);toast('⚠️ '+action+' bloquée après revalidation : '+finalErrors.slice(0,2).join(' · '),'er');return false;}
+    const finalSimilarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(text) && finalErrors.length>0 && finalErrors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
+    if(finalErrors.length && !finalSimilarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée après revalidation : '+finalErrors.slice(0,2).join(' · '),'er');return false;}
     if(lastPost)lastPost.text=text;
     if(po&&po.innerText!==text)po.innerText=text;
     return true;
@@ -4230,6 +4239,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     test('Pentest → hashtag #Débutant',()=>sgTagsNoHist('Pentest')[3]==='#Débutant');
     test('Formulations : une formulation ancienne revient dans le pool',()=>{const recent=new Set([SG_FORMS[1],SG_FORMS[2],SG_FORMS[3]]);return SG_FORMS.includes(SG_FORMS[0])&&!recent.has(SG_FORMS[0]);});
     test('Verrou de relecture : bouton désactivable après validation',()=>document.getElementById('sg-review-btn')!==null&&'disabled' in document.getElementById('sg-review-btn'));
+    test('Similarité : dérogation copie limitée aux posts personnels confirmés et jamais à la publication',()=>{const a=String(sgRelease);return a.includes("action==='Copie'")&&a.includes('sgHasConfirmedPersonalContext')&&a.includes('finalSimilarityOnlyPersonal');});
     test('Moteur Nicolas d’origine conservé',()=>typeof sgOld.genPost==='function'&&typeof sgOld.copyPost==='function'&&typeof sgOld.publishLinkedIn==='function'&&document.getElementById('btn-n')!==null);
     test('RunTest : historique réel protégé',()=>{const beforeH=JSON.stringify(H),beforeQ=JSON.stringify(Q);withHistory([],[],()=>true);return JSON.stringify(H)===beforeH&&JSON.stringify(Q)===beforeQ;});
 
