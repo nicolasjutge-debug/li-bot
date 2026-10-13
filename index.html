@@ -3543,7 +3543,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
             ...q.map(x=>({text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.scheduledAt||x.ts||0,src:'q'}))]
       .filter(x=>x.text).sort((a,b)=>a.ts-b.ts).slice(-7);
   };
-  /* V7.3 — comparateur de proximité rédactionnelle. Il ne confond pas sujet commun,
+  /* V7.5 — comparateur de proximité rédactionnelle. Il ne confond pas sujet commun,
      vocabulaire générique ou structure grammaticale avec une réutilisation de formulation. */
   const SG_HOOK_GENERIC=new Set(('une un le la les des de du dans sur avec pour et ou à au aux en ce cette ces est sont qui que je me mon ma mes on se son sa ses il elle ils elles ne pas plus peut comme mais par aussi tout tous être ont été fait cela ça nous vous ton ta leur leurs quand entre sans sous vers chez après avant alors ainsi même autre autres chaque quelques plusieurs car donc dont très petit petite jour rappel notion sécurité informatique cybersécurité système fichier fichiers accès droits droit permettre permet simple simplement niveau partie forme idée point chose exemple besoin utilisateur utilisateurs aujourd hui aujourd’hui voici voilà notamment également vraiment juste encore toujours').split(' '));
   const sgHookTokens=s=>sgWords(String(s)).filter(w=>!SG_HOOK_GENERIC.has(w));
@@ -3565,7 +3565,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const editScore=1-sgHookLevenshtein(sgWords(sgNoHashtags(candidate)),sgWords(sgNoHashtags(historical)))/Math.max(sgWords(sgNoHashtags(candidate)).length,sgWords(sgNoHashtags(historical)).length);
     const ngramScore=commonNgrams/Math.max(1,Math.min(ca.length,sgHookNgrams(B,3).length));
     const wordScore=commonWords/Math.max(1,Math.min(sa.size,sb.size));
-    const score=Math.round((charScore*.45+ngramScore*.35+wordScore*.20)*100);
+    const rawScore=Math.round((charScore*.45+ngramScore*.35+wordScore*.20)*100);
+    // 100 % est réservé à une égalité réelle après normalisation, jamais à un arrondi.
+    const score=rawScore>=100?99:rawScore;
     return {score,charScore,editScore,commonNgrams,commonWords};
   };
   const sgPublishedHookHistory=()=>{
@@ -3789,7 +3791,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
           const r=sgV72Similarity(display,h.text);
           const na=sgHookNgrams(a,3), nb=new Set(sgHookNgrams(b,3));
           let c3=0;for(const x of na)if(nb.has(x))c3++;
-          const exact=r.score===100;
+          const exact=sgWords(sgNoHashtags(display)).join(' ')===sgWords(sgNoHashtags(h.text)).join(' ');
           const quasi= r.score>=96 && r.charScore>=.90 && r.editScore>=.90 && c3>=6;
           const veryClose= r.score>=94 && r.charScore>=.94 && r.editScore>=.88 && c3>=8 && r.commonWords>=12;
           if(exact||quasi||veryClose)add(`Similarité du corps trop élevée (${r.score} %) avec un post récent.`);
