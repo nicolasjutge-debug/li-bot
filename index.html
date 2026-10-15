@@ -1791,9 +1791,12 @@ function onPoBlur(){
   // bloquant. #TryHackMe reste un blocage absolu.
   const review=validateForReview(current,{autoCleanHashtags:true});
   if(!review.ok){
-    lastPost.text=original;renderPost(original);
+    // Ne jamais effacer une correction en cours simplement parce qu'elle échoue à la validation.
+    // Le texte reste visible et éditable ; la sauvegarde explicite indiquera les erreurs.
+    lastPost.text=current;
+    markDraftDirty();
     const raisons=(review.errors||[]).join(', ');
-    toast('⚠️ Correction refusée ('+raisons+') : retour à la version générée','er');
+    toast('⚠️ Correction à revoir ('+raisons+'). Ton texte est conservé : corrige-le avant de sauvegarder.','er');
     return;
   }
   const reviewedText=review.text;
@@ -1879,7 +1882,9 @@ function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)re
 function genPost(){
   // NOUVEAU (prompt §3) : un post archivé dans W (anciens posts retirés de la base active)
   // reste utilisable pour détecter une répétition, même s'il ne compte plus dans les stats.
-  const usedTexts=new Set([...Q.filter(x=>x.account===acc).map(q=>q.text),...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text),...W.filter(x=>x.account===acc).map(w=>w.text)].map(norm));
+  // V7.6 — compare le corps sans hashtags : changer les hashtags ne rend pas un doublon inédit.
+  const duplicateKey=t=>norm(stripTags(String(t||'')).replace(/#[\p{L}\p{N}_-]+/gu,' '));
+  const usedTexts=new Set([...Q.filter(x=>x.account===acc).map(q=>q.text),...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text),...W.filter(x=>x.account===acc).map(w=>w.text)].map(duplicateKey));
   const maxAttempts=10;
   let text='', isDup=false, validation=null;
   for(let attempt=0;attempt<maxAttempts;attempt++){
@@ -1893,17 +1898,19 @@ function genPost(){
       const combos=[];
       buildCombos(d,topic,acc,finalize).forEach(c=>combos.push(c));
       if(!combos.length){toast('⚠️ Aucun texte conforme (80–150 mots) pour ce thème','er');return;}
-      let fresh=combos.filter(c=>!usedTexts.has(norm(c.text)));
+      let fresh=combos.filter(c=>!usedTexts.has(duplicateKey(c.text)));
       if(acc==='simon') fresh=fresh.filter(c=>validateForReview(c.text,{autoCleanHashtags:true}).ok);
       const freshNewIntro=fresh.filter(c=>!introsInQueue.some(t=>norm(t).startsWith(norm(c.ai))));
       if(freshNewIntro.length)fresh=freshNewIntro;
       fresh=applyFamilyDiversity(fresh,topic,acc);if(acc==='simon')fresh=lenOK(preferCleanConcl(fresh));
-      const chosen=fresh.length?pick(fresh):pick(combos); candidate=chosen.text; dup=!fresh.length;
+      // Ne jamais retomber sur une variante déjà utilisée lorsque la réserve est épuisée.
+      if(!fresh.length){toast('⚠️ Génération arrêtée : toutes les variantes de ce thème ressemblent à des posts déjà utilisés. Change de thème ou enrichis les variantes avant de réessayer.','er');return;}
+      const chosen=pick(fresh); candidate=chosen.text; dup=false;
       recordFamily(topic,chosen.aIdx,acc);
       candidate=(candidate+'\n\n'+pickHashtags(topic,acc)).trim();
     }else{
       candidate=genTxt();
-      dup=usedTexts.has(norm(candidate));
+      dup=usedTexts.has(duplicateKey(candidate));
     }
     const vh=validateHashtags(candidate);
     if(typ==='original'&&acc==='simon'&&!lenValid(candidate)){continue;}
@@ -3539,11 +3546,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgHistory=()=>{
     const h=(typeof H!=='undefined'?H:[]).filter(x=>x.account==='simon');
     const q=(typeof Q!=='undefined'?Q:[]).filter(x=>x.account==='simon');
-    return [...h.map(x=>({text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.publishedAt||x.ts||0,src:'h'})),
-            ...q.map(x=>({text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.scheduledAt||x.ts||0,src:'q'}))]
+    return [...h.map(x=>({id:x.id,text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.publishedAt||x.ts||0,src:'h'})),
+            ...q.map(x=>({id:x.id,draftId:x.draftId,text:x.text||'',theme:x.topic||x.theme||'',structure:x.structure||'',form:x.form||'',family:x.sgFamily||'',ts:x.scheduledAt||x.ts||0,src:'q'}))]
       .filter(x=>x.text).sort((a,b)=>a.ts-b.ts).slice(-7);
   };
-  /* V7.5 — comparateur de proximité rédactionnelle. Il ne confond pas sujet commun,
+  /* V7.8 — diagnostic de référence de similarité. Il ne confond pas sujet commun,
      vocabulaire générique ou structure grammaticale avec une réutilisation de formulation. */
   const SG_HOOK_GENERIC=new Set(('une un le la les des de du dans sur avec pour et ou à au aux en ce cette ces est sont qui que je me mon ma mes on se son sa ses il elle ils elles ne pas plus peut comme mais par aussi tout tous être ont été fait cela ça nous vous ton ta leur leurs quand entre sans sous vers chez après avant alors ainsi même autre autres chaque quelques plusieurs car donc dont très petit petite jour rappel notion sécurité informatique cybersécurité système fichier fichiers accès droits droit permettre permet simple simplement niveau partie forme idée point chose exemple besoin utilisateur utilisateurs aujourd hui aujourd’hui voici voilà notamment également vraiment juste encore toujours').split(' '));
   const sgHookTokens=s=>sgWords(String(s)).filter(w=>!SG_HOOK_GENERIC.has(w));
@@ -3786,6 +3793,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       // Rejet uniquement si le texte reprend réellement plusieurs séquences consécutives
       // et une formulation quasi identique. Les mots génériques et le thème seuls ne suffisent pas.
       for(const h of history){
+        // V7.7 : ne pas comparer un brouillon à sa propre copie dans la file de programmation.
+        // sgSchedule conserve draftId pour identifier cette copie sans ignorer les vrais doublons.
+        if(h.src==='q' && lastPost && (h.id===lastPost.id || h.draftId===lastPost.id))continue;
         const a=sgHookTokens(sgNoHashtags(display)),b=sgHookTokens(sgNoHashtags(h.text));
         if(a.length>=10&&b.length>=10){
           const r=sgV72Similarity(display,h.text);
@@ -3794,7 +3804,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
           const exact=sgWords(sgNoHashtags(display)).join(' ')===sgWords(sgNoHashtags(h.text)).join(' ');
           const quasi= r.score>=96 && r.charScore>=.90 && r.editScore>=.90 && c3>=6;
           const veryClose= r.score>=94 && r.charScore>=.94 && r.editScore>=.88 && c3>=8 && r.commonWords>=12;
-          if(exact||quasi||veryClose)add(`Similarité du corps trop élevée (${r.score} %) avec un post récent.`);
+          if(exact||quasi||veryClose){
+            const historicalBody=sgNoHashtags(h.text).replace(/\s+/g,' ').trim();
+            const excerpt=historicalBody.slice(0,260);
+            const sourceLabel=h.src==='q'?'file de programmation':'historique publié';
+            add(`Similarité du corps trop élevée (${r.score} %) — référence : ${sourceLabel}, ID ${h.id??'inconnu'} — texte comparé : « ${excerpt}${historicalBody.length>260?'…':''} »`);
+          }
         }
       }
       // V7.2 — ACCROCHE : uniquement les accroches réellement publiées (H), dédoublonnées.
@@ -4201,7 +4216,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     else navigator.clipboard.writeText(text).then(()=>{window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encodeURIComponent(text.substring(0,700)),'_blank');if(postToArchive)archive(postToArchive,'copie');clearGenerator();toast('Post copié + LinkedIn ouvert 💼','ok')});
   }
   window.publishLinkedIn=sgPublish;
-  function sgSchedule(){if(acc!=='simon')return sgOld.schedPost();if(!sgRelease('Programmation'))return;const mine=Q.filter(q=>q.account==='simon');const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:'simon',originalText:lastPost.originalText,sgFamily:lastPost.sgFamily,structure:lastPost.structure,form:lastPost.form});saveAll();renderQ();updateStats();toast('Programmé ✓','ok')}
+  function sgSchedule(){if(acc!=='simon')return sgOld.schedPost();if(!sgRelease('Programmation'))return;const mine=Q.filter(q=>q.account==='simon');const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();Q.push({id:Date.now(),draftId:lastPost.id,text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:'simon',originalText:lastPost.originalText,sgFamily:lastPost.sgFamily,structure:lastPost.structure,form:lastPost.form});saveAll();renderQ();updateStats();toast('Programmé ✓','ok')}
   window.schedPost=sgSchedule;
   function sgAlready(){if(acc!=='simon')return sgOld.markAlreadyPublished();if(!sgRelease('Validation de publication'))return;archive(lastPost,'publie');toast('Marqué comme publié — ne sera plus reproposé ✓','ok');clearGenerator();sgSetGate(false)}
   window.markAlreadyPublished=sgAlready;
