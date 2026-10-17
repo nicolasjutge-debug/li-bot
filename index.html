@@ -224,7 +224,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   <div class="hdr-av av-s" id="hdr-av">SJ</div>
   <div class="hdr-info">
     <h1 id="hdr-t">LinkedIn Bot — Simon JUTGÉ</h1>
-    <p id="hdr-s">Cybersécurité · Auto-publication 48h · 100% gratuit</p>
+    <p id="hdr-s">Cybersécurité · Rappel de publication toutes les 24h · 100% gratuit</p>
   </div>
   <div class="hdr-right">
     <span class="svbdg" id="sv-bdg">💾 Base corrigée — source de référence</span>
@@ -251,13 +251,14 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 <div class="timer">
   <div>
     <div class="t-lbl">⏱ Prochain post dans</div>
-    <div class="t-disp" id="t-disp">48:00:00</div>
+    <div class="t-disp" id="t-disp">24:00:00</div>
     <div class="t-next">Suivant : <b id="t-nt">—</b></div>
   </div>
   <div class="t-btns">
     <button class="tbtn tb-go" onclick="startTimer()">▶ Start</button>
     <button class="tbtn tb-pa" onclick="pauseTimer()">⏸ Pause</button>
     <button class="tbtn tb-rs" onclick="resetTimer()">↺ Reset</button>
+    <button class="tbtn" onclick="enablePostNotifications()">🔔 Activer les alertes</button>
   </div>
 </div>
 
@@ -769,7 +770,7 @@ function switchAcc(a){
   const hav=document.getElementById('hdr-av');
   hav.className='hdr-av '+p.avc;hav.textContent=p.init;
   document.getElementById('hdr-t').textContent='LinkedIn Bot — '+p.nom;
-  document.getElementById('hdr-s').textContent=p.role+' · Auto-publication 48h';
+  document.getElementById('hdr-s').textContent=p.role+' · Auto-publication 24h';
   const ap=document.getElementById('ap-div');ap.className='ap '+p.apc;
   const apav=document.getElementById('ap-av');apav.className='ap-av '+p.avc;apav.textContent=p.init;
   document.getElementById('ap-name').textContent=p.nom+' — Compte actif';
@@ -1975,7 +1976,7 @@ function schedPost(){
   // BUGFIX indépendance : la base venait du dernier post TOUS COMPTES confondus.
   const mine=Q.filter(q=>q.account===acc);
   const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
-  Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:acc,originalText:lastPost.originalText!==undefined?lastPost.originalText:lastPost.text});
+  Q.push({id:Date.now(),text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+24*3600*1000,account:acc,originalText:lastPost.originalText!==undefined?lastPost.originalText:lastPost.text});
   saveAll();renderQ();updateStats();toast('Programmé ✓','in');
 }
 // NOUVEAU : pour le cas exact remonté — un post généré correspond à quelque chose que Simon
@@ -2267,7 +2268,7 @@ function weightedPick(items, weights){
 // Nicolas (chaque entrée porte juste un champ .account) — pratique pour tout afficher dans
 // une seule file/historique, mais dangereux pour les recalages de date : réécrire l'échéance
 // de TOUTE la file en cascade (comme le faisaient pubLiQ/cpQ/markPubQ/delQ/resetTimer) mélange
-// les deux comptes et casse la cadence 48h propre à chacun. Cette fonction ne recalcule QUE
+// les deux comptes et casse la cadence 24h propre à chacun. Cette fonction ne recalcule QUE
 // les posts du compte demandé, sans toucher à l'autre, puis retrie Q par échéance pour que le
 // minuteur partagé (qui ne regarde que Q[0]) traite toujours le prochain post chronologique
 // tous comptes confondus, même après un recalage qui ne concernait qu'un seul des deux.
@@ -2275,7 +2276,7 @@ function rescheduleAccountQueue(a){
   const mine=Q.filter(q=>q.account===a);
   if(!mine.length)return;
   const base=Date.now();
-  mine.forEach((q,i)=>{q.scheduledAt=base+(i+1)*48*3600*1000;});
+  mine.forEach((q,i)=>{q.scheduledAt=base+(i+1)*24*3600*1000;});
   Q.sort((x,y)=>x.scheduledAt-y.scheduledAt);
 }
 function genOnePost(extraAvoid=[]){
@@ -2401,7 +2402,7 @@ function genOnePost(extraAvoid=[]){
       // un profil très rempli retarde artificiellement l'échéance de l'autre.
       const mineQ = Q.filter(x=>x.account===acc);
       const base = mineQ.length ? Math.max(...mineQ.map(q=>q.scheduledAt)) : Date.now();
-      post = {id:Date.now()+Math.floor(Math.random()*1000),text:result.text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
+      post = {id:Date.now()+Math.floor(Math.random()*1000),text:result.text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+24*3600*1000,account:acc};
       if(p.type==='original'&&result.aIdx!=null) recordFamily(p.topic,result.aIdx,acc);
       if(p.type==='original'&&acc==='simon')logHook(acc,result.text);
     }
@@ -2420,7 +2421,7 @@ function genOnePost(extraAvoid=[]){
       const result=freshTextFor(p);
       if(result){
         const mineQ=Q.filter(x=>x.account===acc),base=mineQ.length?Math.max(...mineQ.map(q=>q.scheduledAt)):Date.now();
-        post={id:Date.now()+Math.floor(Math.random()*1000),text:result.text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+48*3600*1000,account:acc};
+        post={id:Date.now()+Math.floor(Math.random()*1000),text:result.text,type:p.type,topic:p.topic||p.who||'',label:TL[p.type],scheduledAt:base+24*3600*1000,account:acc};
         wasDup=true;break;
       }
     }
@@ -2629,7 +2630,7 @@ function delQ(id){
   if(removed) rescheduleAccountQueue(removed.account);
   saveAll();renderQ();updateStats();renderRJ();rfTmr();
   autoRefill();
-  if(Q.some(x=>x.account===(removed&&removed.account)))toast('Échéances recalculées (48h en cascade)','in');
+  if(Q.some(x=>x.account===(removed&&removed.account)))toast('Échéances recalculées (24h en cascade)','in');
 }
 
 /* ════ TIMER ════ */
@@ -2637,11 +2638,48 @@ function startTimer(){
   if(tmrRun)return;if(!Q.length){toast('Ajoute des posts d\'abord !','er');return;}
   tmrRun=true;lsS(SK.timer,true);document.getElementById('st-txt').textContent='En cours';
   clearInterval(tmrIv);
+  checkPostDeadlines();
   tmrIv=setInterval(()=>{
     if(!tmrRun){clearInterval(tmrIv);return;}
-    while(Q.length&&Q[0].scheduledAt<=Date.now())pubNext();
-    rfTmr();if(!Q.length)pauseTimer();
-  },1000);toast('Timer démarré ▶','ok');
+    checkPostDeadlines();
+    rfTmr();
+  },15000);
+  toast('Rappels démarrés ▶ — aucun post ne sera publié automatiquement','ok');
+}
+async function enablePostNotifications(){
+  if(!('Notification' in window)){toast('Ce navigateur ne prend pas en charge les notifications.','er');return;}
+  try{
+    const permission=await Notification.requestPermission();
+    if(permission==='granted'){
+      lsS('postNotificationsEnabled',true);
+      toast('Notifications autorisées sur cet appareil ✓','ok');
+      checkPostDeadlines(true);
+    }else toast('Autorise les notifications dans les réglages du navigateur.','er');
+  }catch(e){toast('Impossible d’activer les notifications sur ce navigateur.','er');}
+}
+function notifyPostDue(q){
+  const key='postDueNotified:'+q.account+':'+q.id;
+  if(lsL(key,false))return;
+  lsS(key,true);
+  const title='⏰ C’est l’heure de préparer ton post';
+  const body=(q.label||'Post LinkedIn')+' — ouvre l’application pour copier et publier manuellement.';
+  try{
+    if('Notification' in window && Notification.permission==='granted'){
+      new Notification(title,{body,tag:'post-due-'+q.id,requireInteraction:true});
+    }
+  }catch(e){}
+  try{
+    if(navigator.serviceWorker && navigator.serviceWorker.controller){
+      navigator.serviceWorker.controller.postMessage({type:'SHOW_POST_REMINDER',title,body,tag:'post-due-'+q.id});
+    }
+  }catch(e){}
+}
+function checkPostDeadlines(force=false){
+  const now=Date.now();
+  const due=Q.filter(q=>q.scheduledAt<=now&&!q.overdueNotified);
+  if(!due.length&&!force)return;
+  due.forEach(q=>{q.overdueNotified=true;notifyPostDue(q);});
+  if(due.length){saveAll();renderQ();toast(`⏰ ${due.length} post(s) arrivé(s) à échéance : à toi de le(s) publier manuellement.`,'in');}
 }
 function pauseTimer(){tmrRun=false;clearInterval(tmrIv);lsS(SK.timer,false);document.getElementById('st-txt').textContent='En pause';}
 function resetTimer(){
@@ -2656,11 +2694,11 @@ function resetTimer(){
     saveAll();
     renderQ();
   }
-  document.getElementById('t-disp').textContent='48:00:00';
-  document.getElementById('st-nxt').textContent=Q.length?'48h':'—';
+  document.getElementById('t-disp').textContent='24:00:00';
+  document.getElementById('st-nxt').textContent=Q.length?'24h':'—';
   document.getElementById('t-nt').textContent=Q[0]?.label||'—';
   document.getElementById('st-txt').textContent='Prêt';
-  if(Q.length) toast('Échéances recalculées (48h en cascade, séparément pour chaque profil)','ok');
+  if(Q.length) toast('Échéances recalculées (24h en cascade, séparément pour chaque profil)','ok');
 }
 function pubNext(){
   const q=Q.shift();if(!q)return;
@@ -3086,7 +3124,7 @@ function genAllCf(){
     // BUGFIX indépendance : base calculée uniquement sur la file du compte actif.
     const mineQ=Q.filter(x=>x.account===acc);
     const base=mineQ.length?Math.max(...mineQ.map(q=>q.scheduledAt)):Date.now();
-    Q.push({id:Date.now()+Math.random()*1000,text,type:'congrats',topic:c.name,label:'🎉 Félicitations',scheduledAt:base+48*3600*1000,account:acc});
+    Q.push({id:Date.now()+Math.random()*1000,text,type:'congrats',topic:c.name,label:'🎉 Félicitations',scheduledAt:base+24*3600*1000,account:acc});
     if(!stats[acc])stats[acc]={total:0,sent:0};stats[acc].total++;
   });saveAll();renderQ();updateStats();toast('Tous générés et programmés !','ok');
 }
@@ -3423,7 +3461,7 @@ if(existingDraft&&existingDraft.savedText){draftSavedAt=existingDraft.savedAt||0
   const hav=document.getElementById('hdr-av');
   hav.className='hdr-av '+p.avc;hav.textContent=p.init;
   document.getElementById('hdr-t').textContent='LinkedIn Bot — '+p.nom;
-  document.getElementById('hdr-s').textContent=p.role+' · Auto-publication 48h';
+  document.getElementById('hdr-s').textContent=p.role+' · Auto-publication 24h';
   const ap=document.getElementById('ap-div');ap.className='ap '+p.apc;
   const apav=document.getElementById('ap-av');apav.className='ap-av '+p.avc;apav.textContent=p.init;
   document.getElementById('ap-name').textContent=p.nom+' — Compte actif';
@@ -3449,7 +3487,9 @@ if(syncReady()){syncStatus('idle');pullSync(true);}
 // Pré-rendre le feed APRÈS avoir appliqué l'UI du bon compte (fix iOS notifications)
 setTimeout(()=>renderFeed('actu'), 0);
 
-if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
+// Les notifications sont demandées uniquement après un clic utilisateur.
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkPostDeadlines();});
+window.addEventListener('focus',()=>checkPostDeadlines());
 if(lsL(SK.timer,false)&&Q.length){document.getElementById('st-txt').textContent='Reprise…';setTimeout(()=>startTimer(),300);}
 // Service Worker minimal (voir sw-bot.js) : ne cache rien, sert uniquement à rendre
 // l'app installable sur PC (Chrome/Edge) sans risque de version périmée.
@@ -4152,16 +4192,23 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     toast('Post généré ✓ · '+result.theme+' · '+result.structure,'ok');
   }
   window.genPost=sgGenerate;
-  function sgBuildPersonalCandidate(){
+  function sgBuildPersonalCandidate(extraAvoid=[]){
     // Faits confirmés uniquement : CyberQuest a été développé avec l’aide de l’IA ;
     // Simon a participé à un projet d’accessibilité PMR. Aucun détail de réalisation n’est ajouté.
     const choices=[
       {theme:'CyberQuest',family:'sécurité',text:'CyberQuest est un projet que j’ai développé avec l’aide de l’intelligence artificielle. Cette expérience me donne un sujet concret pour réfléchir à la place de l’IA dans un projet numérique. Un outil peut aider à avancer, mais il ne remplace pas le besoin de comprendre ce que l’on construit ni de vérifier les résultats proposés. Il reste important de garder un regard critique sur les suggestions obtenues et de faire attention à ce qui est réellement confirmé.\n\nParler d’un projet, ce n’est donc pas seulement présenter son idée : c’est aussi reconnaître la part de l’accompagnement utilisé et les limites de ce qu’on peut affirmer. CyberQuest me permet d’aborder ces questions sans prétendre tout maîtriser.'},
       {theme:'Accessibilité numérique',family:'données',text:'J’ai participé à un projet autour de l’accessibilité pour les personnes à mobilité réduite. Ce sujet rappelle qu’un service numérique ou un espace ne se pense pas uniquement du point de vue de la personne qui le conçoit. Les besoins des personnes concernées doivent aussi compter dans les choix réalisés.\n\nL’accessibilité n’est pas un détail ajouté à la fin : elle fait partie des questions à considérer dès la réflexion sur un projet. Cette approche invite à écouter les usages et à éviter de supposer qu’une solution convient à tout le monde. Je peux parler de ma participation à ce projet, sans prétendre représenter à moi seul l’expérience de toutes les personnes concernées.'}
     ];
-    const history=sgHistory().slice(-7).map(x=>sgNorm(sgNoHashtags(x.text||''))).join(' ');
-    const choicesFresh=choices.filter(c=>!history.includes(sgNorm(c.theme)));
-    const pool=(choicesFresh.length?choicesFresh:choices).sort(()=>Math.random()-.5);
+    // Déduplication sur le corps complet, et non sur le nom du thème dans les 7 derniers posts.
+    // Inclut file, historique publié, rejets, archives en attente et les textes écartés à cet appel.
+    const usedBodies=new Set([
+      ...Q.filter(x=>x.account==='simon').map(x=>sgNorm(sgNoHashtags(x.text||''))),
+      ...H.filter(x=>x.account==='simon').map(x=>sgNorm(sgNoHashtags(x.text||''))),
+      ...RJ.filter(x=>x.account==='simon').map(x=>sgNorm(sgNoHashtags(x.text||''))),
+      ...W.filter(x=>x.account==='simon').map(x=>sgNorm(sgNoHashtags(x.text||''))),
+      ...extraAvoid.map(x=>sgNorm(sgNoHashtags(typeof x==='string'?x:x?.text||'')))
+    ]);
+    const pool=choices.filter(c=>!usedBodies.has(sgNorm(sgNoHashtags(c.text)))).sort(()=>Math.random()-.5);
     for(const c of pool){
       const meta={type:'projet',theme:c.theme,structure:'Observation',form:'constat'};
       const errors=sgValidate(c.text,meta);
@@ -4171,11 +4218,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   }
   function sgGenOnePost(extraAvoid=[]){
     if(acc!=='simon')return sgOld.genOnePost(extraAvoid);
+    sgDeduplicatePersonalQueue();
     let result=null,prepared=null;
     const mine=Q.filter(q=>q.account==='simon');
     const personalDue=(mine.length+1)%7===0;
     if(personalDue){
-      result=sgBuildPersonalCandidate();
+      result=sgBuildPersonalCandidate(extraAvoid);
       prepared=result?prepare_post(result.text,{type:result.type,theme:result.theme,structure:result.structure,form:result.form}):null;
     }
     for(let attempt=0;attempt<3&&!(prepared&&prepared.ok);attempt++){
@@ -4183,13 +4231,35 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       prepared=result?prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form}):null;
     }
     if(!result||!prepared?.ok)return {post:null,wasDup:false};
+    // Dernier verrou avant insertion : aucune génération personnelle identique à un corps déjà connu.
+    const candidateBody=sgNorm(sgNoHashtags(prepared.full));
+    const duplicatePersonal=result.src==='personnel' && [
+      ...Q.filter(x=>x.account==='simon').map(x=>x.text||''),
+      ...H.filter(x=>x.account==='simon').map(x=>x.text||''),
+      ...RJ.filter(x=>x.account==='simon').map(x=>x.text||''),
+      ...W.filter(x=>x.account==='simon').map(x=>x.text||''),
+      ...extraAvoid.map(x=>typeof x==='string'?x:(x?.text||''))
+    ].some(t=>sgNorm(sgNoHashtags(t))===candidateBody);
+    if(duplicatePersonal)return {post:null,wasDup:true};
     const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
-    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:result.type==='projet'?'projet':'original',topic:result.theme,label:TL.original,scheduledAt:base+48*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form,sgSrc:result.src};
+    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:result.type==='projet'?'projet':'original',topic:result.theme,label:TL.original,scheduledAt:base+24*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form,sgSrc:result.src};
     Q.push(post);
     if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;
     return {post,wasDup:false};
   }
   window.genOnePost=sgGenOnePost;
+  function sgDeduplicatePersonalQueue(){
+    const seen=new Set();let removed=0;
+    Q=Q.filter(q=>{
+      if(q.account!=='simon'||!(q.sgSrc==='personnel'||q.type==='projet'))return true;
+      const body=sgNorm(sgNoHashtags(q.text||''));
+      if(!body)return true;
+      if(seen.has(body)){removed++;return false;}
+      seen.add(body);return true;
+    });
+    if(removed){saveAll();renderQ();updateStats();toast(`🧹 ${removed} post(s) personnel(s) identique(s) retiré(s) de la file — la première occurrence est conservée.`,'in');}
+    return removed;
+  }
   function sgEdited(){
     const po=document.getElementById('po');const text=(po?.innerText||'').trim();
     if(lastPost){if(lastPost.originalText===undefined)lastPost.originalText=lastPost.text;lastPost.text=text;}
@@ -4216,7 +4286,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     else navigator.clipboard.writeText(text).then(()=>{window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encodeURIComponent(text.substring(0,700)),'_blank');if(postToArchive)archive(postToArchive,'copie');clearGenerator();toast('Post copié + LinkedIn ouvert 💼','ok')});
   }
   window.publishLinkedIn=sgPublish;
-  function sgSchedule(){if(acc!=='simon')return sgOld.schedPost();if(!sgRelease('Programmation'))return;const mine=Q.filter(q=>q.account==='simon');const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();Q.push({id:Date.now(),draftId:lastPost.id,text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+48*3600*1000,account:'simon',originalText:lastPost.originalText,sgFamily:lastPost.sgFamily,structure:lastPost.structure,form:lastPost.form});saveAll();renderQ();updateStats();toast('Programmé ✓','ok')}
+  function sgSchedule(){if(acc!=='simon')return sgOld.schedPost();if(!sgRelease('Programmation'))return;const mine=Q.filter(q=>q.account==='simon');const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();Q.push({id:Date.now(),draftId:lastPost.id,text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+24*3600*1000,account:'simon',originalText:lastPost.originalText,sgFamily:lastPost.sgFamily,structure:lastPost.structure,form:lastPost.form});saveAll();renderQ();updateStats();toast('Programmé ✓','ok')}
   window.schedPost=sgSchedule;
   function sgAlready(){if(acc!=='simon')return sgOld.markAlreadyPublished();if(!sgRelease('Validation de publication'))return;archive(lastPost,'publie');toast('Marqué comme publié — ne sera plus reproposé ✓','ok');clearGenerator();sgSetGate(false)}
   window.markAlreadyPublished=sgAlready;
