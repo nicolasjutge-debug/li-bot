@@ -1603,7 +1603,7 @@ function validateGeneratedPost(post){
     // jamais n'importe quelle occurrence dans le corps du post : cela évite de bloquer
     // une sauvegarde qui évoque légitimement le même sujet dans un autre angle.
     const currentHook=(text.split(/\r?\n/)[0]||'').trim().toLowerCase();
-    if(generationRules.avoidedAngles?.some(a=>{if(!a)return false;const rejected=String(a).trim().toLowerCase();return currentHook===rejected || (rejected.length>=35 && currentHook.includes(rejected));})) errors.push('angle rejeté');
+    if(generationRules.avoidedAngles?.some(a=>{if(!a)return false;const rejected=String(a).trim().toLowerCase();return currentHook===rejected;})) errors.push('angle rejeté');
     if(generationRules.avoidedHashtags?.some(h=>h&&new RegExp(String(h).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(text))) errors.push('hashtag rejeté');
     // CORRECTIF (prompt §5/§11) : generationRules.avoidedExperiences était alimenté par
     // learnCorrection (PortSwigger/TryHackMe/Linux pratique) mais jamais relu ici — resté sans
@@ -1718,7 +1718,7 @@ function saveDraft(){
   const review=validateForReview(current,{autoCleanHashtags:true});
   if(!review.ok){
     const raisons=(review.errors||[]).join(', ');
-    toast('⚠️ Sauvegarde refusée ('+raisons+'). Vérifie l’accroche ; les hashtags rejetés ordinaires sont retirés automatiquement. #TryHackMe reste interdit.','er');return;
+    toast('⚠️ Sauvegarde refusée ('+raisons+'). L’angle est comparé à l’accroche complète ; les hashtags rejetés ordinaires sont retirés automatiquement si aucun autre contrôle ne bloque. #TryHackMe reste interdit.','er');return;
   }
   if(review.removed.length){
     current=review.text;
