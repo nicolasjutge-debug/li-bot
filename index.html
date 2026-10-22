@@ -430,8 +430,16 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <option value="alerte">Alerte / Actualité</option>
       </select>
     </div>
-    <div class="fld"><label>Contexte / angle (optionnel)</label>
-      <textarea id="ctx-inp" style="min-height:52px" placeholder="Précise un angle, une anecdote…"></textarea>
+    <div class="fld"><label>Contexte / angle (optionnel — génération manuelle et ligne éditoriale automatique)</label>
+      <textarea id="ctx-inp" style="min-height:52px" placeholder="Décris avec tes mots une expérience réelle de Simon : ce qu’il a fait, dans quel cadre et ce qu’il en a retenu. Ce texte pourra aussi alimenter 1 post du planning automatique uniquement après confirmation."></textarea>
+      <div style="margin-top:7px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:rgba(0,200,255,.035)">
+        <div style="font-size:11px;font-weight:600;margin-bottom:5px">Validation du contexte pour le planning automatique</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:7px">Cette validation est distincte de la relecture d’un post. Seul « Confirmé » autorise le contexte à alimenter le post personnel prévu dans le planning automatique. Le champ reste utilisable pour la génération manuelle quel que soit ce statut.</div>
+        <label style="display:block;font-size:11px;margin-bottom:4px;cursor:pointer"><input type="radio" name="sg-context-confirm" value="yes" style="accent-color:var(--green)"> <b>Confirmé</b> — ce contexte décrit bien une expérience réelle de Simon.</label>
+        <label style="display:block;font-size:11px;margin-bottom:4px;cursor:pointer"><input type="radio" name="sg-context-confirm" value="maybe" style="accent-color:var(--orange)"> <b>Possible, à confirmer</b> — ne pas l’utiliser comme fait établi dans le planning automatique.</label>
+        <label style="display:block;font-size:11px;cursor:pointer"><input type="radio" name="sg-context-confirm" value="no" style="accent-color:var(--orange)"> <b>Non confirmé / à exclure</b> — ne pas utiliser ce contexte comme expérience de Simon.</label>
+        <div id="sg-context-feedback" aria-live="polite" style="font-size:10px;color:var(--muted);margin-top:5px">Aucun contexte confirmé pour le planning automatique.</div>
+      </div>
     </div>
     <div id="sg-settings" style="margin-top:8px;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:rgba(0,200,255,.035)">
       <div style="font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px">🛡️ Garde-fous Simon</div>
@@ -454,6 +462,14 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span id="sg-review-status" style="font-size:11px;color:var(--orange)">🔒 Relecture humaine requise avant copie/publication</span>
           <button class="btn btn-s" id="sg-review-btn" onclick="sgHumanReview()" style="font-size:11px;padding:5px 9px">✓ Relu et validé</button>
+        </div>
+        <div id="sg-personal-check" style="margin-top:9px;padding:8px;border:1px solid var(--border);border-radius:6px;background:rgba(0,200,255,.035)">
+          <div style="font-size:11px;font-weight:600;margin-bottom:5px">🧩 Quelle est la situation de l’expérience personnelle évoquée ?</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:7px">Cette validation est indépendante de la relecture et vaut pour toutes les expériences, quelle que soit leur forme ou leur domaine.</div>
+          <label style="display:block;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="radio" name="sg-personal-confirm" id="sg-personal-yes" value="yes" style="accent-color:var(--green)"> <b>Oui, confirmée</b> — Simon l’a réellement vécue ou réalisée.</label>
+          <label style="display:block;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="radio" name="sg-personal-confirm" id="sg-personal-maybe" value="maybe" style="accent-color:var(--orange)"> <b>Possible, à confirmer</b> — le sujet pourrait correspondre à son vécu, mais ce n’est pas encore vérifié.</label>
+          <label style="display:block;font-size:11px;cursor:pointer"><input type="radio" name="sg-personal-confirm" id="sg-personal-no" value="no" style="accent-color:var(--orange)"> <b>Non</b> — ce n’est pas son expérience, ou le texte la présente à tort comme telle.</label>
+          <div id="sg-personal-feedback" aria-live="polite" style="font-size:10px;color:var(--muted);margin-top:5px">Si le post ne raconte aucune expérience personnelle, aucune réponse n’est nécessaire. Une expérience « possible » peut être relue, mais pas publiée comme un fait confirmé.</div>
         </div>
         <div id="sg-review-detail" style="font-size:10px;color:var(--muted);margin-top:5px">Le verrou est lié au hash du texte final. Toute modification invalide la relecture.</div>
       </div>
@@ -3693,12 +3709,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgPrec=x=>{const y=String(x).replace(/(?:^|\n)\s*\d+\s*[\/.)]\s*/g,' ').replace(/«[^»]*»|"[^"]*"|“[^”]*”/g,' ').replace(/\b(?:2FA|MFA|STI2D|IPv[46]|TCP\/IP|HTTP\/\d|802\.\d+|SHA-?\d+|AES-?\d*)\b/gi,' ');return /\d|millions?|milliards?|quelques (?:secondes|minutes|heures|jours)|amende|%/i.test(y);};
   const SG_CONCL_FAM=[['retenir',/^(?:ce que je retiens|à retenir|retenons|je retiens)/],['montre',/^(?:cela|ça|cette notion|cet exemple|ce point|c'est un exemple qui) (?:montre|illustre|rappelle)/],['comprendre',/^(?:cela|ça|cette notion|ce point) permet (?:de |d')(?:mieux )?comprendre/],['justement',/^(?:c'est )?justement/],['intérêt',/^(?:ce que je trouve|ce qui m'intéresse|ce qui est intéressant)/],['rappel',/^(?:un|le) (?:bon )?rappel/],['notion',/^c'est une notion que/],['apprendre',/^je (?:continuerai|garderai|poursuivrai|reviendrai)/]];
   const sgConclFam=t=>{const S=sgSentences(sgNoHashtags(String(t))),l=sgNorm(S[S.length-1]||'');const f=SG_CONCL_FAM.find(x=>x[1].test(l));return f?f[0]:'autre';};
-  // Expérience personnelle contrôlée : uniquement à partir d'un élément explicitement confirmé du profil de Simon.
-  const SG_CONFIRMED_PERSONAL=/(?:javascript|python|html|arduino|cyberquest|accessibilit[ée]|pmr|root-?me)/i;
-  const sgHasConfirmedPersonalContext=text=>{
-    const t=String(text||'');
-    return SG_CONFIRMED_PERSONAL.test(t)&&/\b(?:je|j['’])/i.test(t);
-  };
+  // Contexte personnel générique : aucune liste fermée de projets ou de formats.
+  // Accepte les expériences décrites de différentes façons (objet créé, stage, participation,
+  // prototype, fabrication, recherche, aide apportée, découverte pratique, etc.) dès que
+  // le texte les rattache clairement à Simon. Cela n'autorise pas à inventer des faits.
+  const SG_PERSONAL_ACTION=/(?:\b(?:j['’]ai|je|j['’]aimerais|j['’]apprends|j['’]ai pu|j['’]ai voulu|j['’]ai choisi|j['’]ai participé|j['’]ai découvert|j['’]ai travaillé|j['’]ai réalisé|j['’]ai fabriqué|j['’]ai créé|j['’]ai conçu|j['’]ai développé|j['’]ai imprimé|j['’]ai modélisé|j['’]ai construit|mon|ma|mes)\b[^.!?\n]{0,160}\b(?:projet|créé|cr[eé][ée]|fabriqu[ée]|conçu|développ[ée]|réalis[ée]|imprim[ée]|modélis[ée]|construit|prototype|objet|porte[- ]clé|stage|expérience|fauteuil|accessibilité|cyberquest|participation|atelier|recherche|conception|fabrication|impression|découverte|apprentissage|réalisation|activité|mission|observation|bénévolat|présentation)\b|\b(?:créé|fabriqué|conçu|développé|réalisé|imprimé|modélisé|construit|participé|observé|découvert|travaillé|aidé|contribué)\b[^.!?\n]{0,120}\b(?:je|j['’]|mon|ma|mes)\b)/i;
+  const sgHasConfirmedPersonalContext=text=>SG_PERSONAL_ACTION.test(String(text||''));
   const sgFirstPersonUnconfirmed=sentence=>{
     const x=String(sentence||'');
     if(!FP_RE.test(x))return false;
@@ -3807,7 +3823,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       if(/\b(?:challenges?(?:\s+\w+){0,2}\s+(?:résolu|réussi)|flags?|classement|score|solution|taux de réussite)\b/i.test(display))add('Root-Me : élément interdit (challenge, flag, score, classement ou solution).');
     }
     if(/cyberquest/i.test(display)){
-      if(type!=='projet')add('CyberQuest ne doit être cité que dans un post de type projet.');
+      // Le contrôle éditorial ne doit pas imposer la catégorie « projet » : les projets personnels peuvent aussi nourrir une réflexion. Les contrôles spécifiques ci-dessous sur les affirmations non confirmées restent actifs.
       if(/\b(?:utilisateurs|clients|performance|solution professionnelle|produit commercial|développé seul|entièrement développé|créé seul)\b/i.test(display))add('CyberQuest : affirmation non confirmée.');
       if(/\b(?:battle isle|2048|ai nexus|aegis|shadow|nexus)\b/i.test(display))add('CyberQuest : rôle du composant non fourni par le code.');
       // V7.1 §3 : jamais « application gamifiée », « produit / réalisation professionnel(le) » (sauf négation explicite), ni bug, score, quiz ou session de test inventés.
@@ -3888,6 +3904,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const brief=['Tu es le moteur éditorial des publications LinkedIn de Simon, lycéen débutant en cybersécurité. Français naturel, simple, pédagogique ; jamais expert, commercial ni sensationnaliste.',
       'PRIORITÉS : 1 vérité éditoriale ; 2 niveau réel débutant ; 3 voix personnelle quand elle est justifiée ; 4 exactitude ; 5 diversité des angles ; 6 anti-redondance avec les 7 derniers posts ; 7 variété du vocabulaire. Ne jamais inventer une expérience, une émotion, un cours, un professeur, un stage ou une situation vécue.',
       'EXPÉRIENCE PERSONNELLE : elle est encouragée lorsqu’elle repose sur un élément explicitement confirmé du profil de Simon (JavaScript/Python/HTML, Arduino débutant, CyberQuest développé avec l’aide de l’IA, accessibilité PMR, ou Root-Me lorsque la valeur réelle est fournie). La première personne est alors autorisée. En revanche, ne jamais transformer en expérience personnelle Linux/terminal/Kali, TryHackMe, PortSwigger, CTF, pentest, audit, SIEM, OSINT, bug bounty ou pratique professionnelle non confirmée.',
+      'REFORMULATION D’EXPÉRIENCE : si le champ Contexte / angle décrit une expérience de Simon, reformule fidèlement les faits fournis (action, cadre, apprentissage) sans ajouter de détail. Si le vécu est seulement possible, ne l’écris pas comme un fait établi : formule une version à confirmer ou reste général jusqu’à validation humaine.',
       'FORMULATION PERSONNELLE : privilégier une observation courte et vraie (« j’ai découvert… », « j’ai travaillé sur… », « ce projet m’a permis de… ») quand le contexte confirmé le permet. Sinon, rester factuel et neutre. Ne jamais ajouter une pratique non confirmée uniquement pour rendre le post plus humain.',
       'ACCROCHE : différente des 7 derniers posts ; elle peut être personnelle si elle repose sur un fait confirmé, sinon utiliser constat, contraste, conséquence, détail concret ou phrase courte.',
       'CONCLUSION : factuelle (constat, conséquence, précision, ouverture), jamais de bilan personnel artificiel (« Ce que je retiens », « Cela montre que », « À retenir », « Je garderai une fiche »). Une variante de vocabulaire d’une structure récente reste une redondance.',
@@ -4110,6 +4127,16 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(detail)detail.textContent=reviewed?'Le verrou est lié au hash du texte final. Une modification, même minime, invalide la validation.':'Le verrou est lié au hash du texte final. Toute modification invalide la relecture.';
     ['save-draft-btn'].forEach(id=>{});
   }
+  function sgHasPersonalExperienceClaim(text){
+    const t=String(text||'');
+    return /\b(?:j['’]ai|je|mon|ma|mes|nous avons|j['’]ai pu|j['’]ai appris|j['’]ai créé|j['’]ai conçu|j['’]ai réalisé|j['’]ai fabriqué|j['’]ai développé|j['’]ai participé|lors de mon|pendant mon|dans mon)\b/i.test(t)
+      && /\b(?:projet|créé|conçu|réalisé|fabriqué|développé|programmé|arduino|stage|fauteuil|pmr|accessibilité|impression 3d|porte[- ]clé|poubelle|cyberquest|expérience|prototype|atelier|robot|personnel|personnelle|appris|découvert|testé|construit|fabriqué)\b/i.test(t);
+  }
+  function sgResetPersonalConfirmation(){
+    document.querySelectorAll('input[name="sg-personal-confirm"]').forEach(el=>{el.checked=false;});
+    const feedback=document.getElementById('sg-personal-feedback');
+    if(feedback){feedback.textContent='Le texte a changé : vérifie à nouveau si l’expérience est confirmée, possible à confirmer ou non.';feedback.style.color='var(--muted)';}
+  }
   function sgHumanReview(){
     if(sgGate.reviewed){toast('Relecture déjà validée. Modifie le texte pour réactiver le bouton.','in');return;}
     if(acc!=='simon'){toast('La relecture verrouillée concerne le compte Simon.','in');return;}
@@ -4122,6 +4149,23 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const bodyWithoutTags=text.replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
     const finalText=(bodyWithoutTags+'\n\n'+expected.join(' ')).trim();
     if(po){po.innerText=finalText;renderPost(finalText)}
+    // Confirmation humaine séparée pour toute expérience personnelle, sans liste fermée de projets.
+    // La détection sert uniquement à demander confirmation : elle ne prouve jamais que l'expérience a eu lieu.
+    const personalExperienceClaim = sgHasPersonalExperienceClaim(finalText);
+    const personalChoice=document.querySelector('input[name="sg-personal-confirm"]:checked')?.value||'';
+    const personalFeedback=document.getElementById('sg-personal-feedback');
+    if(personalExperienceClaim && personalChoice==='no'){
+      if(personalFeedback){personalFeedback.textContent='Confirmation négative : reformule le texte sans attribuer cette expérience à Simon, puis relis-le à nouveau.';personalFeedback.style.color='var(--orange)';}
+      toast('Relecture suspendue : l’expérience n’est pas confirmée comme vécue par Simon. Corrige le texte.','er');sgSetGate(false);return;
+    }
+    if(personalExperienceClaim && !personalChoice){
+      if(personalFeedback){personalFeedback.textContent='Choisis un statut : confirmée, possible à confirmer, ou non.';personalFeedback.style.color='var(--orange)';}
+      toast('Indique le statut de l’expérience personnelle avant de valider la relecture.','er');sgSetGate(false);return;
+    }
+    if(personalFeedback){
+      personalFeedback.textContent=!personalExperienceClaim?'Aucune expérience personnelle détectée : confirmation non nécessaire.':personalChoice==='yes'?'✓ Expérience confirmée. La relecture peut continuer.':'⚠️ Expérience possible mais non vérifiée : la relecture peut être enregistrée, mais copie/publication/programmation resteront bloquées tant que ce fait n’est pas confirmé ou reformulé sans l’attribuer à Simon.';
+      personalFeedback.style.color=personalExperienceClaim&&personalChoice!=='yes'?'var(--orange)':'var(--green)';
+    }
     const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true});
     const similarityOnlyPersonal = sgHasConfirmedPersonalContext(finalText) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
     if(errors.length && !similarityOnlyPersonal){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
@@ -4139,6 +4183,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const releaseBody=display.replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
     display=(releaseBody+'\n\n'+releaseExpected.join(' ')).trim();
     if(po&&po.innerText!==display){po.innerText=display;renderPost(display);}
+    const personalChoice=document.querySelector('input[name="sg-personal-confirm"]:checked')?.value||'';
+    if(sgHasPersonalExperienceClaim(display) && personalChoice!=='yes'){
+      sgSetGate(false);
+      toast(personalChoice==='maybe'?'Sortie bloquée : l’expérience est seulement possible. Confirme-la ou reformule le post sans la présenter comme un fait.':'Sortie bloquée : confirme d’abord l’expérience personnelle de Simon.','er');
+      return false;
+    }
     const errors=sgValidate(display,{...meta,allowSystemHashtags:true});
     const similarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(display) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
     if(errors.length && !similarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · '),'er');return false;}
@@ -4186,13 +4236,26 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(!prepared?.ok){toast('⚠️ Génération refusée : '+prepared.errors.slice(0,2).join(' · '),'er');return;}
     sgLastMeta={type:'technique',theme:result.theme,structure:result.structure,form:result.form,family:result.family,prompt:result.prompt};
     lastPost={id:Date.now(),text:prepared.full,type:'original',topic:result.theme,label:TL.original,ts:Date.now(),account:'simon',originalText:prepared.full,previousVersions:[],sgFamily:result.family,form:result.form,structure:result.structure};
-    renderPost(prepared.full);sgSetGate(false);
+    renderPost(prepared.full);sgResetPersonalConfirmation();sgSetGate(false);
     if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;saveAll();updateStats();
     const bd=document.getElementById('gen-bdg');if(bd)bd.textContent='Simon · Cyber';
     toast('Post généré ✓ · '+result.theme+' · '+result.structure,'ok');
   }
   window.genPost=sgGenerate;
   function sgBuildPersonalCandidate(extraAvoid=[]){
+    // Le contexte libre ne nourrit le planning automatique que s'il a été explicitement confirmé.
+    // Le texte fourni est repris sans inventer d'action, de résultat ou d'apprentissage absent du brief.
+    const confirmedContext=document.querySelector('input[name="sg-context-confirm"]:checked')?.value==='yes';
+    const contextText=(document.getElementById('ctx-inp')?.value||'').trim();
+    if(confirmedContext && contextText.length>=12){
+      const contextBody=`Dans mon parcours, une expérience concrète est la suivante : ${contextText.replace(/[\s]+/g,' ').replace(/[.!?]+$/,'')}.
+
+Je préfère m’en tenir à ce que cette expérience permet réellement d’affirmer, sans lui ajouter des étapes, des résultats ou des compétences qui ne sont pas décrits.`;
+      const meta={type:'projet',theme:'Expérience personnelle de Simon',structure:'Observation',form:'constat'};
+      const errors=sgValidate(contextBody,meta);
+      if(!errors.length && !extraAvoid.some(x=>sgNorm(sgNoHashtags(typeof x==='string'?x:x?.text||''))===sgNorm(contextBody)))
+        return {theme:meta.theme,family:'projet personnel',text:contextBody,...meta,src:'personnel-contexte'};
+    }
     // Faits confirmés uniquement : CyberQuest a été développé avec l’aide de l’IA ;
     // Simon a participé à un projet d’accessibilité PMR. Aucun détail de réalisation n’est ajouté.
     const choices=[
@@ -4221,7 +4284,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     sgDeduplicatePersonalQueue();
     let result=null,prepared=null;
     const mine=Q.filter(q=>q.account==='simon');
-    const personalDue=(mine.length+1)%7===0;
+    const personalDue=(mine.length+1)%7===0; // Un emplacement personnel est réservé à chaque bloc de 7 posts.
     if(personalDue){
       result=sgBuildPersonalCandidate(extraAvoid);
       prepared=result?prepare_post(result.text,{type:result.type,theme:result.theme,structure:result.structure,form:result.form}):null;
@@ -4262,6 +4325,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   }
   function sgEdited(){
     const po=document.getElementById('po');const text=(po?.innerText||'').trim();
+    if(acc==='simon')sgResetPersonalConfirmation();
     if(lastPost){if(lastPost.originalText===undefined)lastPost.originalText=lastPost.text;lastPost.text=text;}
     sgSetGate(false);
     // Reprend uniquement l'affichage de comptage/hashtags de l'interface d'origine.
@@ -4554,6 +4618,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   window.sgRunTests=sgRunTests;
   function sgRefreshUI(){sgRenderReview();}
   ['sg-prog','sg-geo','sg-names'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{sgSaveSettings();if(lastPost){sgSetGate(false)}}));
+  document.querySelectorAll('input[name="sg-personal-confirm"]').forEach(el=>el.addEventListener('change',()=>{sgSetGate(false);const fb=document.getElementById('sg-personal-feedback');if(fb){fb.textContent=el.value==='yes'?'Statut choisi : expérience confirmée. La relecture reste obligatoire.':el.value==='maybe'?'Statut choisi : expérience possible, à confirmer. La publication restera bloquée tant que ce n’est pas vérifié.':'Statut choisi : expérience non confirmée. Le texte doit être corrigé.';fb.style.color=el.value==='yes'?'var(--green)':'var(--orange)';}}));
+  document.querySelectorAll('input[name="sg-context-confirm"]').forEach(el=>el.addEventListener('change',()=>{const fb=document.getElementById('sg-context-feedback');if(fb){fb.textContent=el.value==='yes'?'✓ Contexte confirmé : il pourra être proposé pour le post personnel du planning automatique (1 sur 7).':el.value==='maybe'?'⚠️ Contexte à confirmer : il reste disponible en génération manuelle, mais sera ignoré par le planning automatique.':'Contexte exclu du planning automatique ; il reste disponible pour la génération manuelle si tu le souhaites.';fb.style.color=el.value==='yes'?'var(--green)':'var(--orange)';}}));
+  document.getElementById('ctx-inp')?.addEventListener('input',()=>{const selected=document.querySelector('input[name="sg-context-confirm"]:checked');if(selected){selected.checked=false;const fb=document.getElementById('sg-context-feedback');if(fb){fb.textContent='Le contexte a changé : confirme-le à nouveau avant qu’il puisse alimenter le planning automatique.';fb.style.color='var(--orange)';}}});
   sgLoadSettings();sgRefreshUI();
 })();
 
