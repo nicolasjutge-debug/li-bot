@@ -3716,8 +3716,13 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const SG_PERSONAL_ACTION=/(?:\b(?:j['’]ai|je|j['’]aimerais|j['’]apprends|j['’]ai pu|j['’]ai voulu|j['’]ai choisi|j['’]ai participé|j['’]ai découvert|j['’]ai travaillé|j['’]ai réalisé|j['’]ai fabriqué|j['’]ai créé|j['’]ai conçu|j['’]ai développé|j['’]ai imprimé|j['’]ai modélisé|j['’]ai construit|mon|ma|mes)\b[^.!?\n]{0,160}\b(?:projet|créé|cr[eé][ée]|fabriqu[ée]|conçu|développ[ée]|réalis[ée]|imprim[ée]|modélis[ée]|construit|prototype|objet|porte[- ]clé|stage|expérience|fauteuil|accessibilité|cyberquest|participation|atelier|recherche|conception|fabrication|impression|découverte|apprentissage|réalisation|activité|mission|observation|bénévolat|présentation)\b|\b(?:créé|fabriqué|conçu|développé|réalisé|imprimé|modélisé|construit|participé|observé|découvert|travaillé|aidé|contribué)\b[^.!?\n]{0,120}\b(?:je|j['’]|mon|ma|mes)\b)/i;
   const sgHasConfirmedPersonalContext=text=>SG_PERSONAL_ACTION.test(String(text||''));
   const sgFirstPersonUnconfirmed=sentence=>{
-    const x=String(sentence||'');
+    const x=String(sentence||'').trim();
     if(!FP_RE.test(x))return false;
+    // Prompt 5 : ne pas confondre une opinion / une réflexion avec une expérience vécue.
+    // Ces formulations à la première personne ne revendiquent pas, à elles seules, une action réalisée.
+    if(/\b(?:je pense|je trouve|je me demande|je comprends|je commence à comprendre|je découvre|je m'intéresse à|j'aimerais comprendre|je voudrais comprendre|je remarque que)\b/i.test(x))return false;
+    // Les projets et expériences réellement confirmés dans le contexte éditorial sont autorisés,
+    // sauf si la phrase revendique explicitement une pratique encore non confirmée.
     if(sgHasConfirmedPersonalContext(x)&&!/(?:linux|terminal|kali|tryhackme|portswigger|siem|osint|ctf|pentest|audit|bug bounty)/i.test(x))return false;
     return flagged(x);
   };
@@ -3905,7 +3910,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       'PRIORITÉS : 1 vérité éditoriale ; 2 niveau réel débutant ; 3 voix personnelle quand elle est justifiée ; 4 exactitude ; 5 diversité des angles ; 6 anti-redondance avec les 7 derniers posts ; 7 variété du vocabulaire. Ne jamais inventer une expérience, une émotion, un cours, un professeur, un stage ou une situation vécue.',
       'EXPÉRIENCE PERSONNELLE : elle est encouragée lorsqu’elle repose sur un élément explicitement confirmé du profil de Simon (JavaScript/Python/HTML, Arduino débutant, CyberQuest développé avec l’aide de l’IA, accessibilité PMR, ou Root-Me lorsque la valeur réelle est fournie). La première personne est alors autorisée. En revanche, ne jamais transformer en expérience personnelle Linux/terminal/Kali, TryHackMe, PortSwigger, CTF, pentest, audit, SIEM, OSINT, bug bounty ou pratique professionnelle non confirmée.',
       'REFORMULATION D’EXPÉRIENCE : si le champ Contexte / angle décrit une expérience de Simon, reformule fidèlement les faits fournis (action, cadre, apprentissage) sans ajouter de détail. Si le vécu est seulement possible, ne l’écris pas comme un fait établi : formule une version à confirmer ou reste général jusqu’à validation humaine.',
-      'FORMULATION PERSONNELLE : privilégier une observation courte et vraie (« j’ai découvert… », « j’ai travaillé sur… », « ce projet m’a permis de… ») quand le contexte confirmé le permet. Sinon, rester factuel et neutre. Ne jamais ajouter une pratique non confirmée uniquement pour rendre le post plus humain.',
+      'FORMULATION PERSONNELLE (PROMPT 5) : distinguer une opinion ou réflexion (« je pense », « je trouve », « je me demande », « je cherche à comprendre ») d’une affirmation d’expérience. Une opinion n’exige pas de preuve de vécu. Une action réellement attribuée à Simon (« j’ai développé », « j’ai testé », « j’ai réalisé », « j’ai participé ») doit reposer sur un fait confirmé. Les projets/expériences explicitement confirmés peuvent être racontés à la première personne. Ne jamais ajouter une pratique non confirmée pour rendre le post plus humain.',
       'ACCROCHE : différente des 7 derniers posts ; elle peut être personnelle si elle repose sur un fait confirmé, sinon utiliser constat, contraste, conséquence, détail concret ou phrase courte.',
       'CONCLUSION : factuelle (constat, conséquence, précision, ouverture), jamais de bilan personnel artificiel (« Ce que je retiens », « Cela montre que », « À retenir », « Je garderai une fiche »). Une variante de vocabulaire d’une structure récente reste une redondance.',
       'EXACTITUDE : formulations prudentes (notamment, peut, en général) ; exemples explicitement hypothétiques ; 1 emoji maximum.'].join('\n');
