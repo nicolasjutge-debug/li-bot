@@ -1599,7 +1599,11 @@ function validateGeneratedPost(post){
     if(/#(?:PortSwigger|TryHackMe)\b/i.test(text)) errors.push('hashtag lié à une expérience non validée');
     const low=text.toLowerCase();
     if(generationRules.avoidedFormulations?.some(f=>f&&low.includes(String(f).toLowerCase()))) errors.push('formulation rejetée');
-    if(generationRules.avoidedAngles?.some(a=>a&&low.includes(String(a).toLowerCase()))) errors.push('angle rejeté');
+    // Un angle appris comme à éviter ne doit viser que l'accroche (première ligne),
+    // jamais n'importe quelle occurrence dans le corps du post : cela évite de bloquer
+    // une sauvegarde qui évoque légitimement le même sujet dans un autre angle.
+    const currentHook=(text.split(/\r?\n/)[0]||'').trim().toLowerCase();
+    if(generationRules.avoidedAngles?.some(a=>{if(!a)return false;const rejected=String(a).trim().toLowerCase();return currentHook===rejected || (rejected.length>=35 && currentHook.includes(rejected));})) errors.push('angle rejeté');
     if(generationRules.avoidedHashtags?.some(h=>h&&new RegExp(String(h).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(text))) errors.push('hashtag rejeté');
     // CORRECTIF (prompt §5/§11) : generationRules.avoidedExperiences était alimenté par
     // learnCorrection (PortSwigger/TryHackMe/Linux pratique) mais jamais relu ici — resté sans
@@ -1714,7 +1718,7 @@ function saveDraft(){
   const review=validateForReview(current,{autoCleanHashtags:true});
   if(!review.ok){
     const raisons=(review.errors||[]).join(', ');
-    toast('⚠️ Sauvegarde refusée ('+raisons+')','er');return;
+    toast('⚠️ Sauvegarde refusée ('+raisons+'). Vérifie l’accroche ; les hashtags rejetés ordinaires sont retirés automatiquement. #TryHackMe reste interdit.','er');return;
   }
   if(review.removed.length){
     current=review.text;
@@ -3897,7 +3901,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       if(sentences.some(x=>SG_IMPL.test(x)))add('Vécu implicite ou anecdote non confirmée (V7 §17).');
       if(sentences.some(x=>SG_EMO2.test(x)))add('Émotion personnelle non confirmée (V7 §18).');
       if(sentences.some(x=>!/root-?me/i.test(x)&&sgPrec(x)))add('Précision chiffrée non nécessaire (V7 §32).');
-      if(sentences.some(x=>sgFirstPersonUnconfirmed(x)))add('Première personne non confirmée (prompt maître §5).');
+      // La confirmation humaine explicite de l’expérience (choix « oui, confirmée »)
+      // doit être prise en compte par la relecture elle-même. Sinon le contrôle §5
+      // rejetterait le texte avant de pouvoir enregistrer cette confirmation.
+      const personalClaimConfirmed = document.querySelector('input[name="sg-personal-confirm"]:checked')?.value === 'yes';
+      if(!personalClaimConfirmed && sentences.some(x=>sgFirstPersonUnconfirmed(x)))add('Première personne non confirmée (prompt maître §5).');
     }
     if(/ynov|epitech/i.test(display)||(/\binsa\b/i.test(display)&&!/accessibilit|pmr|fauteuil/i.test(display)))add('Contexte Ynov/Epitech/INSA non confirmé (§28-29).');
     sgV7Check(display,topic,type).forEach(add);
