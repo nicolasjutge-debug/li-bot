@@ -1748,7 +1748,7 @@ function restoreSavedDraft(){
   const d=lsL(draftKey(),null);
   if(!d||!d.savedText)return false;
   lastPost={id:d.id,text:d.savedText,type:d.type,topic:d.topic,label:d.label,ts:d.savedAt,account:acc,originalText:d.generatedText,previousVersions:[] ,savedText:d.savedText,modifiedText:d.modifiedText,savedAt:d.savedAt};
-  renderPost(d.savedText);markDraftSaved();return true;
+  renderPost(d.savedText);if(window.sgSyncGate)window.sgSyncGate();markDraftSaved();return true;
 }
 function discardDraft(){
   localStorage.removeItem(draftKey());draftDirty=false;draftSavedAt=0;
@@ -1897,6 +1897,7 @@ function clearGenerator(){
   document.getElementById('htb').innerHTML='';
   document.getElementById('pm').textContent='';
   lastPost=null;
+  if(window.sgSyncGate)window.sgSyncGate();
 }
 function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');});}
 
@@ -1948,7 +1949,7 @@ function genPost(){
   if(!text||!validation?.ok){toast('⚠️ Génération refusée : contenu ou hashtag non conforme aux règles','er');return;}
   if(typ==='original'&&acc==='simon')logHook(acc,text);
   lastPost={id:Date.now(),text,type:typ,topic,label:TL[typ],ts:Date.now(),account:acc,originalText:text,previousVersions:[]};
-  renderPost(text);
+  renderPost(text);if(window.sgSyncGate)window.sgSyncGate();
   if(!stats[acc])stats[acc]={total:0,sent:0};
   stats[acc].total++;saveAll();updateStats();
   if(isDup)toast('⚠️ Toutes les variantes de ce thème sont déjà utilisées (texte en double avec un post existant)','er');
@@ -2523,7 +2524,7 @@ function renderQ(){
     return `<div class="qi ${i===0?'nxt':''}" id="qi-${q.id}" style="flex-wrap:wrap">
       <div class="qn">${i+1}</div>
       <div class="qb">
-        <div class="qt">${q.label} · ${ab}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}${q.scheduledAt<=Date.now()?' <span title="L\'heure prévue est passée — reste en file tant que tu ne l\'as pas traité toi-même" style="font-size:11px;color:var(--orange)">⏰ En retard</span>':''}</div>
+        <div class="qt">${q.label} · ${ab}${window.sgQueueBadge?window.sgQueueBadge(q):''}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}${q.scheduledAt<=Date.now()?' <span title="L\'heure prévue est passée — reste en file tant que tu ne l\'as pas traité toi-même" style="font-size:11px;color:var(--orange)">⏰ En retard</span>':''}</div>
         <div class="qp">${q.text.substring(0,120)}…</div>
         ${tags.length?`<div class="qts">${tags.map(h=>`<span>${h}</span>`).join('')}</div>`:''}
         <div class="qtm">${ts}</div>
@@ -2546,6 +2547,7 @@ function renderQ(){
 function pubLiQ(id){
   const q=Q.find(x=>x.id===id);
   if(!q) return;
+  if(window.sgQueueGuard&&!window.sgQueueGuard(q,'Publication'))return;
   // CORRECTIF (même bug que publishLinkedIn) : l'archivage et le retrait de la file se faisaient
   // avant même de savoir si le partage allait réussir — une annulation laissait quand même le
   // post retiré de la file et déjà archivé. On agit maintenant uniquement après confirmation réelle
@@ -2620,6 +2622,7 @@ function restoreQText(id){
 function cpQ(id){
   const q=Q.find(x=>x.id===id);
   if(!q)return;
+  if(window.sgQueueGuard&&!window.sgQueueGuard(q,'Copie'))return;
   navigator.clipboard.writeText(q.text).then(()=>toast('Copié ! 💼','ok'));
   // CORRECTIF (Copier ≠ Publier) : copier ne fait plus qu'une chose — copier le texte. Avant, ce
   // bouton archivait le post ET le retirait de la file, ce qui donnait l'impression qu'un simple
@@ -2641,7 +2644,7 @@ function markPubQ(id){
   toast('Marqué comme publié — retiré de la file ✓','ok');
   autoRefill(true);
 }
-function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;lastPost=q;renderPost(q.text);document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});toast('Aperçu chargé','in');}
+function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;lastPost=q;renderPost(q.text);if(window.sgSyncGate)window.sgSyncGate();document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});toast('Aperçu chargé','in');}
 function delQ(id){
   if(!confirm('Supprimer ce post de la file ?'))return;
   const removed=Q.find(x=>x.id===id);
@@ -3133,7 +3136,7 @@ function delCf(id){CF=CF.filter(x=>x.id!==id);saveAll();renderCF();}
 function genCf(id){
   const c=CF.find(x=>x.id===id);if(!c)return;
   const text=genTxt({type:'congrats',who:c.name,occ:c.occ,note:c.note,ctx:c.note});
-  lastPost={id:Date.now(),text,type:'congrats',topic:c.name,label:'🎉 Félicitations',ts:Date.now(),account:acc,originalText:text};renderPost(text);
+  lastPost={id:Date.now(),text,type:'congrats',topic:c.name,label:'🎉 Félicitations',ts:Date.now(),account:acc,originalText:text};renderPost(text);if(window.sgSyncGate)window.sgSyncGate();
   if(!stats[acc])stats[acc]={total:0,sent:0};stats[acc].total++;saveAll();updateStats();
   toast('Post pour '+c.name+' ✓','ok');document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -3581,7 +3584,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     /\bchmod\s+-R\s+777\s+\/(?:\s|$)/i
   ];
   const SG_STOP=new Set(('le la les un une des de du dans sur avec pour et ou à au aux en ce cette ces est sont qui que je me mon ma mes on se son sa ses il elle ils elles ne pas plus peut comme mais par aussi tout tous être ont été fait cela ça nous vous ton ta leur leurs quand entre sans sous vers chez après avant alors ainsi même autre autres chaque quelques plusieurs car donc dont très').split(' '));
-  let sgGate={reviewed:false,hash:null};
+  let sgGate={reviewed:false,hash:null,postKey:null};let sgUiPostKey=null;
   let sgLastMeta=null;
   const sgOld={
     genPost:window.genPost, copyPost:window.copyPost, publishLinkedIn:window.publishLinkedIn,
@@ -3590,6 +3593,18 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   };
   const sgNorm=s=>String(s??'').normalize('NFKC').replace(/[’‘]/g,"'").toLowerCase().replace(/\s+/g,' ').trim();
   const sgHash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};
+  // ── Relecture par post dans la file (Simon) : la validation est mémorisée SUR le post et liée à son texte exact.
+  // Toute modification du texte la rend caduque ; aucun autre post n'en bénéficie. Même logique sur PC et iPhone.
+  const sgRvNorm=s=>String(s||'').replace(/\r/g,'').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+  const sgRvHash=s=>sgHash(sgRvNorm(s));
+  window.sgQueueReviewed=q=>!q||q.account!=='simon'||Boolean(q.reviewedHash&&q.reviewedHash===sgRvHash(q.text));
+  window.sgQueueBadge=q=>!q||q.account!=='simon'?'':(window.sgQueueReviewed(q)?' <span title="Relu et validé — texte inchangé depuis" style="font-size:10px;color:var(--green)">✓ relu</span>':' <span title="Pas encore relu : copie et publication bloquées (👁 puis « Relu et validé »)" style="font-size:10px;color:var(--orange)">🔒 à relire</span>');
+  window.sgQueueGuard=(q,action)=>{
+    if(window.sgQueueReviewed(q))return true;
+    try{prvQ(q.id)}catch(e){}
+    toast('🔒 '+action+' bloquée : ce post n’a pas été relu. Relis-le puis clique « Relu et validé ».','er');
+    return false;
+  };
   const sgWords=s=>sgNorm(s).replace(/[^\p{L}\p{N}\s'-]/gu,' ').split(/\s+/).filter(Boolean);
   const sgSentences=s=>String(s).split(/[.!?…\n]+/).map(x=>x.trim()).filter(Boolean);
   const sgThemeWords=t=>new Set(sgWords(t).filter(w=>!SG_STOP.has(w)));
@@ -4131,9 +4146,32 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     return {ok:true,text:display,raw:text,hashtags:tags,full,meta};
   }
   window.prepare_post=prepare_post;
+  // CORRECTIF relecture : le verrou est rattaché au post affiché (identité + texte). Aucune validation
+  // ni choix « expérience confirmée » ne se transmet d'un post à un autre.
+  function sgPostKey(){return lastPost&&lastPost.id!==undefined&&lastPost.id!==null?String(lastPost.id):null}
   function sgSetGate(reviewed=false){
     const po=document.getElementById('po');const text=(po?.innerText||'').trim();
-    sgGate={reviewed:Boolean(reviewed),hash:reviewed?sgHash(text):null};
+    sgGate={reviewed:Boolean(reviewed),hash:reviewed?sgHash(text):null,postKey:reviewed?sgPostKey():null};
+    sgUiPostKey=sgPostKey();
+    sgPaintGate();
+  }
+  // Appelée à chaque changement de post affiché (aperçu file, brouillon, vidage, etc.) : si le post a changé,
+  // la validation ET les choix d'expérience personnelle sont remis à zéro ; sinon l'interface est simplement redessinée.
+  function sgRestoreQueueReview(){
+    if(acc!=='simon'||!lastPost||!Q.includes(lastPost)||!lastPost.reviewedHash||!window.sgQueueReviewed(lastPost))return false;
+    if(lastPost.reviewedPersonal==='yes'){const r=document.getElementById('sg-personal-yes');if(r)r.checked=true;}
+    sgSetGate(true);return true;
+  }
+  function sgSyncGate(){
+    const key=sgPostKey();
+    if(key!==sgUiPostKey){sgResetPersonalConfirmation();sgSetGate(false);sgRestoreQueueReview();return;}
+    const hasText=Boolean((document.getElementById('po')?.innerText||'').trim());
+    if(sgGate.reviewed&&(!hasText||sgGate.postKey!==key)){sgSetGate(false);return;}
+    sgPaintGate();
+  }
+  window.sgSyncGate=sgSyncGate;
+  function sgPaintGate(){
+    const reviewed=sgGate.reviewed;
     const btn=document.getElementById('sg-review-btn'),st=document.getElementById('sg-review-status'),detail=document.getElementById('sg-review-detail');
     if(btn){btn.textContent=reviewed?'✓ Relecture validée':'✓ Relu et validé';btn.disabled=Boolean(reviewed);btn.setAttribute('aria-disabled',String(Boolean(reviewed)));btn.title=reviewed?'Relecture déjà validée. Modifie le texte pour pouvoir relire à nouveau.':'Valider la relecture du texte actuel.';}
     if(st){st.textContent=reviewed?'🔓 Relecture humaine validée':'🔒 Relecture humaine requise avant copie/publication';st.style.color=reviewed?'var(--green)':'var(--orange)'}
@@ -4151,6 +4189,15 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(feedback){feedback.textContent='Le texte a changé : vérifie à nouveau si l’expérience est confirmée, possible à confirmer ou non.';feedback.style.color='var(--muted)';}
   }
   function sgHumanReview(){
+    try{sgSyncGate();sgHumanReviewCore();}
+    catch(e){
+      sgGate={reviewed:false,hash:null,postKey:null};
+      try{sgPaintGate()}catch(_){}
+      try{toast('Relecture impossible (erreur interne) : le post reste non relu, tu peux réessayer.','er')}catch(_){}
+      try{console.error('sgHumanReview',e)}catch(_){}
+    }
+  }
+  function sgHumanReviewCore(){
     if(sgGate.reviewed){toast('Relecture déjà validée. Modifie le texte pour réactiver le bouton.','in');return;}
     if(acc!=='simon'){toast('La relecture verrouillée concerne le compte Simon.','in');return;}
     const text=(document.getElementById('po')?.innerText||'').trim();if(!text){toast('Aucun texte à relire.','er');return;}
@@ -4183,12 +4230,20 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const similarityOnlyPersonal = sgHasConfirmedPersonalContext(finalText) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
     if(errors.length && !similarityOnlyPersonal){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
     sgSetGate(true);
+    if(lastPost&&Q.includes(lastPost)){
+      if(sgRvNorm(finalText)!==sgRvNorm(lastPost.text))lastPost.text=finalText;
+      if(!similarityOnlyPersonal&&(!personalExperienceClaim||personalChoice==='yes')){
+        lastPost.reviewedHash=sgRvHash(lastPost.text);lastPost.reviewedAt=Date.now();lastPost.reviewedPersonal=personalExperienceClaim?'yes':'';
+      }else{delete lastPost.reviewedHash;delete lastPost.reviewedAt;delete lastPost.reviewedPersonal;}
+      saveAll();renderQ();
+    }
     if(similarityOnlyPersonal) toast('✓ Relecture enregistrée. Similarité détectée : copie autorisée pour correction, publication/programmation à refaire après correction.','in');
     else toast('✓ Relecture humaine enregistrée.','ok');
   }
   window.sgHumanReview=sgHumanReview;
   function sgRelease(action){
     if(acc!=='simon')return true;
+    sgSyncGate();
     const po=document.getElementById('po');let text=(po?.innerText||'').trim();if(!text){toast('Génère d’abord un post','er');return false;}
     const meta=sgLastMeta||{type:'technique',theme:topic,structure:'',form:''};
     let display=text.replaceAll(SG_TOKEN,sgProgress());
@@ -4221,7 +4276,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     // après la relecture (cas ancien/importé sans hashtags), on compare aussi le texte avant
     // cette finalisation déterministe afin de ne pas créer un faux blocage.
     const bodyHash=sgHash(display.trim());
-    if(!sgGate.reviewed|| (reviewedHash!==finalHash && reviewedHash!==bodyHash)){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
+    if(!sgGate.reviewed|| sgGate.postKey!==sgPostKey() || (reviewedHash!==finalHash && reviewedHash!==bodyHash)){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
     // Revalidation finale : progression et historique sont relus juste avant la sortie.
     const finalErrors=sgValidate(text,{...meta,allowSystemHashtags:true});
     const finalSimilarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(text) && finalErrors.length>0 && finalErrors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
@@ -4340,7 +4395,7 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     const po=document.getElementById('po');const text=(po?.innerText||'').trim();
     if(acc==='simon')sgResetPersonalConfirmation();
     if(lastPost){if(lastPost.originalText===undefined)lastPost.originalText=lastPost.text;lastPost.text=text;}
-    sgSetGate(false);
+    if(!sgRestoreQueueReview())sgSetGate(false);
     // Reprend uniquement l'affichage de comptage/hashtags de l'interface d'origine.
     const tags=[...new Set((text.match(/#[\wÀ-ÿéèêëàâîïôùûüç]+/gi)||[]))];const htb=document.getElementById('htb');
     if(htb)htb.innerHTML=tags.length?'<span style="color:var(--muted);font-size:10px;margin-right:4px">TAGS:</span>'+tags.map(h=>`<span class="htag">${h}</span>`).join(''):'<span style="color:var(--muted);font-size:11px">Aucun hashtag</span>';
@@ -4355,17 +4410,21 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
   window.restoreLastPost=sgRestore;
   function sgCopy(){if(acc!=='simon')return sgOld.copyPost();if(!sgRelease('Copie'))return;const text=(document.getElementById('po').innerText||'').trim();navigator.clipboard.writeText(text).then(()=>{toast('Copié ! 💼','ok');}).catch(()=>toast('Copie impossible sur ce navigateur.','er'))}
   window.copyPost=sgCopy;
+  function sgDequeue(p){
+    if(!p||!Q.includes(p))return;
+    Q=Q.filter(x=>x!==p);rescheduleAccountQueue(p.account);saveAll();renderQ();updateStats();rfTmr();autoRefill(true);
+  }
   function sgPublish(){
     if(acc!=='simon')return sgOld.publishLinkedIn();
     if(!sgRelease('Publication'))return;
     const postToArchive=lastPost;const text=(document.getElementById('po').innerText||'').trim();
-    if(navigator.share){navigator.share({title:'Post LinkedIn — Simon JUTGÉ',text}).then(()=>{if(postToArchive)archive(postToArchive,'copie');clearGenerator();toast('Partagé avec succès ✓','ok')}).catch(()=>toast('Partage annulé — le post reste dans Génération.','in'));}
-    else navigator.clipboard.writeText(text).then(()=>{window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encodeURIComponent(text.substring(0,700)),'_blank');if(postToArchive)archive(postToArchive,'copie');clearGenerator();toast('Post copié + LinkedIn ouvert 💼','ok')});
+    if(navigator.share){navigator.share({title:'Post LinkedIn — Simon JUTGÉ',text}).then(()=>{if(postToArchive)archive(postToArchive,'copie');sgDequeue(postToArchive);clearGenerator();toast('Partagé avec succès ✓','ok')}).catch(()=>toast('Partage annulé — le post reste dans Génération.','in'));}
+    else navigator.clipboard.writeText(text).then(()=>{window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encodeURIComponent(text.substring(0,700)),'_blank');if(postToArchive)archive(postToArchive,'copie');sgDequeue(postToArchive);clearGenerator();toast('Post copié + LinkedIn ouvert 💼','ok')});
   }
   window.publishLinkedIn=sgPublish;
-  function sgSchedule(){if(acc!=='simon')return sgOld.schedPost();if(!sgRelease('Programmation'))return;const mine=Q.filter(q=>q.account==='simon');const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();Q.push({id:Date.now(),draftId:lastPost.id,text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+24*3600*1000,account:'simon',originalText:lastPost.originalText,sgFamily:lastPost.sgFamily,structure:lastPost.structure,form:lastPost.form});saveAll();renderQ();updateStats();toast('Programmé ✓','ok')}
+  function sgSchedule(){if(acc!=='simon')return sgOld.schedPost();if(!sgRelease('Programmation'))return;const mine=Q.filter(q=>q.account==='simon');const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();Q.push({id:Date.now(),draftId:lastPost.id,text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+24*3600*1000,account:'simon',originalText:lastPost.originalText,sgFamily:lastPost.sgFamily,structure:lastPost.structure,form:lastPost.form,reviewedHash:sgRvHash(lastPost.text),reviewedAt:Date.now(),reviewedPersonal:sgHasPersonalExperienceClaim(lastPost.text)?'yes':''});saveAll();renderQ();updateStats();toast('Programmé ✓','ok')}
   window.schedPost=sgSchedule;
-  function sgAlready(){if(acc!=='simon')return sgOld.markAlreadyPublished();if(!sgRelease('Validation de publication'))return;archive(lastPost,'publie');toast('Marqué comme publié — ne sera plus reproposé ✓','ok');clearGenerator();sgSetGate(false)}
+  function sgAlready(){if(acc!=='simon')return sgOld.markAlreadyPublished();if(!sgRelease('Validation de publication'))return;const sgP=lastPost;archive(sgP,'publie');sgDequeue(sgP);toast('Marqué comme publié — ne sera plus reproposé ✓','ok');clearGenerator();sgSetGate(false)}
   window.markAlreadyPublished=sgAlready;
   function sgRunTests(){
     /*
@@ -4554,7 +4613,7 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     });
 
     // 12 — Verrou humain : copie/publication interdite avant relecture et après modification.
-    const po=document.getElementById('po');const savedPo=po?.innerText||'';const savedAccLock=acc,savedTopicLock=topic;acc='simon';topic='';const savedLast=lastPost?JSON.parse(JSON.stringify(lastPost)):lastPost;const savedMeta=sgLastMeta?JSON.parse(JSON.stringify(sgLastMeta)):sgLastMeta;const savedGate={...sgGate};
+    const po=document.getElementById('po');const savedPo=po?.innerText||'';const savedAccLock=acc,savedTopicLock=topic;acc='simon';topic='';const savedLast=lastPost?JSON.parse(JSON.stringify(lastPost)):lastPost;const savedMeta=sgLastMeta?JSON.parse(JSON.stringify(sgLastMeta)):sgLastMeta;const savedGate={...sgGate},savedUiKey=sgUiPostKey;
     try{
       resetHistory([],[]);const r={text:valid,theme:'DNS',structure:'Découverte',form:'En découvrant',family:'réseau'};const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});
       if(po&&p?.ok){po.innerText=p.full;sgLastMeta={type:'technique',theme:r.theme,structure:r.structure,form:r.form,family:r.family};lastPost={text:p.full};sgSetGate(false);
@@ -4568,7 +4627,7 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
       if(po){po.innerText=savedPo;renderPost(savedPo)}
       if(lastPost){Object.keys(lastPost).forEach(k=>delete lastPost[k]);if(savedLast)Object.assign(lastPost,savedLast)}
       else if(savedLast)lastPost=savedLast;
-      sgLastMeta=savedMeta;sgGate=savedGate;resetHistory(oldH||[],oldQ||[]);acc=savedAccLock;topic=savedTopicLock;
+      sgLastMeta=savedMeta;sgGate=savedGate;sgUiPostKey=savedUiKey;sgPaintGate();resetHistory(oldH||[],oldQ||[]);acc=savedAccLock;topic=savedTopicLock;
     }
 
     // V6 — non-régression (§8, §24-25, §26-27, §29)
