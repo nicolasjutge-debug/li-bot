@@ -3555,9 +3555,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     ['Ransomware','#Ransomware','menaces'],['Vulnérabilités','#Vulnérabilité','menaces'],['RGPD','#RGPD','données'],
     ['Données personnelles','#DonnéesPersonnelles','données'],['Confidentialité','#DonnéesPersonnelles','données'],
     ['SIEM','#SIEM','avancé'],['SOC','#SOC','avancé'],['Zero-day','#ZeroDay','avancé'],['Pentest','#Débutant','avancé'],
-    ['CyberQuest','#CyberQuest','sécurité'],['Accessibilité numérique','#Accessibilité','données']
+    ['CyberQuest','#CyberQuest','sécurité'],['Accessibilité numérique','#Accessibilité','données'],
+    ['Programmation','#Programmation','projet'],['Arduino','#Arduino','projet'],['Root-Me','#RootMe','projet']
   ];
-  const SG_PROJECT_TOPICS=new Set(['CyberQuest','Accessibilité numérique']);
+  const SG_PROJECT_TOPICS=new Set(['CyberQuest','Accessibilité numérique','Programmation','Arduino','Root-Me']);
   const SG_THEME=new Map(SG_THEME_ROWS.map(x=>[x[0],x]));
   const SG_ALIASES=new Map([['Réseaux','Réseau'],['Zero Day','Zero-day'],['Vulnérabilité','Vulnérabilités'],['MFA/2FA','MFA / 2FA']]);
   const SG_OFFENSIVE=/\b(?:nmap|sqlmap|metasploit|msfconsole|hydra|hashcat|payload|reverse shell|burp suite|burpsuite|nikto|gobuster|ffuf|john the ripper)\b/i;
@@ -4310,6 +4311,33 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     toast('Post généré ✓ · '+result.theme+' · '+result.structure,'ok');
   }
   window.genPost=sgGenerate;
+
+  /* ═══ CORRECTIF 2026-11-08 — posts « expérience de Simon » du planning automatique ═══
+     Cause : le créneau personnel ne disposait que de 2 textes fixes (CyberQuest, accessibilité PMR). Une fois ces 2 corps
+     présents dans la file/l'historique, plus aucun post d'expérience n'était généré et le repli technique prenait le relais sans prévenir.
+     Banque élargie : UNIQUEMENT des faits confirmés (CyberQuest avec l'aide de l'IA, projet d'accessibilité PMR avec des enseignants-chercheurs,
+     notions JavaScript/Python/HTML, Arduino débutant, Root-Me si la valeur réelle est fournie par le code). Aucun détail ajouté. */
+  const SG_PERSONAL_BANK=[
+    {theme:'CyberQuest',family:'projet personnel',text:'CyberQuest est un projet que j’ai développé avec l’aide de l’intelligence artificielle. Cette expérience me donne un sujet concret pour réfléchir à la place de l’IA dans un projet numérique. Un outil peut aider à avancer, mais il ne remplace pas le besoin de comprendre ce que l’on construit ni de vérifier les résultats proposés. Il reste important de garder un regard critique sur les suggestions obtenues et de faire attention à ce qui est réellement confirmé.\n\nParler d’un projet, ce n’est donc pas seulement présenter son idée : c’est aussi reconnaître la part de l’accompagnement utilisé et les limites de ce qu’on peut affirmer. CyberQuest me permet d’aborder ces questions sans prétendre tout maîtriser.'},
+    {theme:'CyberQuest',family:'projet personnel',text:'CyberQuest est un outil d’apprentissage ludique que j’ai développé avec l’aide de l’IA. Son but est de rendre le vocabulaire de la cybersécurité plus facile à retenir, en apprenant en jouant.\n\nJe le considère comme un projet d’apprentissage, pas un produit professionnel. Il reflète mon niveau de débutant, et c’est justement ce qui m’intéresse : construire quelque chose autour d’un sujet oblige à se demander comment l’expliquer simplement et comment rester exact.\n\nCe projet m’aide surtout à voir ce que je comprends vraiment d’une notion, et ce qu’il me reste à approfondir.'},
+    {theme:'CyberQuest',family:'projet personnel',text:'Quand on développe un projet avec l’aide de l’IA, la question n’est pas seulement « est-ce que ça fonctionne ? ». C’est aussi « est-ce que je comprends ce qui a été proposé ? ».\n\nC’est la réflexion que me donne CyberQuest, un projet d’apprentissage que j’ai développé avec l’aide de l’IA. Je cherche à garder une habitude simple : relire ce qui est proposé, vérifier ce que je peux vérifier et ne pas affirmer ce que je n’ai pas confirmé.\n\nAvec un outil d’aide, la responsabilité de comprendre reste celle de la personne qui construit.'},
+    {theme:'CyberQuest',family:'projet personnel',text:'Pourquoi apprendre la cybersécurité sous forme de jeu ? Parce qu’un vocabulaire nouveau se retient souvent mieux quand on le rencontre dans un contexte concret que sur une simple liste.\n\nC’est l’idée derrière CyberQuest, un outil d’apprentissage ludique que j’ai développé avec l’aide de l’IA. Je ne prétends pas qu’il remplace un cours ou une formation : c’est un projet de débutant, qui me sert à structurer ce que je découvre.\n\nJe trouve que transformer une notion en quelque chose de concret oblige à la comprendre un peu plus précisément.'},
+    {theme:'Accessibilité numérique',family:'projet personnel',text:'J’ai participé à un projet autour de l’accessibilité pour les personnes à mobilité réduite. Ce sujet rappelle qu’un service numérique ou un espace ne se pense pas uniquement du point de vue de la personne qui le conçoit. Les besoins des personnes concernées doivent aussi compter dans les choix réalisés.\n\nL’accessibilité n’est pas un détail ajouté à la fin : elle fait partie des questions à considérer dès la réflexion sur un projet. Cette approche invite à écouter les usages et à éviter de supposer qu’une solution convient à tout le monde. Je peux parler de ma participation à ce projet, sans prétendre représenter à moi seul l’expérience de toutes les personnes concernées.'},
+    {theme:'Accessibilité numérique',family:'projet personnel',text:'Un espace peut paraître pratique pour la plupart des personnes et rester difficile à utiliser pour quelqu’un à mobilité réduite.\n\nJ’ai participé à un projet de recherche sur l’accessibilité pour les personnes à mobilité réduite, avec des enseignants-chercheurs. Je m’en tiens à ma participation : je ne prétends pas avoir tout conçu ni représenter les personnes concernées.\n\nCe sujet me donne un réflexe que je trouve utile : se demander, dès le départ, qui pourra réellement utiliser ce que l’on conçoit. L’accessibilité se pense au début d’un projet, pas après coup.'},
+    {theme:'Accessibilité numérique',family:'projet personnel',text:'Parler d’accessibilité numérique, ce n’est pas seulement parler d’écrans. C’est se demander comment une personne, avec ses contraintes, peut accéder à un service ou à un lieu.\n\nJ’ai participé à un projet de recherche autour de l’accessibilité pour les personnes à mobilité réduite. Ce projet me rappelle qu’une solution ne vaut que si les personnes concernées peuvent s’en servir.\n\nPour qui s’oriente vers l’informatique, c’est une bonne question à garder en tête : un système peut être bien construit techniquement et pourtant mal adapté à ceux qui doivent l’utiliser.'},
+    {theme:'Accessibilité numérique',family:'projet personnel',text:'Quand on conçoit quelque chose, on le pense souvent depuis sa propre situation. Un projet sur l’accessibilité pour les personnes à mobilité réduite rappelle que ce point de vue est limité.\n\nJ’ai participé à un projet de ce type, dans un cadre de recherche avec des enseignants-chercheurs. Je n’entre pas ici dans le détail du projet, car ce n’est pas l’objet de ce message.\n\nIdée générale : écouter les besoins réels avant de proposer une solution, et accepter qu’une première idée puisse ne pas convenir à tout le monde.'},
+    {theme:'Programmation',family:'projet personnel',text:'En parallèle de la cybersécurité, je découvre les bases de la programmation : des notions de JavaScript, de Python et de HTML.\n\nCes langages ne servent pas aux mêmes choses. Le HTML décrit la structure d’une page web, le JavaScript permet de la rendre interactive, et Python est un langage souvent utilisé pour écrire des scripts simples.\n\nJe reste prudent sur mon niveau : ce sont des notions, pas une maîtrise. Mais comprendre comment un programme est écrit aide aussi à comprendre comment il peut être mal utilisé ou mal configuré.'},
+    {theme:'Programmation',family:'projet personnel',text:'Savoir lire un peu de code change la façon de regarder un site web. Derrière une page, il y a du HTML pour la structure, du JavaScript pour le comportement, et parfois d’autres langages côté serveur.\n\nJe découvre ces notions avec JavaScript, Python et HTML. Je suis débutant, et j’essaie de ne pas confondre connaître une notion et savoir la mettre en œuvre.\n\nCette base m’intéresse pour une raison simple : on comprend mieux une erreur de sécurité quand on sait comment l’élément concerné fonctionne normalement.'},
+    {theme:'Programmation',family:'projet personnel',text:'Python, JavaScript, HTML : trois noms qui reviennent souvent quand on commence l’informatique. Je ne les connais que par des notions de base, et je préfère le dire clairement.\n\nCette honnêteté sur le niveau me semble importante en cybersécurité. Affirmer une compétence que l’on n’a pas peut conduire à de mauvaises décisions, alors qu’une limite bien identifiée permet de savoir quoi apprendre ensuite.\n\nMon objectif reste simple : continuer à apprendre les bases, une notion après l’autre, et distinguer ce que je comprends de ce que je découvre encore.'},
+    {theme:'Arduino',family:'projet personnel',text:'Arduino est une carte électronique programmable souvent utilisée pour apprendre : on écrit un programme, et la carte agit sur le monde réel, par exemple en allumant une LED ou en lisant un capteur.\n\nJe débute avec Arduino. Je n’ai pas un niveau avancé, mais je trouve intéressant de voir un programme avoir un effet physique.\n\nCe lien entre le code et le matériel m’aide à comprendre pourquoi la sécurité concerne aussi les objets connectés : dès qu’un appareil agit dans le monde réel, une erreur peut avoir des conséquences réelles.'},
+    {theme:'Arduino',family:'projet personnel',text:'Entre un programme et un objet réel, il y a une différence que l’on peut comprendre avec Arduino : une erreur ne reste pas seulement à l’écran.\n\nJe suis débutant sur Arduino et je découvre cette carte pas à pas. Je ne présente pas cela comme une expertise, seulement comme un point de départ pour comprendre comment le matériel et le code travaillent ensemble.\n\nPour la cybersécurité, c’est une base utile : on protège mieux un système quand on sait de quoi il est composé et comment ses éléments communiquent.'},
+    {theme:'Root-Me',family:'projet personnel',text:'Pour structurer mon apprentissage, je suis le parcours « Initiation à la cybersécurité » sur Root-Me. Ma progression actuelle est de {PROGRESSION_ROOT_ME}.\n\nJe la donne pour ce qu’elle est : un repère de débutant, pas un résultat à mettre en avant. Un pourcentage ne dit pas tout de la compréhension réelle d’une notion, et il ne la remplace pas.\n\nUn parcours guidé a un avantage : il évite de se disperser et rappelle que l’on peut progresser par étapes, en commençant par les bases avant les sujets plus avancés.'},
+    {theme:'Root-Me',family:'projet personnel',text:'Quand on débute, savoir par où commencer n’est pas évident. Sur Root-Me, je suis le parcours « Initiation à la cybersécurité » pour avancer étape par étape. Ma progression est actuellement de {PROGRESSION_ROOT_ME}.\n\nJe préfère indiquer ce repère simplement, sans en tirer de conclusion sur mon niveau. Il montre seulement où j’en suis dans un parcours d’initiation, rien de plus.\n\nL’objectif reste d’apprendre les notions de base de façon progressive, et de dire honnêtement ce qui est acquis et ce qui reste à découvrir dans la suite du parcours.'}
+  ];
+  const sgIsPersonalPost=p=>!!p&&p.account==='simon'&&(String(p.sgSrc||'').startsWith('personnel')||p.type==='projet'||SG_PROJECT_TOPICS.has(p.topic)||p.topic==='Expérience personnelle de Simon');
+  // Corps comparé sans la valeur de progression (elle change avec le temps) pour que deux versions du même texte Root-Me restent des doublons.
+  const sgPersBodyKey=t=>sgNorm(sgNoHashtags(String(t||''))).replace(/\d+(?:[.,]\d+)?\s*%/g,'#');
+  let sgPersWarnAt=0;
   function sgBuildPersonalCandidate(extraAvoid=[]){
     // Le contexte libre ne nourrit le planning automatique que s'il a été explicitement confirmé.
     // Le texte fourni est repris sans inventer d'action, de résultat ou d'apprentissage absent du brief.
@@ -4324,26 +4352,20 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
       if(!errors.length && !extraAvoid.some(x=>sgNorm(sgNoHashtags(typeof x==='string'?x:x?.text||''))===sgNorm(contextBody)))
         return {theme:meta.theme,family:'projet personnel',text:contextBody,...meta,src:'personnel-contexte'};
     }
-    // Faits confirmés uniquement : CyberQuest a été développé avec l’aide de l’IA ;
-    // Simon a participé à un projet d’accessibilité PMR. Aucun détail de réalisation n’est ajouté.
-    const choices=[
-      {theme:'CyberQuest',family:'sécurité',text:'CyberQuest est un projet que j’ai développé avec l’aide de l’intelligence artificielle. Cette expérience me donne un sujet concret pour réfléchir à la place de l’IA dans un projet numérique. Un outil peut aider à avancer, mais il ne remplace pas le besoin de comprendre ce que l’on construit ni de vérifier les résultats proposés. Il reste important de garder un regard critique sur les suggestions obtenues et de faire attention à ce qui est réellement confirmé.\n\nParler d’un projet, ce n’est donc pas seulement présenter son idée : c’est aussi reconnaître la part de l’accompagnement utilisé et les limites de ce qu’on peut affirmer. CyberQuest me permet d’aborder ces questions sans prétendre tout maîtriser.'},
-      {theme:'Accessibilité numérique',family:'données',text:'J’ai participé à un projet autour de l’accessibilité pour les personnes à mobilité réduite. Ce sujet rappelle qu’un service numérique ou un espace ne se pense pas uniquement du point de vue de la personne qui le conçoit. Les besoins des personnes concernées doivent aussi compter dans les choix réalisés.\n\nL’accessibilité n’est pas un détail ajouté à la fin : elle fait partie des questions à considérer dès la réflexion sur un projet. Cette approche invite à écouter les usages et à éviter de supposer qu’une solution convient à tout le monde. Je peux parler de ma participation à ce projet, sans prétendre représenter à moi seul l’expérience de toutes les personnes concernées.'}
-    ];
-    // Déduplication sur le corps complet, et non sur le nom du thème dans les 7 derniers posts.
-    // Inclut file, historique publié, rejets, archives en attente et les textes écartés à cet appel.
+    // Faits confirmés uniquement (voir SG_PERSONAL_BANK). Déduplication sur le corps complet : file, historique, rejets, archives et textes écartés.
     const usedBodies=new Set([
-      ...Q.filter(x=>x.account==='simon').map(x=>sgNorm(sgNoHashtags(x.text||''))),
-      ...H.filter(x=>x.account==='simon').map(x=>sgNorm(sgNoHashtags(x.text||''))),
-      ...RJ.filter(x=>x.account==='simon').map(x=>sgNorm(sgNoHashtags(x.text||''))),
-      ...W.filter(x=>x.account==='simon').map(x=>sgNorm(sgNoHashtags(x.text||''))),
-      ...extraAvoid.map(x=>sgNorm(sgNoHashtags(typeof x==='string'?x:x?.text||'')))
-    ]);
-    const pool=choices.filter(c=>!usedBodies.has(sgNorm(sgNoHashtags(c.text)))).sort(()=>Math.random()-.5);
+      ...Q.filter(x=>x.account==='simon'),...H.filter(x=>x.account==='simon'),...RJ.filter(x=>x.account==='simon'),...W.filter(x=>x.account==='simon'),
+      ...extraAvoid.map(x=>typeof x==='string'?x:x?.text||'')
+    ].map(x=>sgPersBodyKey(typeof x==='string'?x:x?.text||'')));
+    // Variété : on évite de reprendre l’expérience (thème) des 2 derniers posts personnels tant qu’une autre est disponible.
+    const recentThemes=new Set([...H.filter(x=>x.account==='simon').slice(0,6).reverse(),...Q.filter(x=>x.account==='simon').sort((a,b)=>a.scheduledAt-b.scheduledAt)].filter(sgIsPersonalPost).slice(-2).map(x=>x.topic));
+    const avail=SG_PERSONAL_BANK.filter(c=>!usedBodies.has(sgPersBodyKey(c.text)));
+    const pool=(avail.filter(c=>!recentThemes.has(c.theme)).length?avail.filter(c=>!recentThemes.has(c.theme)):avail).sort(()=>Math.random()-.5);
     for(const c of pool){
       const meta={type:'projet',theme:c.theme,structure:'Observation',form:'constat'};
-      const errors=sgValidate(c.text,meta);
-      if(!errors.length)return {...c,...meta,src:'personnel'};
+      const text=c.text.replaceAll(SG_TOKEN,sgProgress()); // la valeur Root-Me réelle est posée par le code
+      const errors=sgValidate(text,meta);
+      if(!errors.length)return {...c,text,...meta,src:'personnel'};
     }
     return null;
   }
@@ -4352,10 +4374,20 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     sgDeduplicatePersonalQueue();
     let result=null,prepared=null;
     const mine=Q.filter(q=>q.account==='simon');
-    const personalDue=(mine.length+1)%7===0; // Un emplacement personnel est réservé à chaque bloc de 7 posts.
+    // Un post d'expérience par fenêtre de 7 : dû si aucun des 6 derniers posts (historique récent + file, dans l'ordre) n'en est un.
+    const seq=[...H.filter(x=>x.account==='simon').slice(0,6).reverse(),...mine.slice().sort((a,b)=>a.scheduledAt-b.scheduledAt)];
+    const personalDue=seq.length>=3&&!seq.slice(-6).some(sgIsPersonalPost);
     if(personalDue){
-      result=sgBuildPersonalCandidate(extraAvoid);
-      prepared=result?prepare_post(result.text,{type:result.type,theme:result.theme,structure:result.structure,form:result.form}):null;
+      const skip=[...extraAvoid];
+      for(let k=0;k<6&&!(prepared&&prepared.ok);k++){
+        result=sgBuildPersonalCandidate(skip);if(!result)break;
+        prepared=prepare_post(result.text,{type:result.type,theme:result.theme,structure:result.structure,form:result.form});
+        if(!(prepared&&prepared.ok))skip.push(result.text);
+      }
+      if(!(prepared&&prepared.ok)){
+        result=null;prepared=null;
+        if(Date.now()-sgPersWarnAt>30000){sgPersWarnAt=Date.now();toast('⚠️ Plus aucun texte d’expérience confirmée disponible : ajoute un contexte confirmé (champ Contexte + « confirmé ») pour relancer les posts personnels.','er');}
+      }
     }
     for(let attempt=0;attempt<3&&!(prepared&&prepared.ok);attempt++){
       result=sgBuildCandidate();
@@ -4448,13 +4480,13 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     const tagSet=(theme)=>sgTagsNoHist(theme).map(x=>x.toLowerCase());
 
     // 1 — Intégrité du catalogue : thèmes, structures, formulations, familles et tags.
-    test('Catalogue : 49 thèmes intégrés',()=>SG_THEME_ROWS.length===49);
-    test('Thèmes personnels exclus du générateur technique',()=>SG_PROJECT_TOPICS.size===2&&[...SG_PROJECT_TOPICS].every(t=>SG_THEME.has(t)));
+    test('Catalogue : 52 thèmes intégrés (49 + 3 thèmes projet)',()=>SG_THEME_ROWS.length===52);
+    test('Thèmes personnels exclus du générateur technique',()=>SG_PROJECT_TOPICS.size===5&&[...SG_PROJECT_TOPICS].every(t=>SG_THEME.has(t)));
     test('Catalogue : au moins 10 types d’accroche',()=>SG_FORMS.length>=10);
     test('Brief : familles d’accroche et de conclusion',()=>sgBriefFam('Je découvre le DNS. Texte.').o==='decouverte'&&sgBriefFam('Texte. Ce que je retiens : un point.').c==='bilan'&&sgBriefFam('Le DNS associe des noms. Il sert aussi à autre chose.').o==='autre');
     test('Catalogue : 5 structures',()=>Object.keys(SG_STRUCT).length===5);
     test('Catalogue : chaque thème a un hashtag spécifique',()=>SG_THEME_ROWS.every(r=>/^#[\p{L}\p{N}_-]+$/u.test(r[1])));
-    test('Catalogue : familles renseignées',()=>SG_THEME_ROWS.every(r=>['réseau','linux','sécurité','menaces','données','avancé'].includes(r[2])));
+    test('Catalogue : familles renseignées',()=>SG_THEME_ROWS.every(r=>['réseau','linux','sécurité','menaces','données','avancé','projet'].includes(r[2])));
     test('Hashtags techniques : exactement 4',()=>SG_THEME_ROWS.every(r=>sgTagsNoHist(r[0]).length===4));
     test('Hashtags techniques : 3 fixes',()=>SG_THEME_ROWS.every(r=>sgTagsNoHist(r[0]).slice(0,3).join('|')===SG_FIXED.join('|')));
     test('Hashtags techniques : 4e spécifique et distinct',()=>SG_THEME_ROWS.every(r=>{const t=sgTagsNoHist(r[0]);return t[3]!==t[0]&&t[3]!==t[1]&&t[3]!==t[2]}));
@@ -4664,6 +4696,11 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     test('V7.2 §9 : banque TS sans élément signalé par les contrôles V7.2',()=>Object.keys(TS).every(k=>[...TS[k].a,...TS[k].c].every(x=>sgV7Check(x,k,'bank').length===0)));
     test('V7.2 §10-11 : SOC, Réseaux, Pentest sans corps TS (théorie / repli factuel)',()=>['SOC','Réseaux','Pentest'].every(k=>TS[k].c.length===0));
     test('V7.2 §3 : banque CyberQuest sans bug, score, quiz, prochaine étape ni mini-défi',()=>TS['CyberQuest'].c.length===0&&TS['CyberQuest'].a.every(x=>!/\b(?:bugs?|scores?|quiz|prochaine étape|mini-défi)\b/i.test(x)));
+    // ── Posts d'expérience de Simon (correctif 2026-11-08) ──
+    test('Expérience : toute la banque personnelle passe prepare_post (faits confirmés, 80–150 mots)',()=>withHistory([],[],()=>{const bad=SG_PERSONAL_BANK.filter(c=>{const t=c.text.replaceAll(SG_TOKEN,sgProgress());const r=prepare_post(t,{type:'projet',theme:c.theme,structure:'Observation',form:'constat'});return !r?.ok;});if(bad.length)throw new Error(bad.length+' texte(s) refusé(s) : '+bad.slice(0,2).map(b=>b.text.slice(0,40)).join(' | '));return SG_PERSONAL_BANK.length>=12;}));
+    test('Expérience : le planning automatique de 7 posts contient un post d’expérience',()=>{const oa=acc,ot=stats.simon?.total;acc='simon';try{return withHistory([],[],()=>{for(let i=0;i<7;i++)genOnePost();return Q.filter(q=>q.account==='simon'&&sgIsPersonalPost(q)).length===1;});}finally{acc=oa;if(stats.simon)stats.simon.total=ot;}});
+    test('Expérience : 30 publications consécutives — jamais épuisé, cadence 1 sur 7, aucun doublon',()=>{const oa=acc,ot=stats.simon?.total;acc='simon';try{return withHistory([],[],()=>{for(let i=0;i<7;i++)genOnePost();let pers=0;const seen=new Set();for(let i=0;i<30;i++){const q=Q.filter(x=>x.account==='simon').sort((a,b)=>a.scheduledAt-b.scheduledAt)[0];H.unshift({...q,publishedAt:Date.now(),source:'publie',confirmed:true});Q.splice(Q.indexOf(q),1);Q.filter(x=>x.account==='simon').forEach((x,j)=>x.scheduledAt=Date.now()+j*86400000);const r=genOnePost();if(r.post&&sgIsPersonalPost(r.post)){pers++;const k=sgPersBodyKey(r.post.text);if(seen.has(k))throw new Error('doublon d’expérience');seen.add(k);}}return pers>=3&&pers<=6;});}finally{acc=oa;if(stats.simon)stats.simon.total=ot;}});
+
     const passed=results.filter(r=>r.ok).length,total=results.length,failed=results.filter(r=>!r.ok);
     // Résultat lisible directement dans l'interface : aucune console développeur nécessaire.
     let panel=document.getElementById('sg-runtest-results');
