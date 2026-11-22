@@ -191,7 +191,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .fibtg:hover{background:rgba(0,200,255,.2);}
 .liinf{background:#060a12;border:1px solid rgba(0,200,255,.15);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:12px;}
 
-#tc{position:fixed;bottom:20px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+#tc{position:fixed;bottom:20px;right:16px;z-index:100010;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
 .ti{background:#0c1220;border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--white);box-shadow:0 6px 24px rgba(0,0,0,.5);animation:tIn .25s ease;display:flex;align-items:center;gap:8px;max-width:290px;pointer-events:auto;}
 .ti.ok{border-color:rgba(0,230,118,.3);color:var(--green);}
 .ti.er{border-color:rgba(255,23,68,.3);color:var(--red);}
@@ -1451,10 +1451,10 @@ function stripTags(t){return (t||'').replace(/\n\n#[^\n]*$/,'').trim();}
 function norm(t){return stripTags(t).replace(/\s+/g,' ').trim().toLowerCase();}
 
 /* ════ FEED CONSOLE ════ */
-const AS=[{src:'CERT-FR',titre:'Campagne phishing active PME françaises',detail:'Spear-phishing avec deepfakes vocaux.'},{src:'ANSSI',titre:'Ransomwares +30% en France 2026',detail:'PME et collectivités restent les principales cibles.'},{src:'plateforme externe',titre:'Nouveaux parcours SOC analyst',detail:'Parcours certifiant avec entreprises françaises.'},{src:'Google',titre:'0-day Chrome corrigé en urgence',detail:'Faille V8 permettant échappée sandbox.'},{src:'HackTheBox',titre:'Top 10 techniques priv esc Linux 2026',detail:'Vecteurs les plus exploités en pentest et CTF.'},{src:'ZATAZ',titre:'2M comptes français exposés',detail:'Base de données mal configurée.'}];
-const AN=[{src:'FFSA',titre:'Réforme assurance emprunteur bilan 2026',detail:'1,2M de ménages ont changé d\'assurance.'},{src:'CNIL',titre:'Protection données clients assurance',detail:'Chiffrement obligatoire pour données de santé.'},{src:'L\'Argus',titre:'Mutuelles +6% en moyenne 2026',detail:'Inflation médicale et vieillissement.'},{src:'France Assureurs',titre:'Sinistres climatiques record 2024',detail:'4,3 milliards d\'euros de dommages assurés.'},{src:'MoneyVox',titre:'PER dépasse 100 milliards',detail:'Le PER s\'impose comme produit phare épargne long terme.'},{src:'Argus',titre:'Cyber assurance PME : marché x2',detail:'Nombre de contrats doublé en 2 ans.'}];
-const FD=[{name:'Sophie Martin',event:'Certification CEH obtenue',occ:'certification',detail:'6 mois de préparation.'},{name:'Lucas Bernard',event:'Analyste SOC — Orange Cyberdefense',occ:'promotion',detail:'Premier poste après BTS SIO.'},{name:'Emma Rousseau',event:'Bachelor Cybersécurité Rennes',occ:'diplome',detail:'Major de promotion.'},{name:'Théo Lefebvre',event:'Alternance Pentesteur — Capgemini',occ:'alternance',detail:'BTS SIO SISR.'}];
-const RD=[{name:'Florian Rault',titre:'Pourquoi chaque dev devrait apprendre le pentest',preview:'3 ans à coder sans comprendre comment mes apps pouvaient être attaquées...',likes:'847'},{name:'ANSSI France',titre:'Guide hygiène informatique 2026',preview:'Notre guide référence mis à jour avec 8 nouvelles recommandations...',likes:'3.4k'}];
+const AS=[{src:"CERT-FR",date:"5 nov. 2026",titre:"Vulnérabilité dans OpenSSH",detail:"Un attaquant peut contourner l'authentification par mot de passe d'un service SSH exposé sur le réseau, sur certains systèmes Linux ; après correction, il faut redémarrer le service.",url:"https://cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-015/"},{src:"ANSSI",date:"9 nov. 2026",titre:"Participation de l'ANSSI à l'European Cyber Week 2026",detail:"Salon européen de la cybersécurité à Rennes, avec des conférences sur la réglementation européenne et l'intelligence artificielle.",url:"https://cyber.gouv.fr/actualites/anssi-ecw-2026/"},{src:"ANSSI",date:"12 oct. 2026",titre:"ECSC 2026 : la Team France à Bochum",detail:"L'équipe de France de cybersécurité participe à la compétition européenne organisée à Bochum.",url:"https://cyber.gouv.fr/actualites/ecsc-2026-la-team-france-a-bochum/"},{src:"ANSSI",date:"29 sept. 2026",titre:"Rapport d'incident sur les cyberattaques ayant touché la DGFiP",detail:"L'agence publie un rapport détaillant les cyberattaques contre la direction générale des Finances publiques.",url:"https://cyber.gouv.fr/actualites/lanssi-publie-le-rapport-dincident-sur-les-cyberattaques-ayant-touche-la-dgfip/"},{src:"Alliancy",date:"6 nov. 2026",titre:"Cybermois : le bilan du dispositif Cybermalveillance",detail:"Rappel des gestes essentiels : double authentification, sauvegardes et vigilance face à l'hameçonnage.",url:"https://alliancy.fr/cybermois-2026-les-demandes-dassistance-au-17cyber-en-hausse-de-14-percent-4e98ad6d-774d-44c6-93f8-6f1953c1ae32"},{src:"CERT-FR",date:"12 nov. 2026",titre:"REACTIV : point de situation sur les fuites de données d'octobre 2026",detail:"Le CERT-FR publie le deuxième point de situation de l'opération REACTIV, avec des progrès notés sur l'authentification multifacteur et 70 % des objectifs 2026 de la feuille de route de sécurité numérique de l'État atteints.",url:"https://cert.cyber.gouv.fr/cti/CERTFR-2026-CTI-010/"},{src:"CERT-FR",date:"oct. 2026",titre:"Multiples vulnérabilités dans PHP",detail:"Deux vulnérabilités critiques (déni de service, exécution de code à distance) ont été corrigées le 21 octobre 2026 ; le CERT-FR recommande, quand c'est possible, de mettre hors ligne les serveurs concernés jusqu'à la mise à jour.",url:"https://cert.cyber.gouv.fr/alerte/CERTFR-2026-ALE-014/"},{src:"CERT-FR",date:"29 oct. 2026",titre:"Ciblage de téléphones Apple : nouvelle campagne de notification",detail:"Le CERT-FR signale une nouvelle campagne de notification, le 29 octobre 2026, liée au ciblage de téléphones Apple.",url:"https://cert.cyber.gouv.fr/cti/CERTFR-2025-CTI-010/"},{src:"MesServicesCyber",date:"7 sept. 2026",titre:"Fiches « ReCyF en pratique » de l'ANSSI",detail:"Une collection de fiches qui éclairent les principales mesures de gestion de risque du Référentiel Français de Cybersécurité (ReCyF).",url:"https://messervices.cyber.gouv.fr/guides/fiches-pratiques-recyf"},{src:"IT-Connect",date:"7 août 2026",titre:"Un guide de l'ANSSI sur les menaces visant le secteur des télécoms",detail:"Sur les trois dernières années, l'ANSSI a été informée de plus de 150 incidents de sécurité touchant des entités du secteur des télécommunications.",url:"https://www.it-connect.fr/dans-un-nouveau-guide-lanssi-sinteresse-aux-menaces-touchant-le-secteur-des-telecoms/"}];
+const AN=[{src:"ACPR",date:"4 nov. 2026",titre:"Assureurs français : rentabilité solide et collecte record au premier semestre",detail:"Étude de l'ACPR sur la situation des assureurs au premier semestre 2026.",url:"https://www.optionfinance.fr/info-financiere-en-continu/d/2026-11-04-assureurs-francais-une-rentabilite-solide-et-une-collecte-record-au-premier-semestre-2026.html"},{src:"France Assureurs",date:"20 oct. 2026",titre:"France Assureurs mobilise ses réseaux après les violences et pillages du 17 octobre",detail:"La Fédération recommande aux assurés de déposer plainte, puis de déclarer rapidement leur sinistre.",url:"https://www.optionfinance.fr/info-financiere-en-continu/d/2026-10-20-france-assureurs-mobilise-ses-reseaux-apres-les-violences-et-pillages-du-17-octobre.html"},{src:"CCSF",date:"24 juin 2026",titre:"Assurance emprunteur : un avis du CCSF pour plus de lisibilité et de garanties",detail:"L'avis vise une meilleure lisibilité et un renforcement des garanties des contrats d'assurance emprunteur des crédits immobiliers.",url:"https://www.banque-france.fr/system/files/2026-06/CP_CCSF_Avis_ADE_1_260526.pdf"},{src:"Trésor",date:"22 juin 2026",titre:"Risques climatiques : le gouvernement propose d'adapter le système assurantiel",detail:"Le premier rapport de l'Observatoire de l'assurabilité, remis par la CCR, dresse un état des lieux rassurant de la couverture assurantielle en France.",url:"https://www.tresor.economie.gouv.fr/Articles/2026/06/22/face-aux-risques-climatiques-le-gouvernement-propose-d-adapter-le-systeme-assurantiel-francais"},{src:"Médiation de l'Assurance",date:"2 sept. 2026",titre:"Record de saisines de la Médiation de l'Assurance",detail:"Le rapport annuel 2025 de la Médiation de l'Assurance fait état d'un afflux de dossiers.",url:"https://www.mediation-assurance.org/wp-content/uploads/2026/09/Rapport-annuel-2025-LMA_Communique-de-presse.pdf"}];
+const FD=[]; /* plus aucune personne préchargée : la liste « À féliciter » est saisie par Simon (fdGet) */
+const RD=[]; /* plus de posts en dur : l'onglet Posts pop. lit l'historique et la liste saisie par Simon (ppGet) */
 
 /* ════ GÉNÉRATION ════ */
 /* CORRECTIF 2026-09-17 : double contrôle indépendant + nettoyage hashtag-only, retry unique. */
@@ -1868,26 +1868,20 @@ function publishLinkedIn(){
 
   // L'archivage ne se fait qu'après confirmation réelle du partage.
   const postToArchive=lastPost;
+  const done=s=>()=>{if(postToArchive) archive(postToArchive,s);clearGenerator();};
   if(navigator.share){
     navigator.share({
       title: 'Post LinkedIn — '+PR[acc].nom,
       text: text
     }).then(()=>{
       toast('Partagé avec succès ✓','ok');
-      if(postToArchive) archive(postToArchive,'copie');
-      clearGenerator();
-    }).catch(()=>{
-      navigator.clipboard.writeText(text).catch(()=>{});
-      toast('Partage annulé — post copié, toujours dans Génération','in');
+      done('copie')();
+    }).catch(e=>{
+      if(e&&e.name==='AbortError'){liCopy(text);toast('Partage annulé — post copié, toujours dans Génération','in');return;}
+      liPublishOut(text,done('copie'),postToArchive&&postToArchive.id);
     });
   } else {
-    navigator.clipboard.writeText(text).then(()=>{
-      const encoded = encodeURIComponent(text.substring(0,700));
-      window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encoded,'_blank');
-      toast('Post copié + LinkedIn ouvert 💼','ok');
-      if(postToArchive) archive(postToArchive,'copie');
-      clearGenerator();
-    });
+    liPublishOut(text,done('copie'),postToArchive&&postToArchive.id);
   }
 }
 
@@ -1899,7 +1893,7 @@ function clearGenerator(){
   lastPost=null;
   if(window.sgSyncGate)window.sgSyncGate();
 }
-function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;navigator.clipboard.writeText(t).then(()=>{toast('Copié ! 💼','ok');});}
+function copyPost(){const t=document.getElementById('po').innerText||'';if(!t)return;liCopy(t).then(ok=>{if(ok)toast('Copié ! 💼','ok');else toast('⚠️ Copie bloquée dans cet aperçu — sélectionne le texte et copie-le à la main','er');});}
 
 function genPost(){
   // NOUVEAU (prompt §3) : un post archivé dans W (anciens posts retirés de la base active)
@@ -2572,13 +2566,12 @@ function pubLiQ(id){
       title:'Post LinkedIn — '+PR[acc].nom,
       text:q.text
     }).then(()=>{toast('Partagé ✓','ok');finalizePublish();})
-    .catch(()=>{navigator.clipboard.writeText(q.text).catch(()=>{});toast('Annulé — post copié, toujours dans la file','in');});
+    .catch(e=>{
+      if(e&&e.name==='AbortError'){liCopy(q.text);toast('Annulé — post copié, toujours dans la file','in');return;}
+      liPublishOut(q.text,finalizePublish,q.id);
+    });
   } else {
-    navigator.clipboard.writeText(q.text).catch(()=>{});
-    const encoded=encodeURIComponent(q.text.substring(0,700));
-    window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encoded,'_blank');
-    toast('Post copié + LinkedIn ouvert','ok');
-    finalizePublish();
+    liPublishOut(q.text,finalizePublish,q.id);
   }
 }
 // NOUVEAU : déplie/replie la zone d'édition d'un post encore en file (pas publié) — même
@@ -2623,7 +2616,7 @@ function cpQ(id){
   const q=Q.find(x=>x.id===id);
   if(!q)return;
   if(window.sgQueueGuard&&!window.sgQueueGuard(q,'Copie'))return;
-  navigator.clipboard.writeText(q.text).then(()=>toast('Copié ! 💼','ok'));
+  liCopy(q.text).then(ok=>ok?toast('Copié ! 💼','ok'):toast('⚠️ Copie bloquée dans cet aperçu — sélectionne le texte et copie-le à la main','er'));
   // CORRECTIF (Copier ≠ Publier) : copier ne fait plus qu'une chose — copier le texte. Avant, ce
   // bouton archivait le post ET le retirait de la file, ce qui donnait l'impression qu'un simple
   // copier-coller équivalait à une publication. Le post reste maintenant dans la file jusqu'à une
@@ -2636,17 +2629,17 @@ function cpQ(id){
 function markPubQ(id){
   const q=Q.find(x=>x.id===id);
   if(!q) return;
-  if(!confirm('Marquer ce post comme déjà publié sur LinkedIn ? (à faire seulement si tu l\'as réellement posté, ailleurs ou avant)'))return;
+  askConfirm('Marquer ce post comme déjà publié sur LinkedIn ? (à faire seulement si tu l\'as réellement posté, ailleurs ou avant)').then(ok=>{if(!ok)return;
   archive({...q},'publie');
   Q=Q.filter(x=>x.id!==id);
   rescheduleAccountQueue(q.account);
   saveAll();renderQ();updateStats();rfTmr();
   toast('Marqué comme publié — retiré de la file ✓','ok');
   autoRefill(true);
-}
+});}
 function prvQ(id){const q=Q.find(x=>x.id===id);if(!q)return;lastPost=q;renderPost(q.text);if(window.sgSyncGate)window.sgSyncGate();document.getElementById('pw').scrollIntoView({behavior:'smooth',block:'nearest'});toast('Aperçu chargé','in');}
 function delQ(id){
-  if(!confirm('Supprimer ce post de la file ?'))return;
+  askConfirm('Supprimer ce post de la file ?').then(ok=>{if(!ok)return;
   const removed=Q.find(x=>x.id===id);
   if(removed)RJ.unshift({id:removed.id,text:removed.text,type:removed.type,topic:removed.topic,label:removed.label||TL[removed.type],account:removed.account,rejectedAt:Date.now()});
   Q=Q.filter(x=>x.id!==id);
@@ -2654,7 +2647,7 @@ function delQ(id){
   saveAll();renderQ();updateStats();renderRJ();rfTmr();
   autoRefill();
   if(Q.some(x=>x.account===(removed&&removed.account)))toast('Échéances recalculées (24h en cascade)','in');
-}
+});}
 
 /* ════ TIMER ════ */
 function startTimer(){
@@ -2914,6 +2907,7 @@ function renderH(){
     // NOUVEAU : badge compact, affiché seulement si pas encore vérifié (pour ne pas surcharger la
     // ligne repliée) — distinct de confBdg qui porte sur la publication, pas sur le contenu.
     const checkBdg=h.checked?'':'<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(255,109,0,.12);color:var(--orange);border:1px solid rgba(255,109,0,.3);margin-left:3px" title="Contenu pas encore relu/vérifié (véracité, niveau, plateformes ou pratiques non réalisées...)">🔎 À vérifier</span>';
+    const su=String(h.newsUrl||((String(h.text).match(/https?:\/\/[^\s<>"']+/)||[''])[0])).replace(/[.,;:!?)]+$/,'').replace(/"/g,'%22');
     const modMark=(h.originalText!==undefined&&h.originalText!==h.text)?'<span title="Modifié depuis la version générée/publiée initialement" style="font-size:11px">✏️</span>':'';
     return `<div class="hi" onclick="tgH(${h.id})">
       <div class="hir">
@@ -2922,12 +2916,14 @@ function renderH(){
         <span class="htxt">${h.text.substring(0,80)}…</span>
         <button class="hcp" onclick="event.stopPropagation();toggleConfirmed(${h.id})" title="${h.confirmed?'Repasser en à confirmer':'Confirmer la publication'}">${h.confirmed?'🔄':'✅'}</button>
         <button class="hcp" onclick="event.stopPropagation();cpH(${h.id})">📋</button>
+        ${su?`<button class="hcp" data-u="${su}" onclick="return liLinkEl(event,this)" title="Ouvrir la source">🔗</button>`:''}
         <button class="hcp" onclick="event.stopPropagation();delH(${h.id})" style="color:rgba(255,23,68,.5)">✕</button>
         ${viewsAreKnown(h)?`<span class="htm" style="color:var(--cyan)">👁 ${h.views}</span>`:''}
         <span class="htm">${ts}</span>
       </div>
       <div class="hex" id="hex-${h.id}">
         <textarea onclick="event.stopPropagation()" onchange="editHText(${h.id},this.value)" style="width:100%;min-height:80px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;line-height:1.5;resize:vertical;box-sizing:border-box">${h.text}</textarea>
+        ${su?`<div style="margin-top:6px" onclick="event.stopPropagation()"><a href="${su}" target="_blank" rel="noopener noreferrer" onclick="return liLink(event,this.href)" style="color:var(--cyan);font-size:12px;word-break:break-all">🔗 Source : ${su}</a></div>`:''}
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
           <label style="font-size:11px;color:var(--muted)">📅 Publié le :</label>
           <input type="datetime-local" value="${toLocalInputValue(h.publishedAt||h.ts)}" style="background:#060910;border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px" onchange="editHDate(${h.id},this.value)">
@@ -2950,7 +2946,7 @@ function resetGenerated(){
   // Ne touche désormais qu'aux posts DU COMPTE ACTIF.
   const mine=Q.filter(q=>q.account===acc);
   if(!mine.length){toast('La file de '+PR[acc].nom+' est déjà vide','in');return;}
-  if(!confirm('Vider la file de '+PR[acc].nom+' ('+mine.length+' posts) et la regénérer avec de nouveaux thèmes ? Les posts retirés seront placés dans « Posts mis de côté » (comme une suppression individuelle) pour ne plus jamais revenir.\n\nLa file de l\'autre profil n\'est pas concernée.'))return;
+  askConfirm('Vider la file de '+PR[acc].nom+' ('+mine.length+' posts) et la regénérer avec de nouveaux thèmes ? Les posts retirés seront placés dans « Posts mis de côté » (comme une suppression individuelle) pour ne plus jamais revenir.\n\nLa file de l\'autre profil n\'est pas concernée.').then(ok=>{if(!ok)return;
   // Les posts vidés sont archivés dans RJ, la liste affichée à l'écran sous « Posts mis de côté » —
   // exactement comme delQ() le fait pour une suppression manuelle à l'unité.
   mine.forEach(q=>RJ.unshift({id:q.id,text:q.text,type:q.type,topic:q.topic,label:q.label||TL[q.type],account:acc,rejectedAt:Date.now()}));
@@ -2960,7 +2956,7 @@ function resetGenerated(){
   // extraAvoid en ceinture-et-bretelles pour ce rechargement immédiat précis
   autoRefill(false, clearedTexts);
   toast('File de '+PR[acc].nom+' regénérée — anciens posts mis de côté ✓','ok');
-}
+});}
 function dedupQueueVsHistory(silent){
   // BUGFIX indépendance : ne compare et ne retire que les posts DU COMPTE ACTIF.
   const usedTexts=new Set([...H.filter(x=>x.account===acc).map(h=>h.text),...RJ.filter(x=>x.account===acc).map(r=>r.text)].map(norm));
@@ -3032,27 +3028,27 @@ function renderRJ(){
 }
 function markPublishedRJ(id){
   const r=RJ.find(x=>x.id===id);if(!r)return;
-  if(!confirm('Marquer ce post comme publié sur LinkedIn ? (à faire seulement si tu l\'as réellement posté)'))return;
+  askConfirm('Marquer ce post comme publié sur LinkedIn ? (à faire seulement si tu l\'as réellement posté)').then(ok=>{if(!ok)return;
   archive({id:r.id,text:r.text,type:r.type,topic:r.topic,label:r.label||TL[r.type],account:r.account},'publie');
   RJ=RJ.filter(x=>x.id!==id);
   saveAll();renderRJ();
   toast('Marqué comme publié ✓','ok');
-}
+});}
 function delRJ(id){
-  if(!confirm('Supprimer définitivement ce post mis de côté ? Cette action est irréversible.'))return;
+  askConfirm('Supprimer définitivement ce post mis de côté ? Cette action est irréversible.').then(ok=>{if(!ok)return;
   RJ=RJ.filter(x=>x.id!==id);
   saveAll();renderRJ();
   toast('Supprimé définitivement','in');
-}
+});}
 function delAllRJ(){
   // BUGFIX indépendance : ne supprime que les posts mis de côté DU COMPTE ACTIF.
   const mine=RJ.filter(r=>r.account===acc);
   if(!mine.length)return;
-  if(!confirm('Supprimer définitivement les '+mine.length+' posts mis de côté de '+PR[acc].nom+' ?\n\nIls pourront être regénérés automatiquement après suppression. L\'autre profil n\'est pas concerné.'))return;
+  askConfirm('Supprimer définitivement les '+mine.length+' posts mis de côté de '+PR[acc].nom+' ?\n\nIls pourront être regénérés automatiquement après suppression. L\'autre profil n\'est pas concerné.').then(ok=>{if(!ok)return;
   RJ=RJ.filter(r=>r.account!==acc);
   saveAll();renderRJ();
   toast('Posts mis de côté de '+PR[acc].nom+' vidés ✓','ok');
-}
+});}
 function setViews(id,val){
   const h=H.find(x=>x.id===id);if(!h)return;
   const trimmed=(val===null||val===undefined)?'':String(val).trim();
@@ -3107,15 +3103,15 @@ function delH(id){
   // BUGFIX : contrairement à delQ()/delRJ(), cette action n'avait aucune confirmation.
   // Or H sert de mémoire "déjà publié" pour éviter les répétitions : la vider par erreur
   // fait resurgir des sujets déjà postés sans prévenir.
-  if(!confirm('Retirer ce post de l\'historique ? L\'app ne saura plus qu\'il a déjà été publié et pourra le reproposer.'))return;
+  askConfirm('Retirer ce post de l\'historique ? L\'app ne saura plus qu\'il a déjà été publié et pourra le reproposer.').then(ok=>{if(!ok)return;
   H=H.filter(x=>x.id!==id);saveAll();renderH();updateStats();
-}
+});}
 function clearHist(){
   if(!H.length){toast('L\'historique est déjà vide','in');return;}
-  if(!confirm('Vider tout l\'historique ('+H.length+' posts) ? L\'app oubliera ce qui a déjà été publié et risque de reproposer les mêmes sujets. Cette action est irréversible.'))return;
+  askConfirm('Vider tout l\'historique ('+H.length+' posts) ? L\'app oubliera ce qui a déjà été publié et risque de reproposer les mêmes sujets. Cette action est irréversible.').then(ok=>{if(!ok)return;
   H=[];if(stats[acc])stats[acc].sent=0;saveAll();renderH();updateStats();
   toast('Historique vidé','in');
-}
+});}
 
 /* ════ FÉLICITATIONS ════ */
 function toggleCff(){const f=document.getElementById('cff');f.style.display=f.style.display==='block'?'none':'block';}
@@ -3169,7 +3165,7 @@ function toggleLi(){
 }
 function showTab(tab,btn){document.querySelectorAll('.litp').forEach(b=>b.classList.remove('act'));btn.classList.add('act');['actu','feli','repost'].forEach(t=>document.getElementById('tab-'+t).style.display=t===tab?'block':'none');renderFeed(tab);}
 function closeLi(){document.getElementById('li-body').classList.remove('open');document.getElementById('li-bdg').textContent='Ouvrir ▾';}
-function getA(i){return acc==='simon'?AS[i]:AN[i];}
+function getA(i){return feedPool(acc)[i];}
 
 function toggleLi(){
   const b=document.getElementById('li-body');
@@ -3188,24 +3184,417 @@ function toggleLi(){
     renderFeed('actu');
   }
 }
+/* ════ CONSOLE : 5 actus toujours disponibles + liste « À féliciter » saisie par Simon ════ */
+const NEWS_TARGET=5;
+const fdk=a=>'sj5_fd_'+a;
+function fdGet(a){const l=lsL(fdk(a||acc),[]);return Array.isArray(l)?l:[];}
+function fdEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fdAdd(){
+  const name=document.getElementById('fd-name').value.trim();
+  if(!name){toast('Indique le nom de la personne','er');return;}
+  const occ=document.getElementById('fd-occ').value,detail=document.getElementById('fd-det').value.trim();
+  const l=fdGet();l.unshift({name:name.slice(0,80),occ:occ,detail:detail.slice(0,160)});
+  lsS(fdk(acc),l);renderFeed('feli');toast('Ajouté à ta liste','ok');
+}
+function fdDel(i){const l=fdGet();l.splice(i,1);lsS(fdk(acc),l);renderFeed('feli');}
+function fdRender(){
+  const l=fdGet();
+  const form='<div class="fld" style="margin:0 0 6px"><input id="fd-name" placeholder="Nom de la personne (dans ton réseau)" maxlength="80"></div>'
+   +'<div class="fld" style="margin:0 0 6px"><select id="fd-occ">'+Object.keys(OL).map(k=>'<option value="'+k+'">'+fdEsc(OL[k])+'</option>').join('')+'</select></div>'
+   +'<div class="fld" style="margin:0 0 6px"><input id="fd-det" placeholder="Détail (poste, entreprise, formation…) — facultatif" maxlength="160"></div>'
+   +'<button class="btn btn-c" onclick="fdAdd()" style="margin-bottom:10px">➕ Ajouter à ma liste</button>';
+  const rows=l.map((f,i)=>'<div class="fi"><div class="fia">'+fdEsc(f.name.split(/\s+/).filter(Boolean).map(w=>w[0]).join('').substring(0,2).toUpperCase())+'</div><div class="fib"><div class="fin">'+fdEsc(f.name)+'</div><div class="fie">🎉 '+fdEsc(OL[f.occ]||f.occ)+'</div>'+(f.detail?'<div class="fit">'+fdEsc(f.detail)+'</div>':'')+'</div><div class="fiac"><button class="fibt fibtg" onclick="uF('+i+')">🎉</button><button class="fibt fibtg" title="Retirer de la liste" onclick="fdDel('+i+')" style="color:var(--orange)">🗑</button></div></div>').join('');
+  document.getElementById('feli-list').innerHTML=form+(rows||'<div class="fit">Ta liste est vide : ajoute les personnes de ton réseau à féliciter (certification, poste, diplôme, alternance…). Rien n’est préchargé.</div>');
+}
+/* ════ ACTUS EN DIRECT (flux CERT-FR) : alimentent la file quand la réserve intégrée s'épuise ════ */
+const LIVE_FEEDS={simon:[{src:'CERT-FR',urls:['https://www.cert.ssi.gouv.fr/alerte/feed/','https://cert.cyber.gouv.fr/alerte/feed/']},{src:'CERT-FR',urls:['https://www.cert.ssi.gouv.fr/cti/feed/','https://cert.cyber.gouv.fr/cti/feed/']}],niko:[]};
+const LIVE_TTL=6*3600e3,LIVE_RETRY=30*60e3,LIVE_MAX_AGE=45*864e5;
+const livek=a=>'sj5_live_'+a;
+const FR_MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+let liveBusy=false,liveMsg='';
+function liveFmt(ts){const d=new Date(ts);return d.getDate()+' '+FR_MONTHS[d.getMonth()]+' '+d.getFullYear();}
+function liveNorm(u){const m=String(u||'').match(/CERTFR-\d{4}-[A-Z]{3}-\d+/i);return m?m[0].toUpperCase():String(u||'').replace(/^https?:\/\/(www\.)?/,'').replace(/\/+$/,'').toLowerCase();}
+function liveOk(u){try{const x=new URL(u);return x.protocol==='https:'&&/(^|\.)(ssi|cyber)\.gouv\.fr$/.test(x.hostname)?x.href:'';}catch(e){return '';}}
+function liveTs(s){let x=String(s||'').trim();if(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/.test(x))x=x.replace(' ','T')+'Z';const t=Date.parse(x);return isNaN(t)?0:t;}
+function liveClean(t,max){
+  const raw=new DOMParser().parseFromString(String(t||''),'text/html').body.textContent||'';
+  let s=raw.replace(/[<>"`]/g,'').replace(/\s+/g,' ').trim();
+  if(s.length>max){s=s.slice(0,max);const k=s.lastIndexOf(' ');if(k>max*.5)s=s.slice(0,k);s=s.replace(/[,;:\s]+$/,'')+'…';}
+  return s;
+}
+function liveParseXml(txt){
+  const doc=new DOMParser().parseFromString(txt,'text/xml');
+  if(doc.getElementsByTagName('parsererror').length)throw new Error('xml');
+  const g=(n,t)=>{const e=n.getElementsByTagName(t)[0];return e?e.textContent:'';};
+  return [...doc.getElementsByTagName('item')].map(n=>({title:g(n,'title'),link:g(n,'link'),date:g(n,'pubDate')||g(n,'dc:date'),desc:g(n,'description')}))
+    .concat([...doc.getElementsByTagName('entry')].map(n=>{const l=n.getElementsByTagName('link')[0];return{title:g(n,'title'),link:l?(l.getAttribute('href')||l.textContent):'',date:g(n,'updated')||g(n,'published'),desc:g(n,'summary')||g(n,'content')};}));
+}
+async function liveGet(url,mode){
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),8000);
+  try{
+    const u=mode==='direct'?url:mode==='json'?'https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url):'https://api.allorigins.win/raw?url='+encodeURIComponent(url);
+    const r=await fetch(u,{signal:ctl.signal});if(!r.ok)throw new Error('http '+r.status);
+    if(mode==='json'){const j=await r.json();if(j.status!=='ok'||!Array.isArray(j.items))throw new Error('json');return j.items.map(i=>({title:i.title,link:i.link,date:i.pubDate,desc:i.description||i.content||''}));}
+    return liveParseXml(await r.text());
+  }finally{clearTimeout(tm);}
+}
+function liveMaybe(){liveRefresh(false).catch(()=>{liveBusy=false;});}
+async function liveRefresh(force){
+  const a=acc,feeds=LIVE_FEEDS[a]||[];
+  if(!feeds.length||liveBusy)return;
+  const c=lsL(livek(a),{ts:0,tried:0,items:[]})||{},now=Date.now();
+  if(!force&&(now-(c.ts||0)<LIVE_TTL||now-(c.tried||0)<LIVE_RETRY))return;
+  liveBusy=true;liveMsg='🔄 mise à jour…';renderFeed('actu');
+  const got=[];let okFeeds=0;const baseSeen=new Set((a==='simon'?AS:AN).map(x=>liveNorm(x.url)));
+  for(const f of feeds){
+    let list=null;
+    search:for(const u of f.urls){for(const m of ['direct','json','raw']){try{const l=await liveGet(u,m);if(l&&l.length){list=l;break search;}}catch(e){}}}
+    if(!list)continue;okFeeds++;
+    list.forEach(i=>{
+      const url=liveOk(i.link),ts=liveTs(i.date);
+      if(!url||!ts||now-ts>LIVE_MAX_AGE||ts>now+864e5||baseSeen.has(liveNorm(url)))return;
+      const titre=liveClean(String(i.title||'').replace(/^\s*CERTFR-\d{4}-[A-Z]{3}-\d+\s*[:\-–—]?\s*/i,''),140);if(!titre)return;
+      let detail=liveClean(i.desc,240);if(!detail||detail===titre)detail='Publication du '+f.src+' du '+liveFmt(ts)+'.';
+      got.push({src:f.src,date:liveFmt(ts),titre:titre,detail:detail,url:url,ts:ts});
+    });
+  }
+  const keep=new Map();[...got,...(c.items||[])].forEach(i=>{const k=liveNorm(i.url);if(!keep.has(k))keep.set(k,i);});
+  const items=[...keep.values()].filter(i=>now-i.ts<=LIVE_MAX_AGE).sort((x,y)=>y.ts-x.ts).slice(0,30);
+  lsS(livek(a),{ts:okFeeds?now:(c.ts||0),tried:now,items:items});
+  liveMsg=okFeeds?'':'⚠️ en direct indisponible : réserve intégrée utilisée';
+  liveBusy=false;
+  if(acc===a)renderFeed('actu');
+}
+function feedPool(a){
+  const base=a==='simon'?AS:AN,seen=new Set(base.map(x=>liveNorm(x.url)));
+  const lc=lsL(livek(a),{items:[]}),live=((lc&&lc.items)||[]).filter(i=>i&&i.url&&!seen.has(liveNorm(i.url)));
+  return base.concat(live);
+}
+/* ════ POSTS POP. : mes posts qui marchent + liste « à relayer » saisie par Simon ════ */
+const ppk=a=>'sj5_pp_'+a;
+function ppGet(a){const l=lsL(ppk(a||acc),[]);return Array.isArray(l)?l:[];}
+function ppTop(){return H.filter(h=>h.account===acc&&h.confirmed&&viewsAreKnown(h)&&Number(h.views)>0).sort((a,b)=>Number(b.views)-Number(a.views)).slice(0,5);}
+function ppAdd(){
+  const g=id=>document.getElementById(id).value.trim();
+  const author=g('pp-au'),url=g('pp-url'),note=g('pp-note');
+  if(!author){toast('Indique l’auteur du post','er');return;}
+  if(url&&!/^https?:\/\//i.test(url)){toast('Le lien doit commencer par https://','er');return;}
+  const l=ppGet();l.unshift({author:author.slice(0,80),url:url.slice(0,400),note:note.slice(0,240)});
+  lsS(ppk(acc),l);renderFeed('repost');toast('Ajouté à ta liste','ok');
+}
+function ppDel(i){const l=ppGet();l.splice(i,1);lsS(ppk(acc),l);renderFeed('repost');}
+function ppRelay(i){const r=ppGet()[i];if(!r)return;document.querySelector('[data-t="repost"]').click();document.getElementById('rp-txt').value=r.author+(r.note?' — '+r.note:'')+(r.url?'\n\n'+r.url:'');closeLi();toast('Post chargé : ajoute ta réaction','in');}
+function ppRework(id){
+  const h=H.find(x=>x.id===id);if(!h)return;
+  document.querySelector('[data-t="original"]').click();
+  const b=[...document.querySelectorAll('#tp-'+(acc==='simon'?'s':'n')+' .tp')].find(x=>x.textContent===h.topic);
+  if(b){selTp(b);toast('Thème « '+h.topic+' » sélectionné : lance la génération','in');}
+  else toast('Ce thème n’a pas de bouton : choisis-en un proche','in');
+  closeLi();
+}
+function ppRender(){
+  const top=ppTop(),l=ppGet();
+  const head=t=>'<div class="fit" style="margin:2px 0 6px;color:var(--white)">'+t+'</div>';
+  const topH=head('📈 Mes posts qui marchent')+(top.length?top.map((h,k)=>'<div class="fi"><div class="fia">'+(k+1)+'</div><div class="fib"><div class="fin">'+fdEsc(h.topic||h.label||'Post')+' · <span style="color:var(--muted)">👁 '+Number(h.views).toLocaleString('fr-FR')+'</span></div><div class="fit">'+fdEsc(String(h.text||'').split('\n')[0].slice(0,110))+'</div></div><div class="fiac"><button class="fibt fibtg" title="Reprendre ce thème sous un nouvel angle" onclick="ppRework('+h.id+')">🔁</button></div></div>').join(''):'<div class="fit">Aucun post confirmé avec ses impressions pour l’instant : saisis-les dans Posts publiés.</div>');
+  const form=head('🔗 À relayer (posts repérés par toi sur LinkedIn)')
+   +'<div class="fld" style="margin:0 0 6px"><input id="pp-au" placeholder="Auteur du post" maxlength="80"></div>'
+   +'<div class="fld" style="margin:0 0 6px"><input id="pp-url" placeholder="Lien du post (https://…) — facultatif" maxlength="400"></div>'
+   +'<div class="fld" style="margin:0 0 6px"><input id="pp-note" placeholder="Ce qui t’a marqué — facultatif" maxlength="240"></div>'
+   +'<button class="btn btn-c" onclick="ppAdd()" style="margin-bottom:10px">➕ Ajouter à relayer</button>';
+  const rows=l.map((r,i)=>'<div class="fi"><div class="fia">'+fdEsc(r.author.split(/\s+/).filter(Boolean).map(w=>w[0]).join('').substring(0,2).toUpperCase())+'</div><div class="fib"><div class="fin">'+fdEsc(r.author)+'</div>'+(r.note?'<div class="fit">'+fdEsc(r.note)+'</div>':'')+(/^https?:\/\//i.test(r.url||'')?'<a href="'+fdEsc(r.url)+'" target="_blank" rel="noopener" onclick="return liLink(event,this.href)" style="font-size:11px;color:var(--cyan)">🔗 Voir le post</a>':'')+'</div><div class="fiac"><button class="fibt fibtg" title="Préparer le repost" onclick="ppRelay('+i+')">🔁</button><button class="fibt fibtg" title="Retirer" onclick="ppDel('+i+')" style="color:var(--orange)">🗑</button></div></div>').join('');
+  document.getElementById('rp-list').innerHTML=topH+'<div style="height:10px"></div>'+form+(rows||'<div class="fit">Rien à relayer pour l’instant.</div>');
+}
 function renderFeed(tab){
   const a = acc; // Capturer acc à cet instant précis
-  const data = a==='simon' ? AS : AN;
+  const data = feedPool(a);
   if(tab==='actu'){
-    document.getElementById('actu-list').innerHTML=data.map((d,i)=>`<div class="fi"><div class="fia">${d.src.substring(0,2)}</div><div class="fib"><div class="fin">${d.src}</div><div class="fie" style="color:var(--orange)">${d.titre}</div><div class="fit">${d.detail}</div></div><div class="fiac"><button class="fibt fibtg" onclick="uA(${i})">✍️</button><button class="fibt fibtg" onclick="uAr(${i})" style="background:rgba(255,109,0,.1);color:var(--orange)">🔁</button></div></div>`).join('');
+    const rowF=(d,i)=>{const done=H.find(h=>h.account===a&&h.newsKey===actuKey(d));const st=done?`<div class="fit" style="color:var(--green)">✓ Publié</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px" onclick="event.stopPropagation()"><label style="font-size:11px;color:var(--muted)">👁</label><input type="number" min="0" inputmode="numeric" value="${viewsAreKnown(done)?done.views:''}" placeholder="impressions" style="width:96px;background:#060910;border:1px solid var(--border);border-radius:6px;padding:4px 7px;color:var(--white);font-size:12px" onchange="actuSetViews(${done.id},this.value)"><button class="fibt fibtg" onclick="actuToggleChecked(${done.id})" style="width:auto;padding:4px 8px;font-size:11px;color:${done.checked?'var(--green)':'var(--orange)'}">${done.checked?'🔎 Vérifié':'🔎 À vérifier'}</button><button class="fibt fibtg" onclick="actuToggleConfirmed(${done.id})" style="width:auto;padding:4px 8px;font-size:11px;color:${done.confirmed?'var(--green)':'#ffc107'}">${done.confirmed?'✅ Confirmé':'🕓 À confirmer'}</button></div>`:'';const lk=d.url?`<a href="${d.url}" target="_blank" rel="noopener" onclick="return liLink(event,this.href)" style="font-size:11px;color:var(--cyan)">🔗 Source</a>`:'';return `<div class="fi"><div class="fia">${d.src.substring(0,2)}</div><div class="fib"><div class="fin">${d.src}${d.date?' · '+d.date:''}</div><div class="fie" style="color:var(--orange)">${d.titre}</div><div class="fit">${d.detail}</div>${lk}${st}</div><div class="fiac"><button class="fibt fibtg" onclick="uA(${i})">✍️</button><button class="fibt fibtg" onclick="uAr(${i})" style="background:rgba(255,109,0,.1);color:var(--orange)">🔁</button><button class="fibt fibtg" title="Publier sur LinkedIn" onclick="openActuPub(${i})" style="background:rgba(0,230,118,.12);color:var(--green)">🚀</button></div></div>`;};
+    const items=data.map((d,i)=>({d:d,i:i,done:H.some(h=>h.account===a&&h.newsKey===actuKey(d))}));
+    const avail=items.filter(x=>!x.done).slice(0,NEWS_TARGET),pubd=items.filter(x=>x.done),wait=items.filter(x=>!x.done).length-avail.length;
+    const lc=lsL(livek(a),{items:[]}),hasLive=!!(LIVE_FEEDS[a]&&LIVE_FEEDS[a].length),liveBits=hasLive?' · 🌐 '+(((lc&&lc.items)||[]).length)+' en direct <button class="fibt fibtg" title="Actualiser les actus en direct" onclick="liveRefresh(true)" style="margin-left:4px">🔄</button>'+(liveMsg?' · '+liveMsg:''):'';
+    document.getElementById('actu-list').innerHTML='<div class="fit" style="margin:0 0 8px;color:'+(avail.length>=NEWS_TARGET?'var(--green)':'var(--orange)')+'">📰 '+avail.length+'/'+NEWS_TARGET+' actus à publier · '+wait+' en réserve'+(avail.length<NEWS_TARGET?' — réserve épuisée, à recharger':'')+liveBits+'</div>'
+      +avail.map(x=>rowF(x.d,x.i)).join('')
+      +(pubd.length?'<div class="fit" style="margin:12px 0 6px">✓ Déjà publiées ('+pubd.length+')</div>'+pubd.map(x=>rowF(x.d,x.i)).join(''):'');
+    liveMaybe();
   }else if(tab==='feli'){
-    document.getElementById('feli-list').innerHTML=FD.map((f,i)=>`<div class="fi"><div class="fia">${f.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div><div class="fib"><div class="fin">${f.name}</div><div class="fie">🎉 ${f.event}</div><div class="fit">${f.detail}</div></div><div class="fiac"><button class="fibt fibtg" onclick="uF(${i})">🎉</button></div></div>`).join('');
+    fdRender();
   }else{
-    document.getElementById('rp-list').innerHTML=RD.map((r,i)=>`<div class="fi"><div class="fia">${r.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div><div class="fib"><div class="fin">${r.name} · <span style="color:var(--muted)">${r.likes}</span></div><div class="fie" style="color:var(--white)">${r.titre}</div><div class="fit">${r.preview}</div></div><div class="fiac"><button class="fibt fibtg" onclick="uR(${i})">🔁</button></div></div>`).join('');
+    ppRender();
   }
   // Mettre à jour getA pour utiliser les bonnes données
   window._currentFeedData = data;
 }
 function uA(i){const a=getA(i);document.querySelector('[data-t="original"]').click();document.getElementById('ctx-inp').value='Parle de : "'+a.titre+'" — '+a.detail;closeLi();toast('Contexte pré-rempli','in');}
-function uAr(i){const a=getA(i);document.querySelector('[data-t="repost"]').click();document.getElementById('rp-txt').value=a.titre+' — '+a.src+'\n\n'+a.detail;closeLi();toast('Post pré-rempli','in');}
-function uF(i){const f=FD[i];document.querySelector('[data-t="congrats"]').click();document.getElementById('cw-who').value=f.name+' — '+f.detail;document.getElementById('cw-occ').value=f.occ;closeLi();toast('Pré-rempli pour '+f.name,'in');}
+function uAr(i){if(acc==='simon'){openActuPub(i);return;}const a=getA(i);document.querySelector('[data-t="repost"]').click();document.getElementById('rp-txt').value=a.titre+' — '+a.src+'\n\n'+a.detail;closeLi();toast('Post pré-rempli','in');}
+function uF(i){const f=fdGet()[i];if(!f)return;document.querySelector('[data-t="congrats"]').click();document.getElementById('cw-who').value=f.name+(f.detail?' — '+f.detail:'');document.getElementById('cw-occ').value=f.occ;closeLi();toast('Pré-rempli pour '+f.name,'in');}
 function uR(i){const r=RD[i];document.querySelector('[data-t="repost"]').click();document.getElementById('rp-txt').value=r.titre+'\n\n'+r.preview;closeLi();toast('Post chargé','in');}
 
+/* ════ SORTIE VERS LINKEDIN — jamais silencieuse ════
+   Aperçu intégré / WebView : presse-papiers, partage natif et popups peuvent être refusés. On tente un repli,
+   on n'archive que sur ouverture réelle ou confirmation explicite, et on propose toujours une voie manuelle. */
+function liShareUrl(text){return 'https://www.linkedin.com/feed/?shareActive=true&text='+encodeURIComponent(String(text).substring(0,700));}
+function liCopy(text){
+  const fb=()=>{try{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,text.length);const ok=document.execCommand('copy');document.body.removeChild(ta);return !!ok;}catch(e){return false;}};
+  try{if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text).then(()=>true,()=>fb());}catch(e){}
+  return Promise.resolve(fb());
+}
+function liOpenShare(text){try{return !!window.open(liShareUrl(text),'_blank');}catch(e){return false;}}
+function liFbClose(){const o=document.getElementById('li-fb');if(o)o.remove();}
+function liFbOpen(text,hid){
+  actuCss();liFbClose();
+  const o=document.createElement('div');o.id='li-fb';
+  o.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.88);overflow:auto;padding:12px;display:flex;justify-content:center;align-items:flex-start';
+  o.innerHTML='<div style="width:100%;max-width:560px;background:var(--card,#0d1117);color:var(--white,#fff);border:1px solid var(--border,#222);border-radius:10px;padding:14px;font-size:13px">'
+   +'<div style="font-weight:700;margin-bottom:6px">💼 Publier sur LinkedIn</div>'
+   +'<div style="color:var(--orange);margin-bottom:8px">Le post est enregistré dans Posts publiés (à confirmer). LinkedIn ne s’est pas ouvert automatiquement depuis cet aperçu : ouvre-le avec le bouton ci-dessous (ou copie le texte), publie, puis confirme.</div>'
+   +'<textarea id="li-fb-t" readonly style="width:100%;min-height:150px;border-radius:8px;background:#060910;color:#fff;border:1px solid var(--border,#222);padding:8px;font-size:12px;box-sizing:border-box"></textarea>'
+   +'<div class="btn-row" style="margin-top:8px"><a id="li-fb-a" class="btn btn-c" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;text-align:center">🔗 Ouvrir LinkedIn</a><button class="btn btn-c" id="li-fb-cp">📋 Copier</button><button class="btn btn-c" id="li-fb-sh" style="display:none">📤 Partager…</button></div>'
+   +'<div class="btn-row" style="margin-top:8px"><button class="btn btn-s" id="li-fb-ok">✅ C’est publié — confirmer</button><button class="btn btn-c" id="li-fb-x">Fermer</button></div></div>';
+  document.body.appendChild(o);
+  const ta=document.getElementById('li-fb-t');ta.value=text;
+  document.getElementById('li-fb-a').href=liShareUrl(text);
+  document.getElementById('li-fb-cp').onclick=()=>liCopy(text).then(ok=>{toast(ok?'Copié ! 💼':'⚠️ Copie bloquée ici — sélectionne le texte et copie-le à la main','in');if(!ok){ta.focus();ta.select();}});
+  if(navigator.share){const sh=document.getElementById('li-fb-sh');sh.style.display='';sh.onclick=()=>{navigator.share({text}).catch(()=>{});};}
+  document.getElementById('li-fb-ok').onclick=()=>{liFbClose();liHistConfirm(hid);};
+  document.getElementById('li-fb-x').onclick=liFbClose;
+}
+function liHistConfirm(hid){
+  const h=H.find(x=>x.id===hid);
+  if(!h){toast('Post introuvable dans Posts publiés','er');return;}
+  if(h.confirmed){toast('Déjà confirmé ✓','in');return;}
+  toggleConfirmed(hid);
+}
+function liPublishOut(text,onOpened,hid){
+  const cp=liCopy(text),opened=liOpenShare(text);
+  cp.then(copied=>{
+    onOpened(); /* « Publier » : le post entre dans Posts publiés (à confirmer), LinkedIn ouvert ou non */
+    if(opened)toast(copied?'Post copié + LinkedIn ouvert 💼 — dans Posts publiés (à confirmer)':'LinkedIn ouvert 💼 — dans Posts publiés (à confirmer)','ok');
+    else liFbOpen(text,hid);
+  });
+}
+function askConfirm(msg){
+  actuCss();
+  return new Promise(res=>{
+    const old=document.getElementById('app-cf');if(old)old.remove();
+    const o=document.createElement('div');o.id='app-cf';
+    o.style.cssText='position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.72);display:flex;justify-content:center;align-items:center;padding:16px';
+    o.innerHTML='<div style="width:100%;max-width:420px;background:var(--card,#0d1117);color:var(--white,#fff);border:1px solid var(--border,#222);border-radius:12px;padding:16px;font-size:14px"><div id="app-cf-m" style="white-space:pre-wrap;margin-bottom:14px;line-height:1.45"></div><div class="btn-row"><button class="btn btn-c" id="app-cf-n">Annuler</button><button class="btn btn-s" id="app-cf-y">Confirmer</button></div></div>';
+    document.body.appendChild(o);
+    document.getElementById('app-cf-m').textContent=String(msg);
+    const done=v=>{o.remove();res(v);};
+    document.getElementById('app-cf-y').onclick=()=>done(true);
+    document.getElementById('app-cf-n').onclick=()=>done(false);
+    o.addEventListener('click',e=>{if(e.target===o)done(false);});
+  });
+}
+function liLink(ev,url){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  let w=null;try{w=window.open(url,'_blank');}catch(e){}
+  if(!w)liCopy(url).then(ok=>toast(ok?'🔗 Lien copié — colle-le dans ton navigateur':'🔗 '+url,'in'));
+  return false;
+}
+function liLinkEl(ev,el){return liLink(ev,el.getAttribute('data-u'));}
+function liLinkify(text){
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc(text).replace(/https?:\/\/[^\s<]+/g,m=>{const u=m.replace(/[.,;:!?)]+$/,''),rest=m.slice(u.length);return '<a href="'+u+'" target="_blank" rel="noopener noreferrer" onclick="return liLink(event,this.href)" style="color:#0a66c2;text-decoration:underline;word-break:break-all">'+u+'</a>'+rest;}).replace(/(^|[\s>])(#[\p{L}\p{N}_-]+)/gu,'$1<span style="color:#0a66c2">$2</span>');
+}
+/* ════ CONSOLE → PUBLICATION RÉELLE : aperçu fil LinkedIn + archivage + impressions ════ */
+let actuPub=null;
+const ACTU_SIM_THEMES=[[/openssh|\bssh\b/i,'Mots de passe'],[/ecsc|\bctf\b|challenge/i,'CTF'],[/hame[cç]on|phishing|cybermois/i,'Phishing'],[/ransom|ran[cç]on/i,'Ransomware'],[/0-?day|zero.?day/i,'Zero Day'],[/dgfip|rapport d.incident|\bsoc\b|analyst/i,'SOC'],[/expos|fuite|base de donn/i,'Fuites de données'],[/linux|priv.?esc/i,'Linux']];
+const ACTU_NIKO_TAGS=[[/emprunteur/i,'#AssuranceEmprunteur'],[/acpr|supervis/i,'#ACPR'],[/climat|assurabilit/i,'#RisquesClimatiques'],[/sinistre|plainte|pillage/i,'#Sinistres'],[/m[ée]diation/i,'#Médiation'],[/mutuelle/i,'#Mutuelle'],[/\bPER\b/,'#PER'],[/[ée]pargne/i,'#Épargne'],[/cyber/i,'#CyberAssurance']];
+function actuKey(a){return String(a.src)+'|'+String(a.titre);}
+function actuTheme(a){const t=a.titre+' '+a.detail;for(const [re,k] of ACTU_SIM_THEMES)if(re.test(t)&&TS[k])return k;return 'Actualité';}
+function actuTagsNiko(a){const t=a.titre+' '+a.detail,x=['#Assurance','#Actualité'];for(const [re,k] of ACTU_NIKO_TAGS)if(re.test(t)&&x.length<4)x.push(k);if(x.length<4)x.push('#Veille');return x;}
+function actuSourceLine(a){return 'Source : '+a.src+(a.url?' — '+a.url:'.');}
+function actuDraft(a){
+  const cl=t=>{let x=String(t).replace(/\bV8\b/g,'du moteur JavaScript').replace(/\b0-day\b/gi,'zero-day').replace(/\bTop\s+\d+\s*/i,'').replace(/\s*[+-]?\d+(?:[.,]\d+)?\s*%/g,'').replace(/\s*\b(?:19|20)\d{2}\b/g,'').replace(/\b\d+(?:[.,]\d+)?\s?[MkK]\b\s*/g,'').replace(/\s{2,}/g,' ').trim();return x.charAt(0).toUpperCase()+x.slice(1);}; /* V7 §32 : pas de chiffres ni d'années */
+  const src=actuSourceLine(a);
+  if(acc==='simon'){
+    const body='🚨 Actualité cybersécurité : '+cl(a.titre)+'\n\n'+cl(a.detail)+'\n\nPourquoi suivre ce type d’actualité : elle montre comment les menaces évoluent et quelles protections restent efficaces. Elle aide aussi à repérer les sujets à approfondir. Les bonnes pratiques de base, comme les mises à jour, les mots de passe uniques, la double authentification et la vérification des liens, limitent déjà une grande partie des risques. S’appuyer sur les alertes d’organismes officiels permet aussi de savoir où trouver une information fiable quand une nouvelle menace apparaît.';
+    /* hashtags posés par le code (3 fixes + 1 thématique) et ligne « Source » avec lien : le brouillon affiché = le post final */
+    for(const theme of [actuTheme(a),'Actualité']){const pp=prepare_post(body,{type:'technique',theme,structure:'',form:'',sourceLine:src});if(pp&&pp.ok)return pp.full;}
+    return body+'\n\n'+src+'\n\n#STI2D #Découverte #Cybersécurité';
+  }
+  return '📰 Actualité assurance : '+a.titre+'\n\n'+a.detail+'\n\nCette actualité rappelle l’importance de rester informé dans nos métiers.\n\n'+src+'\n\n'+actuTagsNiko(a).join(' ');
+}
+function actuCss(){
+  if(document.getElementById('actu-css'))return;
+  const s=document.createElement('style');s.id='actu-css';
+  s.textContent='#actu-ov{position:fixed;inset:0;z-index:99999;background:#05080f;display:flex;flex-direction:column}'
+  +'#actu-ov .abar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;border-bottom:1px solid var(--border,#222);background:#0a0f18;color:var(--white,#fff)}#actu-ov .abar b{font-size:14px}'
+  +'#actu-ov .asc{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px}'
+  +'#actu-ov .afoot{flex:0 0 auto;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border,#222);background:#0a0f18}'
+  +'#actu-ov .afoot .btn-row{margin-top:8px}#actu-ov .afoot .btn-row:first-child{margin-top:0}#actu-ov .afoot .btn-row .btn{flex:1 1 0}'
+  +'#actu-ov .box{width:100%;max-width:560px;margin:0 auto}#actu-ov .lc{background:#fff;color:rgba(0,0,0,.9);border-radius:8px;font-family:-apple-system,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;margin:0 0 10px}'
+  +'#actu-ov .lh{display:flex;gap:10px;padding:12px 14px 4px;align-items:center}#actu-ov .la{width:48px;height:48px;border-radius:50%;background:#0a66c2;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}'
+  +'#actu-ov .ls{font-size:12px;color:rgba(0,0,0,.6)}#actu-ov .lt{padding:8px 14px;font-size:14px;line-height:1.45;white-space:pre-wrap;outline:none;min-height:120px;word-break:break-word}'
+  +'#actu-ov .lt[contenteditable=true]{outline:2px solid #0a66c2;outline-offset:-2px;background:#f4f9ff}'
+  +'#actu-ov .lr{padding:6px 14px;font-size:12px;color:rgba(0,0,0,.6);border-top:1px solid rgba(0,0,0,.1)}#actu-ov .lb{display:flex;justify-content:space-around;padding:8px 6px;border-top:1px solid rgba(0,0,0,.1);font-size:13px;font-weight:600;color:rgba(0,0,0,.6)}'
+  +'#actu-ov .st{background:var(--card,#0d1117);color:var(--white,#fff);border:1px solid var(--border,#222);border-radius:8px;padding:12px;font-size:12px}#actu-ov .st input{width:120px;padding:6px;border-radius:6px;border:1px solid var(--border,#222);background:#060910;color:#fff}'
+  +'#actu-ov .btn,#li-fb .btn,#app-cf .btn{font-size:13px;padding:11px 16px}#actu-ov .lb button{flex:1;background:none;border:0;font:inherit;font-weight:600;color:rgba(0,0,0,.6);padding:10px 2px;cursor:pointer}#actu-ov .lb button.on{color:#0a66c2}'
+  +'body.ov-open{overflow:hidden}body.ov-open #tc{top:calc(64px + env(safe-area-inset-top,0px));bottom:auto;left:12px;right:12px;align-items:center}';
+  document.head.appendChild(s);
+}
+function openActuPub(i,raw){
+  const a=raw?null:getA(i);if(!raw&&!a)return;
+  const dup=a&&H.some(h=>h.account===acc&&(h.newsKey===actuKey(a)||String(h.text||'').includes(a.titre)));
+  closeLi();actuCss();actuClose();
+  actuPub={acc:acc,a:a,theme:a?actuTheme(a):'Actualité',edit:false,validated:false,locked:false};
+  const ov=document.createElement('div');ov.id='actu-ov';
+  ov.innerHTML='<div class="abar"><button class="btn btn-c" id="actu-back" onclick="actuClose()">← Retour</button><b>Publier une actualité</b></div>'
+  +'<div class="asc"><div class="box"><div class="lc"><div class="lh"><div class="la" id="actu-av"></div><div><b id="actu-nm"></b><div class="ls">Aperçu fil d’actualité · Maintenant · 🌐</div></div></div>'
+  +'<div class="lt" id="actu-txt"></div><div class="lr" id="actu-rx">👁 0 impression</div>'
+  +'<div class="lb"><button type="button" id="actu-b-like" onclick="actuLike()">👍 J’aime</button><button type="button" id="actu-b-com" onclick="actuComment()">💬 Commenter</button><button type="button" id="actu-b-rep" onclick="actuRepost()">🔁 Republier</button><button type="button" id="actu-b-snd" onclick="actuSend()">✉️ Envoyer</button></div>'
+  +'<div id="actu-cm" style="display:none;padding:8px 14px 12px;border-top:1px solid rgba(0,0,0,.1)"><div id="actu-cm-list"></div><textarea id="actu-cm-t" rows="2" placeholder="Ajouter un commentaire…" style="width:100%;border:1px solid rgba(0,0,0,.25);border-radius:8px;padding:8px;font-size:13px;font-family:inherit;color:#111;background:#fff"></textarea><div class="btn-row"><button class="btn btn-c" onclick="actuCmSource()">🔗 Insérer la source</button><button class="btn btn-s" onclick="actuCmSend()">Commenter</button></div></div></div>'
+  +'<div style="font-size:11px;color:#9aa4b2;margin:0 2px 6px">🔗 Le lien de la source est cliquable, hashtags inclus. « Modifier » pour changer le texte, puis « Relu et validé ». « Publier » enregistre le post dans Posts publiés (à confirmer). J’aime et Commenter sont simulés dans l’aperçu ; Republier et Envoyer ouvrent LinkedIn ou le partage.</div>'
+  +'<div id="actu-msg" style="font-size:12px;margin:0 2px 8px;color:var(--orange)"></div>'
+  +'<div id="actu-s2" class="st" style="display:none"><div id="actu-s2t" style="margin-bottom:8px"></div>'
+  +'<div class="btn-row" style="margin-bottom:8px"><a id="actu-lnk" class="btn btn-c" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;text-align:center">🔗 Ouvrir LinkedIn</a><button class="btn btn-c" onclick="actuCopyBtn()">📋 Copier le texte</button><button id="actu-shr" class="btn btn-c" style="display:none" onclick="actuShare()">📤 Partager…</button></div>'
+  +'<label>👁 Impressions LinkedIn (modifiables ensuite dans Posts publiés) : <input id="actu-views" type="number" min="0" inputmode="numeric" placeholder="0" oninput="actuViewsLive(this.value)"></label></div></div></div>'
+  +'<div class="afoot"><div class="box"><div id="actu-s1"><div class="btn-row"><button class="btn btn-c" id="actu-edit" onclick="actuEdit()">✏️ Modifier le texte</button><button class="btn btn-c" id="actu-val" onclick="actuValid()">☐ Marquer comme relu et validé</button></div>'
+  +'<div class="btn-row"><button class="btn btn-s" id="actu-go" onclick="actuGo()">💼 Publier sur LinkedIn</button><button class="btn btn-c" onclick="actuClose()">Annuler</button></div></div>'
+  +'<div id="actu-s2f" style="display:none"><div class="btn-row"><button class="btn btn-s" onclick="actuConfirm()">✅ Publication confirmée</button><button class="btn btn-c" onclick="actuUndo()">↩️ Pas publié — retirer</button></div></div></div></div>';
+  document.body.appendChild(ov);document.body.classList.add('ov-open');
+  document.getElementById('actu-nm').textContent=PR[acc].nom;
+  document.getElementById('actu-av').textContent=String(PR[acc].nom).split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  actuRender(raw||actuDraft(a));actuValid(false);actuRx();
+  if(dup)document.getElementById('actu-msg').textContent='ℹ️ Cette actualité figure déjà dans les posts publiés — vérifie qu’il ne s’agit pas d’un doublon.';
+}
+function actuClose(){
+  if(actuPub&&actuPub.hid){const h=H.find(x=>x.id===actuPub.hid);if(h&&!h.confirmed)toast('Post enregistré dans Posts publiés — à confirmer quand il est publié','in');}
+  const o=document.getElementById('actu-ov');if(o)o.remove();document.body.classList.remove('ov-open');actuPub=null;
+}
+function actuText(){const el=document.getElementById('actu-txt');return el?(el.innerText||el.textContent||'').trim():'';}
+function actuRender(text){ /* aperçu non modifiable : URL cliquables, hashtags en bleu */
+  const el=document.getElementById('actu-txt');if(!el||!actuPub)return;
+  el.contentEditable='false';el.innerHTML=liLinkify(text);actuPub.edit=false;
+  const b=document.getElementById('actu-edit');if(b)b.textContent='✏️ Modifier le texte';
+}
+function actuEdit(){
+  if(!actuPub||actuPub.locked)return;
+  const el=document.getElementById('actu-txt'),b=document.getElementById('actu-edit');
+  if(actuPub.edit){actuRender(actuText());return;}
+  const t=actuText();el.textContent=t;el.contentEditable='true';actuPub.edit=true;actuValid(false);
+  if(b)b.textContent='👁 Aperçu avec liens';el.focus();
+}
+function actuValid(v){ /* « relu et validé » : tout changement du texte remet le verrou à zéro */
+  if(!actuPub)return;
+  actuPub.validated=(v===undefined)?!actuPub.validated:!!v;
+  if(actuPub.validated&&actuPub.edit)actuRender(actuText());
+  const b=document.getElementById('actu-val'),go=document.getElementById('actu-go');
+  if(b){b.textContent=actuPub.validated?'✓ Relu et validé':'☐ Marquer comme relu et validé';b.style.background=actuPub.validated?'rgba(0,230,118,.15)':'';b.style.color=actuPub.validated?'var(--green)':'';}
+  if(go)go.style.opacity=actuPub.validated?'1':'.55';
+}
+function actuWarn(t,c){ /* message TOUJOURS visible : zone d'état amenée à l'écran + toast */
+  const m=document.getElementById('actu-msg');
+  if(m){m.style.color=c||'var(--orange)';m.textContent=t;try{m.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}}
+  toast(t.length>120?t.slice(0,117)+'…':t,'er');
+}
+function actuGo(force){
+  const msg=document.getElementById('actu-msg');
+  if(!actuPub)return;
+  if(!actuPub.validated&&force!==true){askConfirm('Tu as relu le post (texte, lien de la source, hashtags) ? Il sera enregistré dans Posts publiés, puis LinkedIn s’ouvrira.').then(ok=>{if(ok&&actuPub){actuValid(true);actuGo(true);}});return;}
+  let text=actuText();
+  if(!text){actuWarn('Le post est vide.');return;}
+  if(acc==='simon'){ /* relecture V7 de Simon : 80–150 mots, hashtags posés par le code, garde-fous d'expérience ; la ligne « Source : … lien » est la seule URL admise */
+    const srcM=text.match(/^[ \t]*Source\s*:[^\n]*$/m),sourceLine=srcM?srcM[0].trim():'';
+    let body=srcM?text.replace(srcM[0],''):text;
+    body=body.replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+    let pp=prepare_post(body,{type:'technique',theme:(actuPub&&actuPub.theme)||'Actualité',structure:'',form:'',sourceLine});
+    if((!pp||!pp.ok)&&actuPub&&actuPub.theme!=='Actualité'){const p2=prepare_post(body,{type:'technique',theme:'Actualité',structure:'',form:'',sourceLine});if(p2&&p2.ok){pp=p2;actuPub.theme='Actualité';}} /* règle de diversité des thèmes : repli sur le thème générique */
+    if(!pp||!pp.ok){actuWarn('⚠️ Relecture V7 Simon : '+((pp&&pp.errors)||['échec']).join(' · ')+' — touche « Modifier », corrige le texte puis revalide.','var(--red)');return;}
+    text=pp.full;
+  }
+  const review=validateForReview(text,{autoCleanHashtags:true});
+  if(!review.ok){actuWarn('⚠️ Publication bloquée ('+(review.errors||[]).join(', ')+') — touche « Modifier », corrige le texte puis revalide.','var(--red)');return;}
+  if(review.removed&&review.removed.length)text=review.text;
+  actuPub.text=text;actuPub.locked=true;actuRender(text);
+  /* « Publier » : le post entre tout de suite dans Posts publiés, en « à confirmer » (comme les posts auto-générés) ; confirmation et impressions ensuite */
+  const hid=Date.now(),na=actuPub.a||null;
+  const post={id:hid,text:text,type:'original',topic:(acc==='simon'&&actuPub.theme)||'Actualité',label:'Actualité',account:acc,checked:true};
+  if(na){post.newsKey=actuKey(na);post.newsSrc=na.src;post.newsTitle=na.titre;if(na.url)post.newsUrl=na.url;}
+  archive(post,'copie');actuPub.hid=hid;
+  try{autoRefill(true);}catch(e){}
+  let opened=false;try{opened=!!window.open(liShareUrl(text),'_blank');}catch(e){}
+  msg.textContent='';
+  document.getElementById('actu-s1').style.display='none';
+  document.getElementById('actu-s2').style.display='block';
+  document.getElementById('actu-s2f').style.display='block';
+  try{document.getElementById('actu-s2').scrollIntoView({block:'nearest'});}catch(e){}
+  document.getElementById('actu-lnk').href=liShareUrl(text);
+  if(navigator.share)document.getElementById('actu-shr').style.display='';
+  const t2=document.getElementById('actu-s2t');
+  const msgs=ok=>'✓ Enregistré dans Posts publiés (à confirmer). '+(opened?('LinkedIn est ouvert'+(ok===true?' (texte aussi copié)':(ok===false?' (copie auto indisponible — texte préchargé)':''))+'. '):('LinkedIn ne s’est pas ouvert depuis cet aperçu'+(ok===true?' (texte copié)':'')+' : utilise « Ouvrir LinkedIn » ou « Copier le texte », publie. '))+'Une fois publié, touche « Publication confirmée ».';
+  t2.textContent=msgs();
+  liCopy(text).then(ok=>{if(actuPub)t2.textContent=msgs(ok);});
+}
+function actuCopyBtn(){if(!actuPub||!actuPub.text)return;liCopy(actuPub.text).then(ok=>toast(ok?'Copié ! 💼':'⚠️ Copie bloquée ici — sélectionne le texte du post et copie-le à la main','in'));}
+function actuShare(){if(!actuPub||!actuPub.text||!navigator.share)return;navigator.share({text:actuPub.text}).catch(()=>{});}
+function actuConfirm(){
+  if(!actuPub||!actuPub.hid)return;
+  const h=H.find(x=>x.id===actuPub.hid),n=Math.max(0,parseInt(document.getElementById('actu-views').value,10)||0);
+  if(h){h.confirmed=true;if(n>0){h.views=n;h.viewsKnown=true;}}
+  saveAll();renderH();updateStats();
+  const st=document.getElementById('st-pf-body');if(st&&st.classList.contains('open'))renderStatsPanel();
+  actuClose();
+  toast('Publication confirmée ✓ — dans Posts publiés, impressions modifiables','ok');
+}
+function actuUndo(){
+  if(actuPub&&actuPub.hid){const id=actuPub.hid;H=H.filter(x=>x.id!==id);if(stats[acc]&&stats[acc].sent>0)stats[acc].sent--;saveAll();renderH();updateStats();toast('Retiré de Posts publiés','in');}
+  actuClose();
+}
+function actuViewsLive(v){if(actuPub){actuPub.views=Math.max(0,parseInt(v,10)||0);actuRx();}}
+function actuRx(){
+  if(!actuPub)return;
+  const c=(actuPub.comments||[]).length,v=actuPub.views||0,p=[];
+  if(actuPub.liked)p.push('👍 Vous');
+  if(c)p.push('💬 '+c+' commentaire'+(c>1?'s':''));
+  p.push('👁 '+v+' impression'+(v>1?'s':''));
+  const el=document.getElementById('actu-rx');if(el)el.textContent=p.join(' · ');
+}
+/* boutons de la carte : J'aime / Commenter simulés dans l'aperçu ; Republier = publier ; Envoyer = partage natif ou copie */
+function actuLike(){
+  if(!actuPub)return;
+  actuPub.liked=!actuPub.liked;
+  const b=document.getElementById('actu-b-like');if(b){b.classList.toggle('on',actuPub.liked);b.textContent=actuPub.liked?'👍 Vous aimez':'👍 J’aime';}
+  actuRx();
+}
+function actuComment(){
+  const c=document.getElementById('actu-cm');if(!c)return;
+  const open=c.style.display==='none';c.style.display=open?'block':'none';
+  const b=document.getElementById('actu-b-com');if(b)b.classList.toggle('on',open);
+  if(open){const t=document.getElementById('actu-cm-t');if(t)t.focus();}
+}
+function actuCmSource(){
+  const t=document.getElementById('actu-cm-t');if(!t)return;
+  const m=actuText().match(/https?:\/\/[^\s]+/);
+  if(!m){toast('Pas de lien de source dans le post','in');return;}
+  t.value=(t.value?t.value+'\n':'')+'Source : '+m[0];
+}
+function actuCmSend(){
+  const t=document.getElementById('actu-cm-t'),v=((t&&t.value)||'').trim();
+  if(!v||!actuPub)return;
+  (actuPub.comments=actuPub.comments||[]).push(v);t.value='';
+  const l=document.getElementById('actu-cm-list');
+  if(l)l.innerHTML=actuPub.comments.map(c=>'<div style="font-size:13px;margin:4px 0;color:#111"><b>'+String(PR[acc].nom).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</b> '+liLinkify(c)+'</div>').join('');
+  actuRx();
+}
+function actuRepost(){
+  if(!actuPub)return;
+  if(!actuPub.locked){actuGo();return;}
+  const t=actuPub.text,o=liOpenShare(t);
+  liCopy(t).then(ok=>toast(o?'LinkedIn ouvert 🔁 — texte prêt à publier':(ok?'Texte copié — ouvre LinkedIn pour republier':'⚠️ Ouvre LinkedIn et colle le texte du post'),'in'));
+}
+function actuSend(){
+  if(!actuPub)return;
+  const t=actuPub.text||actuText();if(!t)return;
+  if(navigator.share){navigator.share({title:'Post LinkedIn — '+PR[acc].nom,text:t}).catch(()=>{});return;}
+  liCopy(t).then(ok=>toast(ok?'Texte copié — colle-le dans un message LinkedIn ✉️':'⚠️ Copie bloquée ici — sélectionne le texte du post et copie-le à la main','in'));
+}
+/* Actualités : mêmes fonctions que Posts publiés (impressions, vérifié, confirmé), puis rafraîchit la liste */
+function actuSetViews(id,v){setViews(id,v);renderFeed('actu');}
+function actuToggleChecked(id){toggleChecked(id);renderFeed('actu');}
+function actuToggleConfirmed(id){toggleConfirmed(id);renderFeed('actu');}
 /* ════ SYNC CLOUD (GitHub Gist privé) ════ */
 let syncBusy=false,syncTm=null;
 function ghHeaders(){return {'Authorization':'Bearer '+lsL(GK.tok,''),'Accept':'application/vnd.github+json','Content-Type':'application/json'};}
@@ -3220,12 +3609,12 @@ function syncStatus(s,msg){
 function buildSyncPayload(){
   const other=acc==='simon'?'niko':'simon';
   const payload={updatedAt:Date.now(),revision:(lsL(SK.rev+acc,0)||0)+1,stats:stats};
-  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ,W:W};
-  payload[other]={Q:lsL(qk(other),[]),H:lsL(hk(other),[]),CF:lsL(cfk(other),[]),RJ:lsL(rjk(other),[]),W:lsL(wk(other),[])};
+  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ,W:W,FL:fdGet(acc),PL:ppGet(acc)};
+  payload[other]={Q:lsL(qk(other),[]),H:lsL(hk(other),[]),CF:lsL(cfk(other),[]),RJ:lsL(rjk(other),[]),W:lsL(wk(other),[]),FL:fdGet(other),PL:ppGet(other)};
   return payload;
 }
 function applySyncPayload(p){
-  ['simon','niko'].forEach(a=>{if(p[a]){lsS(qk(a),p[a].Q||[]);lsS(hk(a),p[a].H||[]);lsS(cfk(a),p[a].CF||[]);lsS(rjk(a),p[a].RJ||[]);lsS(wk(a),p[a].W||[]);}});
+  ['simon','niko'].forEach(a=>{if(p[a]){lsS(qk(a),p[a].Q||[]);lsS(hk(a),p[a].H||[]);lsS(cfk(a),p[a].CF||[]);lsS(rjk(a),p[a].RJ||[]);lsS(wk(a),p[a].W||[]);if(Array.isArray(p[a].FL))lsS(fdk(a),p[a].FL);if(Array.isArray(p[a].PL))lsS(ppk(a),p[a].PL);}});
   if(p.stats){stats=p.stats;lsS(SK.stats,stats);}
   loadAcc(acc);updateStats();renderQ();renderH();renderCF();renderRJ();renderW();
   lsS(GK.ts,p.updatedAt);
@@ -3278,8 +3667,8 @@ async function pushSync(){
 }
 function buildFullBackup(){
   const payload={updatedAt:Date.now(),stats:stats,app:'BotLik',exportedAt:Date.now()};
-  ['simon','niko'].forEach(a=>{payload[a]={Q:lsL(qk(a),[]),H:lsL(hk(a),[]),CF:lsL(cfk(a),[]),RJ:lsL(rjk(a),[]),W:lsL(wk(a),[])};});
-  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ,W:W}; // s'assure que le compte actif en mémoire est bien à jour
+  ['simon','niko'].forEach(a=>{payload[a]={Q:lsL(qk(a),[]),H:lsL(hk(a),[]),CF:lsL(cfk(a),[]),RJ:lsL(rjk(a),[]),W:lsL(wk(a),[]),FL:fdGet(a),PL:ppGet(a)};});
+  payload[acc]={Q:Q,H:H,CF:CF,RJ:RJ,W:W,FL:fdGet(acc),PL:ppGet(acc)}; // s'assure que le compte actif en mémoire est bien à jour
   return payload;
 }
 function downloadBackup(){
@@ -3375,9 +3764,9 @@ function renderW(){
   }).join('');
 }
 function tgW(id){const el=document.getElementById('wex-'+id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
-function promoteW(id){const r=W.find(x=>x.id===id);if(!r)return;if(!confirm('Réintégrer ce post dans la base active ? Il pourra alors être pris en compte par les contrôles et l\'historique.'))return;W=W.filter(x=>x.id!==id);delete r.waitingReason;r.status='A_VERIFIER';r.checked=false;r.account=acc;H.unshift(r);saveAll();renderW();renderH();toast('Post réintégré dans l\'historique actif — à vérifier ✓','ok');}
-function delW(id){if(!confirm('Supprimer définitivement cet ancien post ?'))return;W=W.filter(x=>x.id!==id);saveAll();renderW();toast('Post supprimé définitivement','in');}
-function delAllW(){const n=W.filter(x=>x.account===acc).length;if(!n)return;if(!confirm('Supprimer définitivement les '+n+' posts en attente ?'))return;W=W.filter(x=>x.account!==acc);saveAll();renderW();toast(n+' posts supprimés','in');}
+function promoteW(id){const r=W.find(x=>x.id===id);if(!r)return;askConfirm('Réintégrer ce post dans la base active ? Il pourra alors être pris en compte par les contrôles et l\'historique.').then(ok=>{if(!ok)return;W=W.filter(x=>x.id!==id);delete r.waitingReason;r.status='A_VERIFIER';r.checked=false;r.account=acc;H.unshift(r);saveAll();renderW();renderH();toast('Post réintégré dans l\'historique actif — à vérifier ✓','ok');});}
+function delW(id){askConfirm('Supprimer définitivement cet ancien post ?').then(ok=>{if(!ok)return;W=W.filter(x=>x.id!==id);saveAll();renderW();toast('Post supprimé définitivement','in');});}
+function delAllW(){const n=W.filter(x=>x.account===acc).length;if(!n)return;askConfirm('Supprimer définitivement les '+n+' posts en attente ?').then(ok=>{if(!ok)return;W=W.filter(x=>x.account!==acc);saveAll();renderW();toast(n+' posts supprimés','in');});}
 function classifyAllW(){let n=0;W.forEach(r=>{if(r.account===acc&&!r.checked){r.checked=true;r.status='CONTROLE';n++;}});saveAll();renderW();toast(n+' post'+(n>1?'s':'')+' marqué'+(n>1?'s':'')+' comme contrôlé','ok');}
 function toggleStatsPanel(){const b=document.getElementById('st-pf-body');const o=b.classList.toggle('open');document.getElementById('st-pf-bdg').textContent=o?'Fermer ▴':'Ouvrir ▾';if(o)renderStatsPanel();}
 // Détermine la famille narrative d'un post archivé en comparant son texte à l'accroche
@@ -3808,7 +4197,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   }
   window.sgV7Check=sgV7Check;
   function sgValidate(raw,opt={}){
-    const errors=[];const body=String(raw||'').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
+    const errors=[];let body=String(raw||'').trim();if(opt.sourceLine)body=body.split(opt.sourceLine).join('').replace(/\n{3,}/g,'\n\n').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
     const sentences=sgSentences(sgNoHashtags(display));const themeSet=sgThemeWords(topic);
     const add=(e)=>{if(!errors.includes(e))errors.push(e)};
@@ -3991,7 +4380,24 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     'Zero-day':'Une vulnérabilité zero-day est une vulnérabilité pour laquelle il existe une période où les défenses et les corrections disponibles peuvent être limitées.',
     'Pentest':'Un pentest est une démarche autorisée qui cherche à évaluer la sécurité d’un système dans un périmètre défini.'
   };
+  const SG_FB_MEM={};let SG_FB_PEND=[];
+  // Anti-répétition des posts de repli (mémoire de session, non persistée) : une tournure n'est rejouée
+  // qu'après que la plupart des autres variantes du même lot ont servi. La mémoire ne retient que les
+  // tournures d'un post ACCEPTÉ (sgFbCommit), pour que les phrases rarement rejetées ne dominent pas.
+  function sgFbPick(arr,key){
+    const mem=(SG_FB_MEM[key]=SG_FB_MEM[key]||[]);
+    let idx=arr.map((_,i)=>i).filter(i=>!mem.includes(i));
+    if(!idx.length)idx=arr.map((_,i)=>i);
+    const i=idx[Math.floor(Math.random()*idx.length)];
+    SG_FB_PEND.push([key,i,arr.length]);
+    return arr[i];
+  }
+  function sgFbCommit(){
+    SG_FB_PEND.forEach(([key,i,n])=>{const mem=(SG_FB_MEM[key]=SG_FB_MEM[key]||[]);const at=mem.indexOf(i);if(at>=0)mem.splice(at,1);mem.push(i);const keep=Math.max(1,Math.floor(n*0.7));while(mem.length>keep)mem.shift();});
+    SG_FB_PEND=[];
+  }
   function sgFallbackText(theme,form){
+    SG_FB_PEND=[];
     // Brief §3/§14 : texte impersonnel (aucune pratique ni émotion inventée), accroche selon le type, conclusion factuelle.
     const t=`« ${theme} »`;
     // V7 §37 : chaque forme correspond à UNE famille (C,E,F,D,A,B,I,J,H,G,F,B) ; 2 variantes par forme.
@@ -4019,6 +4425,18 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       'élément technique':`Le principal enjeu autour de ${t} concerne la bonne compréhension de son rôle dans un système.`,
       'problème général':`Comment situer ${t} parmi les autres notions de la cybersécurité ?`,
       'distinction utile':`${t} est une notion à distinguer de celles qui lui ressemblent.`};
+    const H3={'constat':`Dans les bases de la sécurité informatique, ${t} revient régulièrement.`,
+      'contraste':`${t} semble simple à définir, mais ses effets sont loin d’être anecdotiques.`,
+      'observation générale':`D’où vient l’importance de ${t} dans les discussions sur la sécurité ?`,
+      'conséquence':`Passer à côté de ${t} peut brouiller la lecture de nombreux sujets de sécurité.`,
+      'détail concret':`Concrètement, ${t} renvoie à un mécanisme qu’on peut décrire en quelques mots.`,
+      'mise en contexte':`${t} s’inscrit dans le fonctionnement d’un système d’information, du poste de travail jusqu’au réseau.`,
+      'exemple hypothétique':`Supposons qu’un message d’alerte mentionne ${t} : que faut-il comprendre derrière ce terme ?`,
+      'phrase courte':`${t} : le mot est court, l’idée mérite d’être précise.`,
+      'rythme court puis long':`Un mot, une idée : ${t}. Mais derrière, il y a un fonctionnement qu’on gagne à connaître avec précision.`,
+      'élément technique':`Au cœur de ${t}, il y a un rôle précis dans le système, qu’il faut savoir situer.`,
+      'problème général':`Comment expliquer simplement ce que recouvre ${t} ?`,
+      'distinction utile':`Entre ${t} et les termes voisins, la nuance mérite d’être posée.`};
     const fact=SG_FALLBACK_FACTS[theme]||`${t} correspond à une notion informatique qui mérite d’être définie avec précision.`;
     const B=['Ce type de notion sert de point d’appui pour aborder ensuite des sujets plus avancés de l’informatique et de la sécurité.',
       'Selon le contexte, la même notion peut intervenir à plusieurs niveaux d’un système, du poste utilisateur jusqu’au réseau.',
@@ -4064,7 +4482,86 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       `Face à ${t}, une définition précise vaut mieux qu’une intuition approximative.`,
       `${t} prend son sens dans un ensemble de mesures : isolé, il ne décrit qu’une partie du sujet.`];
     const rnd=a=>a[Math.floor(Math.random()*a.length)];
-    return `${rnd([H[form]||H['constat'],H2[form]||H[form]||H['constat']])} ${fact} ${rnd(B)} ${rnd(C)} ${rnd(E)} ${rnd(D)}`;
+    B.push('Cette notion intervient à plusieurs endroits d’un système, ce qui explique qu’on la retrouve dans des contextes très différents.',
+      'Dans une architecture réelle, plusieurs éléments coopèrent : comprendre le rôle de chacun évite d’attribuer à un seul composant des effets qui viennent de plusieurs.',
+      'On rencontre cette notion aussi bien dans un usage personnel que dans une infrastructure d’entreprise, avec des réglages différents.',
+      'Les supports d’initiation reviennent souvent sur cette notion, car elle aide à relier des idées qui, séparées, semblent abstraites.',
+      'Ce vocabulaire se retrouve dans les documentations, les alertes de sécurité et les guides de bonnes pratiques.',
+      'Le rôle de cette notion se comprend mieux en regardant ce qui se passe quand elle est absente ou mal réglée.',
+      'Selon l’outil utilisé, cette notion porte parfois un nom différent, alors que le principe reste proche.',
+      'Bien situer cette notion rend un système plus lisible et plus facile à surveiller.');
+    C.push('Une notion bien définie n’explique pas à elle seule une situation réelle : le contexte compte autant que la définition.',
+      'Les exemples simplifiés servent à fixer les idées, mais les cas concrets comportent souvent des exceptions.',
+      'Ce qui vaut pour un petit réseau domestique ne se transpose pas forcément à une grande organisation.',
+      'Certaines confusions viennent du vocabulaire : deux termes proches ne désignent pas forcément la même chose.',
+      'Les réglages par défaut conviennent rarement à toutes les situations, d’où l’intérêt de savoir ce qu’ils changent.',
+      'Les versions et les configurations évoluent, si bien que certains détails peuvent changer d’un produit à l’autre.',
+      'Une mesure isolée laisse des zones non couvertes ; c’est l’ensemble qui donne un niveau de protection raisonnable.',
+      'Les définitions courtes laissent de côté des nuances qui comptent dès qu’on passe à la pratique.');
+    E.push('Pour vérifier un point précis, la documentation officielle de l’outil ou du standard concerné reste la meilleure source.',
+      'Un schéma ou un petit exemple fictif aide à situer la notion avant de la manipuler.',
+      'Expliquer la notion à voix haute, avec ses propres mots, est un bon test pour savoir si l’idée est comprise.',
+      'Comparer plusieurs glossaires de cybersécurité permet de repérer les nuances entre notions proches.',
+      'Relier la notion à un exemple du quotidien numérique rend son rôle plus facile à retenir.',
+      'Des fiches pratiques rédigées par des organismes spécialisés expliquent comment cette notion s’applique concrètement.',
+      'Avant d’aller plus loin, il est utile de lister les termes voisins pour ne pas les mélanger.',
+      'Une fiche mémo avec une définition, un exemple et une limite suffit souvent pour fixer l’essentiel.');
+    D.push(`Replacer ${t} parmi les autres éléments d’un système évite de lui prêter des effets qui viennent d’ailleurs.`,
+      `Poser une définition claire de ${t} reste la première étape avant d’en discuter les usages.`,
+      `${t} illustre bien l’intérêt de partir des bases avant de s’intéresser aux outils.`,
+      `En cybersécurité, ${t} se comprend mieux une fois replacé dans la chaîne complète : données, comptes, systèmes et réseaux.`,
+      `Un vocabulaire précis autour de ${t} facilite les échanges avec les personnes qui administrent les systèmes.`,
+      `${t} reste un bon exemple de notion simple en apparence, mais riche de nuances dès qu’on s’y attarde.`,
+      `Savoir expliquer ${t} en quelques phrases est déjà une première étape vers des sujets plus techniques.`,
+      `Le plus utile avec ${t} : comprendre à quoi sert la notion, avant de chercher à retenir son nom exact.`,
+      `${t} prend de la valeur quand on peut l’illustrer par un exemple concret plutôt que par une définition seule.`,
+      `Comprendre ${t}, c’est aussi savoir dans quels cas la notion ne suffit pas.`);
+    // Variété de forme : 5 mises en page différentes (paragraphe dense, deux blocs, mini-liste 1/2/3, rythme court, chute isolée).
+    const hook=sgFbPick([H[form]||H['constat'],H2[form]||H[form]||H['constat'],H3[form]||H['constat']],'h'+form);
+    const lay=sgFbPick([0,1,2,3,4],'L');
+    // Voix de Simon (lycéen débutant en Terminale STI2D) : une phrase de découverte à la 1re personne dans ~7 posts de repli sur 10.
+    // Uniquement des formulations qui ne revendiquent aucune pratique (je découvre / je pense / je me demande / je comprends…) ; ni âge, ni lieu, ni établissement.
+    const V=[`En Terminale STI2D, je découvre la cybersécurité, et ${t} est un des termes que je commence à comprendre.`,
+      `Je découvre encore ${t} : mon but est de comprendre à quoi sert la notion, pas de l’expliquer comme un expert.`,
+      `Je pense que ${t} se comprend mieux avec un exemple simple qu’avec une définition seule.`,
+      `Je débute en cybersécurité, alors je me demande comment ${t} s’applique ailleurs que dans les exemples simples.`,
+      `Je trouve utile de situer ${t} avant de regarder les outils, et c’est ce que je cherche à faire à mon niveau de débutant.`,
+      `Je commence à comprendre ${t} en reliant la notion à des exemples simples, sans prétendre la maîtriser.`,
+      `Pour un lycéen qui débute en cybersécurité, ${t} est une notion à poser calmement avant d’aller vers la pratique.`,
+      `Je remarque que ${t} est une notion qu’on retrouve dans les ressources d’initiation, ce qui m’aide à la situer.`,
+      `Je découvre la cybersécurité en Terminale STI2D, et ${t} m’aide à comprendre comment on parle de sécurité en informatique.`,
+      `Je pense que la bonne méthode avec ${t} est de partir de la définition, puis de regarder les outils.`,
+      `Je me demande encore quelles autres notions se rattachent à ${t}, et je les découvre une par une.`,
+      `Je ne présente pas cela comme une expertise : c’est simplement ce que je comprends de ${t} aujourd’hui.`];
+    // Série STI2D (option SIN) : une phrase de contexte au niveau du programme officiel (aucune pratique personnelle revendiquée) dans ~4 posts de repli sur 10.
+    const S=[`La série STI2D, avec l’enseignement SIN, s’intéresse aux réseaux, à la programmation et aux systèmes numériques : ${t} peut y trouver sa place.`,
+      `La série STI2D invite à regarder un système dans son ensemble ; ${t} est un élément de plus à situer dans cet ensemble.`,
+      `En STI2D, l’enseignement SIN aborde les réseaux, la programmation et les systèmes embarqués, trois domaines où ${t} peut avoir un rôle.`,
+      `Les flux d’information (voix, données, images) font partie de l’enseignement SIN en STI2D, et ${t} fait partie du vocabulaire qu’on rencontre en s’intéressant à leur circulation.`,
+      `La série STI2D s’appuie sur des projets autour de systèmes concrets, un bon point de départ pour situer ${t}.`,
+      `Pour qui suit la série STI2D, ${t} peut servir de passerelle entre ce qu’on voit sur les réseaux ou la programmation et la cybersécurité.`,
+      `Je découvre ${t} en m’appuyant sur les bases de la série STI2D : systèmes, réseaux et programmation.`,
+      `Avec la série STI2D, les notions de réseau et de programmation servent de repères pour aborder ${t}.`,
+      `STI2D et cybersécurité se rejoignent sur un point : comprendre comment un système fonctionne avant de chercher à le protéger. ${t} en est un exemple.`,
+      `Dans l’option SIN, les objets connectés et les systèmes embarqués côtoient les réseaux ; ${t} fait partie des notions qu’on peut rencontrer en s’intéressant à ces systèmes.`];
+    const wantSti=Math.random()<0.4;
+    const sti=wantSti?sgFbPick(S,'S'):null;
+    const vpool=wantSti?V.filter(x=>!/STI2D/.test(x)):V;
+    const v=Math.random()<0.7?sgFbPick(vpool,wantSti?'V2':'V'):null;
+    const slotV={0:'c',1:'e',2:'e',3:'e',4:'b'}[lay],slotS={0:'b',1:'c',2:'b',3:'b',4:'c'}[lay];
+    const pick={b:null,c:null,e:null};
+    if(v)pick[slotV]=v;
+    if(sti)pick[slotS]=sti;
+    const b=pick.b||sgFbPick(B,'B'),c=pick.c||sgFbPick(C,'C'),e=pick.e||sgFbPick(E,'E'),d=sgFbPick(D,'D');
+    let text=[
+      `${hook} ${fact} ${b} ${c} ${d}`,
+      `${hook} ${fact}\n\n${c} ${e} ${d}`,
+      `${hook}\n\n1/ ${fact}\n\n2/ ${b}\n\n3/ ${e}\n\n${d}`,
+      `${hook}\n\n${fact} ${b}\n\n${e} ${d}`,
+      `${hook} ${fact} ${c}\n\n${b}\n\n${d}`
+    ][lay];
+    if(sgCountWords(text)<84)text=text.replace(d,sgFbPick(E,'E2')+' '+d);
+    return text;
   }
   /* PROMPT MAÎTRE v6 §15-16 — texte < 80 mots après nettoyage : on ENRICHIT avec une explication factuelle. Une expérience personnelle n'est ajoutée que si elle repose sur un contexte confirmé. */
   const SG_TS_ALIAS={'Zero-day':'Zero Day','MFA / 2FA':'Authentification 2FA'};
@@ -4130,7 +4627,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       for(let k=0;k<10;k++){
         const fallback=sgFallbackText(th,form);
         const ferr=sgValidate(fallback,{type:'technique',topic:th,structure,form});
-        if(!ferr.length)return {text:fallback,src:'repli',theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
+        if(!ferr.length){sgFbCommit();return {text:fallback,src:'repli',theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};}
       }
     }
     return null;
@@ -4141,7 +4638,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const text=String(candidate||'').trim();const display=text.replaceAll(SG_TOKEN,sgProgress());
     const errors=sgValidate(display,{...meta,allowSystemHashtags:false});
     if(errors.length)return {ok:false,errors};
-    const tags=sgTags(meta.theme||sgLastMeta?.theme||topic,display);const full=(display+'\n\n'+tags.join(' ')).trim();
+    const tags=sgTags(meta.theme||sgLastMeta?.theme||topic,display);const full=(display+(meta.sourceLine?'\n\n'+meta.sourceLine:'')+'\n\n'+tags.join(' ')).trim();
     const finalErrors=sgValidate(full,{...meta,allowSystemHashtags:true,checkTagRepeat:true});
     if(finalErrors.length)return {ok:false,errors:finalErrors};
     return {ok:true,text:display,raw:text,hashtags:tags,full,meta};
@@ -4298,6 +4795,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   }
   function sgGenerate(){
     if(acc!=='simon')return sgOld.genPost();
+    if(typ==='repost'){const rp=(document.getElementById('rp-txt')?.value||'').trim();if(!rp){toast('Colle d’abord le post à republier','er');return;}openActuPub(-1,rp);return;}
+    if(typ!=='original'){toast('⚠️ Pour Simon, seuls « Original » et « Republier » sont générés (règles V7).','er');return;}
     let result=null;
     for(let attempt=0;attempt<2&&!result;attempt++) result=sgBuildCandidate();
     if(!result){toast('⚠️ Aucune combinaison conforme trouvée. Choisis un autre thème.','er');return;}
@@ -4440,7 +4939,7 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     if(!lastPost)return;const t=lastPost.originalText||lastPost.text;lastPost.text=t;renderPost(t);sgSetGate(false);toast('Version générée restaurée.','ok');
   }
   window.restoreLastPost=sgRestore;
-  function sgCopy(){if(acc!=='simon')return sgOld.copyPost();if(!sgRelease('Copie'))return;const text=(document.getElementById('po').innerText||'').trim();navigator.clipboard.writeText(text).then(()=>{toast('Copié ! 💼','ok');}).catch(()=>toast('Copie impossible sur ce navigateur.','er'))}
+  function sgCopy(){if(acc!=='simon')return sgOld.copyPost();if(!sgRelease('Copie'))return;const text=(document.getElementById('po').innerText||'').trim();liCopy(text).then(ok=>ok?toast('Copié ! 💼','ok'):toast('Copie impossible sur ce navigateur.','er'))}
   window.copyPost=sgCopy;
   function sgDequeue(p){
     if(!p||!Q.includes(p))return;
@@ -4450,8 +4949,9 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     if(acc!=='simon')return sgOld.publishLinkedIn();
     if(!sgRelease('Publication'))return;
     const postToArchive=lastPost;const text=(document.getElementById('po').innerText||'').trim();
-    if(navigator.share){navigator.share({title:'Post LinkedIn — Simon JUTGÉ',text}).then(()=>{if(postToArchive)archive(postToArchive,'copie');sgDequeue(postToArchive);clearGenerator();toast('Partagé avec succès ✓','ok')}).catch(()=>toast('Partage annulé — le post reste dans Génération.','in'));}
-    else navigator.clipboard.writeText(text).then(()=>{window.open('https://www.linkedin.com/feed/?shareActive=true&text='+encodeURIComponent(text.substring(0,700)),'_blank');if(postToArchive)archive(postToArchive,'copie');sgDequeue(postToArchive);clearGenerator();toast('Post copié + LinkedIn ouvert 💼','ok')});
+    const done=s=>()=>{if(postToArchive)archive(postToArchive,s);sgDequeue(postToArchive);clearGenerator();};
+    if(navigator.share){navigator.share({title:'Post LinkedIn — Simon JUTGÉ',text}).then(()=>{done('copie')();toast('Partagé avec succès ✓','ok')}).catch(e=>{if(e&&e.name==='AbortError'){toast('Partage annulé — le post reste dans Génération.','in');return;}liPublishOut(text,done('copie'),postToArchive&&postToArchive.id);});}
+    else liPublishOut(text,done('copie'),postToArchive&&postToArchive.id);
   }
   window.publishLinkedIn=sgPublish;
   function sgSchedule(){if(acc!=='simon')return sgOld.schedPost();if(!sgRelease('Programmation'))return;const mine=Q.filter(q=>q.account==='simon');const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();Q.push({id:Date.now(),draftId:lastPost.id,text:lastPost.text,type:lastPost.type,topic:lastPost.topic,label:lastPost.label,scheduledAt:base+24*3600*1000,account:'simon',originalText:lastPost.originalText,sgFamily:lastPost.sgFamily,structure:lastPost.structure,form:lastPost.form,reviewedHash:sgRvHash(lastPost.text),reviewedAt:Date.now(),reviewedPersonal:sgHasPersonalExperienceClaim(lastPost.text)?'yes':''});saveAll();renderQ();updateStats();toast('Programmé ✓','ok')}
