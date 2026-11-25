@@ -431,12 +431,12 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       </select>
     </div>
     <div class="fld"><label>Contexte / angle (optionnel — génération manuelle et ligne éditoriale automatique)</label>
-      <textarea id="ctx-inp" style="min-height:52px" placeholder="Décris avec tes mots une expérience réelle de Simon : ce qu’il a fait, dans quel cadre et ce qu’il en a retenu. Ce texte pourra aussi alimenter 1 post du planning automatique uniquement après confirmation."></textarea>
+      <textarea id="ctx-inp" style="min-height:52px" placeholder="Décris avec tes mots une expérience réelle de Simon : ce qu’il a fait, dans quel cadre et ce qu’il en a retenu. Ce texte pourra aussi alimenter 1 post du planning automatique après validation (Confirmé ou Possible)."></textarea>
       <div style="margin-top:7px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:rgba(0,200,255,.035)">
         <div style="font-size:11px;font-weight:600;margin-bottom:5px">Validation du contexte pour le planning automatique</div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:7px">Cette validation est distincte de la relecture d’un post. Seul « Confirmé » autorise le contexte à alimenter le post personnel prévu dans le planning automatique. Le champ reste utilisable pour la génération manuelle quel que soit ce statut.</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:7px">Cette validation est distincte de la relecture d’un post. « Confirmé » ou « Possible » autorisent le contexte à alimenter le post personnel prévu dans le planning automatique. Le champ reste utilisable pour la génération manuelle quel que soit ce statut.</div>
         <label style="display:block;font-size:11px;margin-bottom:4px;cursor:pointer"><input type="radio" name="sg-context-confirm" value="yes" style="accent-color:var(--green)"> <b>Confirmé</b> — ce contexte décrit bien une expérience réelle de Simon.</label>
-        <label style="display:block;font-size:11px;margin-bottom:4px;cursor:pointer"><input type="radio" name="sg-context-confirm" value="maybe" style="accent-color:var(--orange)"> <b>Possible, à confirmer</b> — ne pas l’utiliser comme fait établi dans le planning automatique.</label>
+        <label style="display:block;font-size:11px;margin-bottom:4px;cursor:pointer"><input type="radio" name="sg-context-confirm" value="maybe" style="accent-color:var(--orange)"> <b>Possible</b> — validé : ce contexte peut alimenter le post perso du planning automatique et être publié.</label>
         <label style="display:block;font-size:11px;cursor:pointer"><input type="radio" name="sg-context-confirm" value="no" style="accent-color:var(--orange)"> <b>Non confirmé / à exclure</b> — ne pas utiliser ce contexte comme expérience de Simon.</label>
         <div id="sg-context-feedback" aria-live="polite" style="font-size:10px;color:var(--muted);margin-top:5px">Aucun contexte confirmé pour le planning automatique.</div>
       </div>
@@ -467,9 +467,10 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
           <div style="font-size:11px;font-weight:600;margin-bottom:5px">🧩 Quelle est la situation de l’expérience personnelle évoquée ?</div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:7px">Cette validation est indépendante de la relecture et vaut pour toutes les expériences, quelle que soit leur forme ou leur domaine.</div>
           <label style="display:block;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="radio" name="sg-personal-confirm" id="sg-personal-yes" value="yes" style="accent-color:var(--green)"> <b>Oui, confirmée</b> — Simon l’a réellement vécue ou réalisée.</label>
-          <label style="display:block;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="radio" name="sg-personal-confirm" id="sg-personal-maybe" value="maybe" style="accent-color:var(--orange)"> <b>Possible, à confirmer</b> — le sujet pourrait correspondre à son vécu, mais ce n’est pas encore vérifié.</label>
+          <label style="display:block;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="radio" name="sg-personal-confirm" id="sg-personal-maybe" value="maybe" style="accent-color:var(--orange)"> <b>Possible</b> — le sujet peut correspondre à son vécu : validé, le post reste publiable.</label>
           <label style="display:block;font-size:11px;cursor:pointer"><input type="radio" name="sg-personal-confirm" id="sg-personal-no" value="no" style="accent-color:var(--orange)"> <b>Non</b> — ce n’est pas son expérience, ou le texte la présente à tort comme telle.</label>
-          <div id="sg-personal-feedback" aria-live="polite" style="font-size:10px;color:var(--muted);margin-top:5px">Si le post ne raconte aucune expérience personnelle, aucune réponse n’est nécessaire. Une expérience « possible » peut être relue, mais pas publiée comme un fait confirmé.</div>
+          <div id="sg-personal-feedback" aria-live="polite" style="font-size:10px;color:var(--muted);margin-top:5px">Si le post ne raconte aucune expérience personnelle, aucune réponse n’est nécessaire. Une expérience « possible » est validée et publiable ; « Non » bloque le post.</div>
+          <div id="sg-avoided-exp" style="font-size:10px;color:var(--muted);margin-top:5px"></div>
         </div>
         <div id="sg-review-detail" style="font-size:10px;color:var(--muted);margin-top:5px">Le verrou est lié au hash du texte final. Toute modification invalide la relecture.</div>
       </div>
@@ -656,6 +657,9 @@ function defaultGenerationRules(){
       'liste courte de notions découvertes'
     ],
     corrections:[],
+    avoidedExperienceThemes:[],
+    avoidedSkills:[],
+    validatedExperiences:[],
     validatedExamples:[]
   };
 }
@@ -3929,6 +3933,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     'Observation':['constat général','explication','illustration','découverte','conclusion']
   };
   const SG_THEME_ROWS=[
+    ['NAT','#NAT','réseau'],['SSH','#SSH','réseau'],['Active Directory','#ActiveDirectory','sécurité'],['Virtualisation','#Virtualisation','linux'],['Supervision','#Supervision','sécurité'],['Analyse de trames','#Wireshark','avancé'],['Proxy','#Proxy','réseau'],['Antivirus et EDR','#EDR','menaces'],['Gestion des incidents','#Incidents','sécurité'],['Scripts Bash et PowerShell','#Scripting','linux'],
     ['Modèle OSI','#OSI','réseau'],['Adresse IP','#AdresseIP','réseau'],['IPv4','#IPv4','réseau'],
     ['Masque de sous-réseau','#Réseau','réseau'],['Passerelle','#Réseau','réseau'],['DNS','#DNS','réseau'],
     ['DHCP','#DHCP','réseau'],['TCP','#TCP','réseau'],['UDP','#UDP','réseau'],['Ports','#Réseau','réseau'],
@@ -3945,9 +3950,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     ['Données personnelles','#DonnéesPersonnelles','données'],['Confidentialité','#DonnéesPersonnelles','données'],
     ['SIEM','#SIEM','avancé'],['SOC','#SOC','avancé'],['Zero-day','#ZeroDay','avancé'],['Pentest','#Débutant','avancé'],
     ['CyberQuest','#CyberQuest','sécurité'],['Accessibilité numérique','#Accessibilité','données'],
-    ['Programmation','#Programmation','projet'],['Arduino','#Arduino','projet'],['Root-Me','#RootMe','projet']
+    ['Programmation','#Programmation','projet'],['Arduino','#Arduino','projet'],['Root-Me','#RootMe','projet'],
+    ['Réseau local','#Réseau','projet'],['Sécurité de mes comptes','#MotsDePasse','projet'],['Sensibilisation de l’entourage','#Sensibilisation','projet'],
+    ['Veille cybersécurité','#Veille','projet'],['Portfolio en ligne','#Portfolio','projet']
   ];
-  const SG_PROJECT_TOPICS=new Set(['CyberQuest','Accessibilité numérique','Programmation','Arduino','Root-Me']);
+  const SG_PROJECT_TOPICS=new Set(['CyberQuest','Accessibilité numérique','Programmation','Arduino','Root-Me','Réseau local','Sécurité de mes comptes','Sensibilisation de l’entourage','Veille cybersécurité','Portfolio en ligne']);
+  const SG_POSSIBLE_TOPICS=new Set(['Réseau local','Sécurité de mes comptes','Sensibilisation de l’entourage','Veille cybersécurité','Portfolio en ligne']);
   const SG_THEME=new Map(SG_THEME_ROWS.map(x=>[x[0],x]));
   const SG_ALIASES=new Map([['Réseaux','Réseau'],['Zero Day','Zero-day'],['Vulnérabilité','Vulnérabilités'],['MFA/2FA','MFA / 2FA']]);
   const SG_OFFENSIVE=/\b(?:nmap|sqlmap|metasploit|msfconsole|hydra|hashcat|payload|reverse shell|burp suite|burpsuite|nikto|gobuster|ffuf|john the ripper)\b/i;
@@ -4073,13 +4081,17 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   };
   const sgFamily=topic=>sgTopicRow(topic)?.[2]||'autre';
   const sgSpecificTag=topic=>sgTopicRow(topic)?.[1]||'#Informatique';
-  const SG_ALT={'réseau':['#Réseau','#Informatique'],'linux':['#Linux','#Informatique'],'sécurité':['#SécuritéInformatique','#Informatique'],'menaces':['#SécuritéInformatique','#Informatique'],'données':['#RGPD','#DonnéesPersonnelles','#SécuritéInformatique'],'avancé':['#SécuritéInformatique','#Informatique']};
-  const sgTagPool=topic=>{const bad=x=>SG_FIXED.some(f=>f.toLowerCase()===x.toLowerCase())||SG_BANNED.some(b=>b.toLowerCase()===x.toLowerCase());const p=[...new Set([sgSpecificTag(topic),...(SG_ALT[sgFamily(topic)]||[])])].filter(x=>!bad(x));return p.length?p:['#Informatique'];};
+  const SG_ALT={'réseau':['#Réseau','#Informatique'],'linux':['#Linux','#Informatique'],'sécurité':['#SécuritéInformatique','#Informatique'],'menaces':['#SécuritéInformatique','#Informatique'],'données':['#RGPD','#DonnéesPersonnelles','#SécuritéInformatique'],'avancé':['#SécuritéInformatique','#Informatique'],'projet':['#ProjetPersonnel','#Apprentissage','#Informatique']};
+  const sgTagPool=topic=>{const bad=x=>SG_FIXED.some(f=>f.toLowerCase()===x.toLowerCase())||SG_BANNED.some(b=>b.toLowerCase()===x.toLowerCase());const p=[...new Set(topic==='Expérience personnelle de Simon'?['#ProjetPersonnel','#Apprentissage','#Informatique']:[sgSpecificTag(topic),...(SG_ALT[sgFamily(topic)]||[])])].filter(x=>!bad(x));return p.length?p:['#Informatique'];};
   const sgFourth=t=>{const m=String(t||'').match(/#[\p{L}\p{N}_-]+/gu)||[];return m.length>=4?m[3].toLowerCase():'';};
   const sgRecent4=ex=>{const e=ex?sgNorm(sgNoHashtags(ex)):null;return sgHistory().filter(h=>!e||sgNorm(sgNoHashtags(h.text||''))!==e).slice(-3).map(h=>sgFourth(h.text)).filter(Boolean);};
   const sgTags=(topic,ex)=>{const pool=sgTagPool(topic),rec=new Set(sgRecent4(ex));return [...SG_FIXED,pool.find(x=>!rec.has(x.toLowerCase()))||pool[0]];};
   const sgTagsNoHist=topic=>[...SG_FIXED,sgTagPool(topic)[0]];
   const sgAdvancedCount5=()=>sgHistory().slice(-5).filter(x=>SG_ADVANCED.has(x.theme)).length;
+  // Variante pour la validation d'un texte précis : le post validé ne se compte pas lui-même. Au moment de la relecture
+  // d'un post de la file, il figure déjà dans la fenêtre : un post « avancé » (SIEM, SOC…) se refusait donc tout seul
+  // (« Sujet avancé déjà présent »). Pour un candidat pas encore dans la file, le résultat est identique à avant.
+  const sgAdvancedCount5Others=text=>{const me=sgNorm(sgNoHashtags(String(text||'')));return sgHistory().filter(h=>sgNorm(sgNoHashtags(h.text||''))!==me).slice(-5).filter(x=>SG_ADVANCED.has(x.theme)).length;};
   const sgRootCount7=()=>sgHistory().slice(-7).filter(x=>/root[\s-]?me/i.test(x.text)).length;
   const sgFamilyCount7=f=>{if(!f||f==='autre')return 0;return sgHistory().slice(-7).filter(x=>{const fam=x.family||sgFamily(x.theme);return fam&&fam!=='autre'&&fam===f}).length;};
   const sgRecentForm3=()=>sgHistory().slice(-3).map(x=>x.form).filter(Boolean);
@@ -4298,7 +4310,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
         if(best&&best.score>=84&&((best.commonNgrams>=2&&best.charScore>=.55)||(best.commonNgrams>=1&&best.charScore>=.75&&best.editScore>=.62)||(best.editScore>=.90&&best.commonWords>=4)))add(`Conclusion trop proche d’un post publié : « ${best.text.slice(0,70)} »`);
       }
       // La diversité de famille sert à choisir/générer un prochain sujet, pas à rejeter un texte final distinct.
-      if(SG_ADVANCED.has(topic)&&sgAdvancedCount5()>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
+      if(SG_ADVANCED.has(topic)&&sgAdvancedCount5Others(display)>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
     }
     [/\b(?:mon|ma|mes) (?:professeurs?|profs?|enseignants?|stage|entreprise|tuteur)\b/i,/\bpendant (?:mon|ma|le) (?:stage|cours)\b/i,/\blors d[’']une mission\b/i,/\b(?:vu|appris|abordé|étudié) en cours\b/i].forEach(re=>{if(re.test(display))add('Contexte scolaire ou professionnel non confirmé (brief §1).')});
     if(type==='technique'){
@@ -4309,7 +4321,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       // La confirmation humaine explicite de l’expérience (choix « oui, confirmée »)
       // doit être prise en compte par la relecture elle-même. Sinon le contrôle §5
       // rejetterait le texte avant de pouvoir enregistrer cette confirmation.
-      const personalClaimConfirmed = document.querySelector('input[name="sg-personal-confirm"]:checked')?.value === 'yes';
+      const personalClaimConfirmed = ['yes','maybe'].includes(document.querySelector('input[name="sg-personal-confirm"]:checked')?.value);
       if(!personalClaimConfirmed && sentences.some(x=>sgFirstPersonUnconfirmed(x)))add('Première personne non confirmée (prompt maître §5).');
     }
     if(/ynov|epitech/i.test(display)||(/\binsa\b/i.test(display)&&!/accessibilit|pmr|fauteuil/i.test(display)))add('Contexte Ynov/Epitech/INSA non confirmé (§28-29).');
@@ -4322,7 +4334,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const brief=['Tu es le moteur éditorial des publications LinkedIn de Simon, lycéen débutant en cybersécurité. Français naturel, simple, pédagogique ; jamais expert, commercial ni sensationnaliste.',
       'PRIORITÉS : 1 vérité éditoriale ; 2 niveau réel débutant ; 3 voix personnelle quand elle est justifiée ; 4 exactitude ; 5 diversité des angles ; 6 anti-redondance avec les 7 derniers posts ; 7 variété du vocabulaire. Ne jamais inventer une expérience, une émotion, un cours, un professeur, un stage ou une situation vécue.',
       'EXPÉRIENCE PERSONNELLE : elle est encouragée lorsqu’elle repose sur un élément explicitement confirmé du profil de Simon (JavaScript/Python/HTML, Arduino débutant, CyberQuest développé avec l’aide de l’IA, accessibilité PMR, ou Root-Me lorsque la valeur réelle est fournie). La première personne est alors autorisée. En revanche, ne jamais transformer en expérience personnelle Linux/terminal/Kali, TryHackMe, PortSwigger, CTF, pentest, audit, SIEM, OSINT, bug bounty ou pratique professionnelle non confirmée.',
-      'REFORMULATION D’EXPÉRIENCE : si le champ Contexte / angle décrit une expérience de Simon, reformule fidèlement les faits fournis (action, cadre, apprentissage) sans ajouter de détail. Si le vécu est seulement possible, ne l’écris pas comme un fait établi : formule une version à confirmer ou reste général jusqu’à validation humaine.',
+      'REFORMULATION D’EXPÉRIENCE : si le champ Contexte / angle décrit une expérience de Simon, reformule fidèlement les faits fournis (action, cadre, apprentissage) sans ajouter de détail. Si le vécu est seulement possible, l’utilisateur peut le valider (statut « Possible ») : le post en « je » reste alors publiable ; « Non » l’exclut.',
       'FORMULATION PERSONNELLE (PROMPT 5) : distinguer une opinion ou réflexion (« je pense », « je trouve », « je me demande », « je cherche à comprendre ») d’une affirmation d’expérience. Une opinion n’exige pas de preuve de vécu. Une action réellement attribuée à Simon (« j’ai développé », « j’ai testé », « j’ai réalisé », « j’ai participé ») doit reposer sur un fait confirmé. Les projets/expériences explicitement confirmés peuvent être racontés à la première personne. Ne jamais ajouter une pratique non confirmée pour rendre le post plus humain.',
       'ACCROCHE : différente des 7 derniers posts ; elle peut être personnelle si elle repose sur un fait confirmé, sinon utiliser constat, contraste, conséquence, détail concret ou phrase courte.',
       'CONCLUSION : factuelle (constat, conséquence, précision, ouverture), jamais de bilan personnel artificiel (« Ce que je retiens », « Cela montre que », « À retenir », « Je garderai une fiche »). Une variante de vocabulaire d’une structure récente reste une redondance.',
@@ -4334,7 +4346,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const SG_FALLBACK_FACTS={
     'Modèle OSI':'Le modèle OSI organise les communications réseau en sept couches, ce qui aide à situer le rôle de différents mécanismes.',
     'Adresse IP':'Une adresse IP sert à identifier une interface sur un réseau et permet aux équipements de savoir à quelle destination envoyer des données.',
-    'IPv4':'IPv4 utilise des adresses de 32 bits, généralement écrites sous la forme de quatre nombres séparés par des points.',
+    'IPv4':'IPv4 est la version du protocole IP la plus répandue : ses adresses s’écrivent généralement sous la forme de quatre nombres séparés par des points.',
     'Masque de sous-réseau':'Le masque de sous-réseau aide à distinguer la partie réseau et la partie hôte d’une adresse IPv4.',
     'Passerelle':'La passerelle permet à un équipement d’atteindre des réseaux qui ne sont pas directement accessibles sur son réseau local.',
     'DNS':'Le DNS associe notamment des noms de domaine à des adresses IP, afin que les utilisateurs n’aient pas à retenir les adresses numériques.',
@@ -4378,7 +4390,17 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     'SIEM':'Un SIEM centralise et corrèle notamment des événements issus de plusieurs sources afin de faciliter leur analyse.',
     'SOC':'Un SOC regroupe des activités de surveillance et d’analyse de la sécurité des systèmes d’information.',
     'Zero-day':'Une vulnérabilité zero-day est une vulnérabilité pour laquelle il existe une période où les défenses et les corrections disponibles peuvent être limitées.',
-    'Pentest':'Un pentest est une démarche autorisée qui cherche à évaluer la sécurité d’un système dans un périmètre défini.'
+    'Pentest':'Un pentest est une démarche autorisée qui cherche à évaluer la sécurité d’un système dans un périmètre défini.',
+    'NAT':'Le NAT permet à plusieurs appareils d’un réseau local, qui ont des adresses privées, d’accéder à Internet en partageant une même adresse publique.',
+    'SSH':'SSH est un protocole qui permet de se connecter à distance à un ordinateur, avec des échanges chiffrés pour limiter le risque d’être lus en route.',
+    'Active Directory':'Active Directory est l’annuaire de Microsoft : il centralise les comptes des utilisateurs, leurs groupes et leurs droits d’accès au sein d’une organisation.',
+    'Virtualisation':'La virtualisation permet de faire tourner plusieurs ordinateurs virtuels sur une seule machine physique, chacun restant séparé des autres.',
+    'Supervision':'La supervision consiste à surveiller l’état des équipements et des services d’un réseau pour repérer rapidement une panne ou un comportement anormal.',
+    'Analyse de trames':'Un analyseur de trames, comme Wireshark, permet de voir les données qui circulent sur un réseau, par exemple pour comprendre un échange ou chercher l’origine d’une panne.',
+    'Proxy':'Un proxy est un serveur placé entre un utilisateur et Internet : il transmet les demandes et peut aussi les filtrer ou garder certaines pages en mémoire.',
+    'Antivirus et EDR':'Un antivirus repère des logiciels malveillants déjà connus ; un EDR, outil qui surveille les postes de travail, observe en plus leur comportement pour repérer ce qui paraît suspect.',
+    'Gestion des incidents':'La gestion des incidents de sécurité consiste à repérer un problème, comprendre ce qui s’est passé, limiter les dégâts, puis rétablir un fonctionnement normal.',
+    'Scripts Bash et PowerShell':'Un script est une suite de commandes enregistrées dans un fichier pour automatiser une tâche ; Bash est très utilisé sous Linux et PowerShell sous Windows.'
   };
   const SG_FB_MEM={};let SG_FB_PEND=[];
   // Anti-répétition des posts de repli (mémoire de session, non persistée) : une tournure n'est rejouée
@@ -4657,7 +4679,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   // la validation ET les choix d'expérience personnelle sont remis à zéro ; sinon l'interface est simplement redessinée.
   function sgRestoreQueueReview(){
     if(acc!=='simon'||!lastPost||!Q.includes(lastPost)||!lastPost.reviewedHash||!window.sgQueueReviewed(lastPost))return false;
-    if(lastPost.reviewedPersonal==='yes'){const r=document.getElementById('sg-personal-yes');if(r)r.checked=true;}
+    if(lastPost.reviewedPersonal==='yes'||lastPost.reviewedPersonal==='maybe'){const r=document.getElementById(lastPost.reviewedPersonal==='yes'?'sg-personal-yes':'sg-personal-maybe');if(r)r.checked=true;}
     sgSetGate(true);return true;
   }
   function sgSyncGate(){
@@ -4681,10 +4703,23 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     return /\b(?:j['’]ai|je|mon|ma|mes|nous avons|j['’]ai pu|j['’]ai appris|j['’]ai créé|j['’]ai conçu|j['’]ai réalisé|j['’]ai fabriqué|j['’]ai développé|j['’]ai participé|lors de mon|pendant mon|dans mon)\b/i.test(t)
       && /\b(?:projet|créé|conçu|réalisé|fabriqué|développé|programmé|arduino|stage|fauteuil|pmr|accessibilité|impression 3d|porte[- ]clé|poubelle|cyberquest|expérience|prototype|atelier|robot|personnel|personnelle|appris|découvert|testé|construit|fabriqué)\b/i.test(t);
   }
+  // fix10 : un post perso à thème « expérience possible » en « je » demande TOUJOURS le statut Oui / Possible / Non, même si la détection par mots-clés ne le repère pas.
+  function sgPersonalClaim(text){return sgHasPersonalExperienceClaim(text)||(!!lastPost&&SG_POSSIBLE_TOPICS.has(lastPost.topic)&&/(?:^|[^\p{L}])(?:je|j['’]ai)(?![\p{L}])/iu.test(String(text||'')));}
   function sgResetPersonalConfirmation(){
     document.querySelectorAll('input[name="sg-personal-confirm"]').forEach(el=>{el.checked=false;});
     const feedback=document.getElementById('sg-personal-feedback');
-    if(feedback){feedback.textContent='Le texte a changé : vérifie à nouveau si l’expérience est confirmée, possible à confirmer ou non.';feedback.style.color='var(--muted)';}
+    if(feedback){feedback.textContent='Le texte a changé : vérifie à nouveau si l’expérience est confirmée, possible ou non.';feedback.style.color='var(--muted)';}
+  }
+  // CORRECTIF relecture d'un post de la FILE : il est relu avec SES propres paramètres (type, thème, structure, forme),
+  // jamais avec ceux du dernier aperçu du générateur (sgLastMeta) ni avec le thème choisi dans la liste.
+  // Avant, un post d'expérience (type « projet ») ou d'un autre thème que l'aperçu précédent était validé comme un post
+  // « technique » d'un autre thème : faux « Première personne non confirmée » / « Accroche sans lien », « Relu et validé »
+  // impossible, copie et publication bloquées. Hors file (aperçu du générateur), le comportement reste inchangé.
+  function sgMetaForCurrent(fallback){
+    if(lastPost&&lastPost.account==='simon'&&Q.includes(lastPost)&&(lastPost.type==='original'||lastPost.type==='projet')){
+      return {type:sgIsPersonalPost(lastPost)?'projet':'technique',theme:lastPost.topic||lastPost.theme||topic,structure:lastPost.structure||'',form:lastPost.form||'',family:lastPost.sgFamily||''};
+    }
+    return sgLastMeta||fallback;
   }
   function sgHumanReview(){
     try{sgSyncGate();sgHumanReviewCore();}
@@ -4699,7 +4734,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(sgGate.reviewed){toast('Relecture déjà validée. Modifie le texte pour réactiver le bouton.','in');return;}
     if(acc!=='simon'){toast('La relecture verrouillée concerne le compte Simon.','in');return;}
     const text=(document.getElementById('po')?.innerText||'').trim();if(!text){toast('Aucun texte à relire.','er');return;}
-    const meta=sgLastMeta||{type:'technique',theme:topic};
+    const meta=sgMetaForCurrent({type:'technique',theme:topic});
     const expected=sgTags(meta.theme||topic,text);
     // Les hashtags sont gérés exclusivement par le code : on retire toute
     // version affichée puis on pose la liste canonique attendue. Cela évite
@@ -4709,20 +4744,23 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(po){po.innerText=finalText;renderPost(finalText)}
     // Confirmation humaine séparée pour toute expérience personnelle, sans liste fermée de projets.
     // La détection sert uniquement à demander confirmation : elle ne prouve jamais que l'expérience a eu lieu.
-    const personalExperienceClaim = sgHasPersonalExperienceClaim(finalText);
+    const personalExperienceClaim = sgPersonalClaim(finalText);
     const personalChoice=document.querySelector('input[name="sg-personal-confirm"]:checked')?.value||'';
     const personalFeedback=document.getElementById('sg-personal-feedback');
     if(personalExperienceClaim && personalChoice==='no'){
-      if(personalFeedback){personalFeedback.textContent='Confirmation négative : reformule le texte sans attribuer cette expérience à Simon, puis relis-le à nouveau.';personalFeedback.style.color='var(--orange)';}
+      const rej=sgRejectExperience();
+      if(personalFeedback){personalFeedback.textContent='Confirmation négative : reformule le texte sans attribuer cette expérience à Simon, puis relis-le à nouveau.'+(rej?' « '+rej+' » ne sera plus repris dans les posts projet perso suivants (autres compétences) ; la génération continue.':'');personalFeedback.style.color='var(--orange)';}
       toast('Relecture suspendue : l’expérience n’est pas confirmée comme vécue par Simon. Corrige le texte.','er');sgSetGate(false);return;
     }
+    if(personalExperienceClaim && (personalChoice==='yes'||personalChoice==='maybe'))sgRestoreExperience();
+    if(personalExperienceClaim && personalChoice==='yes' && lastPost && sgIsPersonalPost(lastPost) && lastPost.sgSrc!=='personnel-contexte' && sgRecordValidated(lastPost.topic,lastPost.topic,lastPost.text,'post'))sgRenderAvoidedExp();
     if(personalExperienceClaim && !personalChoice){
-      if(personalFeedback){personalFeedback.textContent='Choisis un statut : confirmée, possible à confirmer, ou non.';personalFeedback.style.color='var(--orange)';}
+      if(personalFeedback){personalFeedback.textContent='Choisis un statut : confirmée, possible, ou non.';personalFeedback.style.color='var(--orange)';}
       toast('Indique le statut de l’expérience personnelle avant de valider la relecture.','er');sgSetGate(false);return;
     }
     if(personalFeedback){
-      personalFeedback.textContent=!personalExperienceClaim?'Aucune expérience personnelle détectée : confirmation non nécessaire.':personalChoice==='yes'?'✓ Expérience confirmée. La relecture peut continuer.':'⚠️ Expérience possible mais non vérifiée : la relecture peut être enregistrée, mais copie/publication/programmation resteront bloquées tant que ce fait n’est pas confirmé ou reformulé sans l’attribuer à Simon.';
-      personalFeedback.style.color=personalExperienceClaim&&personalChoice!=='yes'?'var(--orange)':'var(--green)';
+      personalFeedback.textContent=!personalExperienceClaim?'Aucune expérience personnelle détectée : confirmation non nécessaire.':personalChoice==='yes'?'✓ Expérience confirmée. La relecture peut continuer.':'✓ Expérience possible validée : la relecture est enregistrée et le post reste publiable.';
+      personalFeedback.style.color='var(--green)';
     }
     const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true});
     const similarityOnlyPersonal = sgHasConfirmedPersonalContext(finalText) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
@@ -4730,8 +4768,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     sgSetGate(true);
     if(lastPost&&Q.includes(lastPost)){
       if(sgRvNorm(finalText)!==sgRvNorm(lastPost.text))lastPost.text=finalText;
-      if(!similarityOnlyPersonal&&(!personalExperienceClaim||personalChoice==='yes')){
-        lastPost.reviewedHash=sgRvHash(lastPost.text);lastPost.reviewedAt=Date.now();lastPost.reviewedPersonal=personalExperienceClaim?'yes':'';
+      if(!similarityOnlyPersonal&&(!personalExperienceClaim||personalChoice==='yes'||personalChoice==='maybe')){
+        lastPost.reviewedHash=sgRvHash(lastPost.text);lastPost.reviewedAt=Date.now();lastPost.reviewedPersonal=personalExperienceClaim?personalChoice:'';
       }else{delete lastPost.reviewedHash;delete lastPost.reviewedAt;delete lastPost.reviewedPersonal;}
       saveAll();renderQ();
     }
@@ -4743,16 +4781,16 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(acc!=='simon')return true;
     sgSyncGate();
     const po=document.getElementById('po');let text=(po?.innerText||'').trim();if(!text){toast('Génère d’abord un post','er');return false;}
-    const meta=sgLastMeta||{type:'technique',theme:topic,structure:'',form:''};
+    const meta=sgMetaForCurrent({type:'technique',theme:topic,structure:'',form:''});
     let display=text.replaceAll(SG_TOKEN,sgProgress());
     const releaseExpected=sgTags(meta.theme||topic,text);
     const releaseBody=display.replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
     display=(releaseBody+'\n\n'+releaseExpected.join(' ')).trim();
     if(po&&po.innerText!==display){po.innerText=display;renderPost(display);}
     const personalChoice=document.querySelector('input[name="sg-personal-confirm"]:checked')?.value||'';
-    if(sgHasPersonalExperienceClaim(display) && personalChoice!=='yes'){
+    if(sgPersonalClaim(display) && personalChoice!=='yes' && personalChoice!=='maybe'){
       sgSetGate(false);
-      toast(personalChoice==='maybe'?'Sortie bloquée : l’expérience est seulement possible. Confirme-la ou reformule le post sans la présenter comme un fait.':'Sortie bloquée : confirme d’abord l’expérience personnelle de Simon.','er');
+      toast('Sortie bloquée : indique d’abord le statut de l’expérience personnelle de Simon (confirmée ou possible).','er');
       return false;
     }
     const errors=sgValidate(display,{...meta,allowSystemHashtags:true});
@@ -4814,7 +4852,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   /* ═══ CORRECTIF 2026-11-08 — posts « expérience de Simon » du planning automatique ═══
      Cause : le créneau personnel ne disposait que de 2 textes fixes (CyberQuest, accessibilité PMR). Une fois ces 2 corps
      présents dans la file/l'historique, plus aucun post d'expérience n'était généré et le repli technique prenait le relais sans prévenir.
-     Banque élargie : UNIQUEMENT des faits confirmés (CyberQuest avec l'aide de l'IA, projet d'accessibilité PMR avec des enseignants-chercheurs,
+     CORRECTIF fix10 (2026-11-24) : statut « Possible » = validé et publiable pour les posts perso (je) ; thèmes élargis à des expériences POSSIBLES (réseau, comptes, sensibilisation, veille, portfolio), « Non » bloque toujours. Faits confirmés (CyberQuest avec l'aide de l'IA, projet d'accessibilité PMR avec des enseignants-chercheurs,
      notions JavaScript/Python/HTML, Arduino débutant, Root-Me si la valeur réelle est fournie par le code). Aucun détail ajouté. */
   const SG_PERSONAL_BANK=[
     {theme:'CyberQuest',family:'projet personnel',text:'CyberQuest est un projet que j’ai développé avec l’aide de l’intelligence artificielle. Cette expérience me donne un sujet concret pour réfléchir à la place de l’IA dans un projet numérique. Un outil peut aider à avancer, mais il ne remplace pas le besoin de comprendre ce que l’on construit ni de vérifier les résultats proposés. Il reste important de garder un regard critique sur les suggestions obtenues et de faire attention à ce qui est réellement confirmé.\n\nParler d’un projet, ce n’est donc pas seulement présenter son idée : c’est aussi reconnaître la part de l’accompagnement utilisé et les limites de ce qu’on peut affirmer. CyberQuest me permet d’aborder ces questions sans prétendre tout maîtriser.'},
@@ -4831,25 +4869,106 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     {theme:'Arduino',family:'projet personnel',text:'Arduino est une carte électronique programmable souvent utilisée pour apprendre : on écrit un programme, et la carte agit sur le monde réel, par exemple en allumant une LED ou en lisant un capteur.\n\nJe débute avec Arduino. Je n’ai pas un niveau avancé, mais je trouve intéressant de voir un programme avoir un effet physique.\n\nCe lien entre le code et le matériel m’aide à comprendre pourquoi la sécurité concerne aussi les objets connectés : dès qu’un appareil agit dans le monde réel, une erreur peut avoir des conséquences réelles.'},
     {theme:'Arduino',family:'projet personnel',text:'Entre un programme et un objet réel, il y a une différence que l’on peut comprendre avec Arduino : une erreur ne reste pas seulement à l’écran.\n\nJe suis débutant sur Arduino et je découvre cette carte pas à pas. Je ne présente pas cela comme une expertise, seulement comme un point de départ pour comprendre comment le matériel et le code travaillent ensemble.\n\nPour la cybersécurité, c’est une base utile : on protège mieux un système quand on sait de quoi il est composé et comment ses éléments communiquent.'},
     {theme:'Root-Me',family:'projet personnel',text:'Pour structurer mon apprentissage, je suis le parcours « Initiation à la cybersécurité » sur Root-Me. Ma progression actuelle est de {PROGRESSION_ROOT_ME}.\n\nJe la donne pour ce qu’elle est : un repère de débutant, pas un résultat à mettre en avant. Un pourcentage ne dit pas tout de la compréhension réelle d’une notion, et il ne la remplace pas.\n\nUn parcours guidé a un avantage : il évite de se disperser et rappelle que l’on peut progresser par étapes, en commençant par les bases avant les sujets plus avancés.'},
-    {theme:'Root-Me',family:'projet personnel',text:'Quand on débute, savoir par où commencer n’est pas évident. Sur Root-Me, je suis le parcours « Initiation à la cybersécurité » pour avancer étape par étape. Ma progression est actuellement de {PROGRESSION_ROOT_ME}.\n\nJe préfère indiquer ce repère simplement, sans en tirer de conclusion sur mon niveau. Il montre seulement où j’en suis dans un parcours d’initiation, rien de plus.\n\nL’objectif reste d’apprendre les notions de base de façon progressive, et de dire honnêtement ce qui est acquis et ce qui reste à découvrir dans la suite du parcours.'}
+    {theme:'Root-Me',family:'projet personnel',text:'Quand on débute, savoir par où commencer n’est pas évident. Sur Root-Me, je suis le parcours « Initiation à la cybersécurité » pour avancer étape par étape. Ma progression est actuellement de {PROGRESSION_ROOT_ME}.\n\nJe préfère indiquer ce repère simplement, sans en tirer de conclusion sur mon niveau. Il montre seulement où j’en suis dans un parcours d’initiation, rien de plus.\n\nL’objectif reste d’apprendre les notions de base de façon progressive, et de dire honnêtement ce qui est acquis et ce qui reste à découvrir dans la suite du parcours.'},
+    {theme:'Réseau local',family:'projet personnel',text:'Un réseau local, c’est d’abord des appareils qui doivent se reconnaître et se parler. En essayant de relier plusieurs machines entre elles, j’ai commencé à comprendre à quoi servent une adresse IP, un masque et une passerelle. Ces notions paraissent abstraites tant qu’on ne les rencontre pas sur un cas concret.\n\nJe suis débutant sur le sujet : je sais vérifier qu’un appareil répond avec un test de connexion, mais je ne prétends pas maîtriser la configuration d’un réseau complet.\n\nPour la cybersécurité, c’est une base utile : on protège mieux des échanges quand on sait comment ils circulent.'},
+    {theme:'Réseau local',family:'projet personnel',text:'Brancher deux appareils ne suffit pas à les faire communiquer : il faut qu’ils partagent un même réseau et des paramètres cohérents. C’est l’une des premières choses que j’ai comprises en essayant de relier des machines entre elles.\n\nJe reste au niveau débutant : je découvre le vocabulaire (adresse IP, masque, passerelle) et je cherche surtout à comprendre ce que chaque paramètre change quand une connexion échoue.\n\nUn problème de réseau a souvent une cause simple, et il devient plus facile à repérer quand on connaît le rôle de chaque élément de la chaîne.'},
+    {theme:'Sécurité de mes comptes',family:'projet personnel',text:'Protéger ses comptes commence par des gestes simples. J’ai activé la double authentification sur mes comptes et je cherche à utiliser des mots de passe différents pour chaque service.\n\nJe ne présente pas cela comme une compétence, seulement comme une habitude de base que je mets en place pas à pas. Je reste débutant en cybersécurité, mais ces réflexes concrets m’aident à comprendre pourquoi ils sont recommandés.\n\nUn mot de passe réutilisé partout transforme une seule fuite de données en risque pour tous les comptes d’une même personne.'},
+    {theme:'Sécurité de mes comptes',family:'projet personnel',text:'Un mot de passe solide ne sert à rien s’il est réutilisé sur plusieurs services. C’est l’une des idées que j’applique à mes propres comptes, en m’appuyant sur un gestionnaire de mots de passe.\n\nJe suis débutant et je ne cherche pas à donner des leçons : j’essaie surtout de comprendre ce que ces outils protègent réellement, et dans quels cas ils ne suffisent pas.\n\nLa double authentification ajoute une étape de vérification, utile quand un mot de passe a déjà été exposé lors d’une fuite de données.'},
+    {theme:'Sensibilisation de l’entourage',family:'projet personnel',text:'Un message de phishing réussit surtout quand il paraît normal. J’ai essayé d’expliquer à un proche comment repérer les signes d’un message suspect : expéditeur inhabituel, lien douteux, demande pressante.\n\nJe suis débutant et je n’ai pas de réponse à tout. Expliquer simplement m’oblige pourtant à vérifier que j’ai bien compris ce que je dis, et à reconnaître ce que je ne sais pas encore.\n\nEn cybersécurité, la sensibilisation des utilisateurs compte autant que les outils : la meilleure protection technique peut être contournée par un simple clic.'},
+    {theme:'Sensibilisation de l’entourage',family:'projet personnel',text:'Parler de cybersécurité autour de soi n’est pas toujours simple. J’ai essayé d’expliquer à des proches l’intérêt de ne pas cliquer sur un lien reçu sans l’avoir vérifié.\n\nJe suis débutant, donc je m’en tiens à des conseils de base et je préfère dire quand je ne suis pas sûr de la réponse. Cet exercice m’aide à reformuler les notions avec mes propres mots.\n\nUne règle simple et répétée a souvent plus d’effet qu’une longue explication technique, surtout pour les personnes qui n’utilisent pas l’informatique au quotidien.'},
+    {theme:'Veille cybersécurité',family:'projet personnel',text:'Suivre l’actualité de la cybersécurité demande un peu de méthode. Je lis des articles de sensibilisation publiés par des sources publiques et je note les termes que je ne comprends pas encore.\n\nJe suis débutant : cette veille me sert à repérer les sujets qui reviennent, comme le phishing ou les fuites de données, avant de les approfondir un par un.\n\nUne information de sécurité n’a de valeur que si sa source est fiable. Vérifier d’où vient un article fait partie de la démarche, au même titre que le lire.'},
+    {theme:'Veille cybersécurité',family:'projet personnel',text:'Un terme de cybersécurité entendu une fois ne reste pas toujours en mémoire. Pour apprendre, je garde une liste des notions rencontrées dans mes lectures et je cherche leur définition avant de passer à la suite.\n\nJe suis débutant, et cette liste est un simple point de repère. Elle m’aide à distinguer les notions que je sais expliquer de celles qui restent floues.\n\nSavoir reformuler une notion sans la recopier est un bon test : si l’explication reste floue, c’est que la notion n’est pas encore acquise.'},
+    {theme:'Portfolio en ligne',family:'projet personnel',text:'Présenter son parcours sur un site web oblige à choisir ce que l’on peut réellement affirmer. J’ai construit un portfolio en ligne avec des notions de HTML et de CSS pour présenter mes projets de débutant.\n\nJe veux qu’il reste fidèle à mon niveau : pas de compétence annoncée sans pouvoir l’expliquer, pas de projet présenté comme plus avancé qu’il ne l’est.\n\nUn portfolio honnête est plus utile qu’un portfolio impressionnant : il donne à un lecteur une idée juste de ce que la personne sait faire aujourd’hui.'},
+    {theme:'Portfolio en ligne',family:'projet personnel',text:'Un portfolio ne se résume pas à une page de présentation : c’est aussi un exercice de rédaction. J’ai créé le mien avec des notions de HTML pour rassembler mes projets au même endroit.\n\nJe suis débutant et je le fais évoluer à mesure que j’apprends. Chaque ajout me pousse à vérifier que ce que j’écris correspond à ce que j’ai vraiment réalisé.\n\nUne page personnelle expose aussi des informations : choisir ce que l’on publie, et ce que l’on garde pour soi, fait partie des réflexes de base en cybersécurité.'}
   ];
   const sgIsPersonalPost=p=>!!p&&p.account==='simon'&&(String(p.sgSrc||'').startsWith('personnel')||p.type==='projet'||SG_PROJECT_TOPICS.has(p.topic)||p.topic==='Expérience personnelle de Simon');
   // Corps comparé sans la valeur de progression (elle change avec le temps) pour que deux versions du même texte Root-Me restent des doublons.
   const sgPersBodyKey=t=>sgNorm(sgNoHashtags(String(t||''))).replace(/\d+(?:[.,]\d+)?\s*%/g,'#');
   let sgPersWarnAt=0;
+  const SG_PERSO_LABEL='🧩 Projet perso';
+  // Phrases neutres (aucun fait ajouté) qui complètent un contexte court pour atteindre 80–150 mots.
+  const SG_CTX_CLOSERS=[
+    'Je préfère m’en tenir à ce que cette expérience permet réellement d’affirmer, sans lui ajouter des étapes, des résultats ou des compétences qui ne sont pas décrits.',
+    'Je suis débutant et je le dis simplement : cette expérience est un point de départ pour apprendre, pas une démonstration de maîtrise.',
+    'Ce qui m’intéresse, c’est de comprendre ce que je fais avant de l’affirmer, et de rester honnête sur ce qui est acquis ou non.',
+    'En cybersécurité, savoir expliquer simplement ce que l’on a réellement fait compte autant que le résultat lui-même.'
+  ];
+  let sgCtxWarnAt=0;
+  function sgCtxNotice(msg,loud){
+    const fb=document.getElementById('sg-context-feedback');
+    if(fb){fb.textContent='⚠️ '+msg;fb.style.color='var(--orange)';}
+    if(loud&&Date.now()-sgCtxWarnAt>30000){sgCtxWarnAt=Date.now();toast('⚠️ '+msg,'er');}
+  }
+  function sgCtxUsed(){
+    const fb=document.getElementById('sg-context-feedback');
+    if(fb){fb.textContent='✓ Contexte utilisé dans le post « projet perso » du planning (1 sur 7), une seule fois. '+(document.querySelector('input[name="sg-context-confirm"]:checked')?.value==='yes'?'Mémorisé dans la ligne éditoriale (statut « Oui »).':'Non mémorisé dans la ligne éditoriale (statut « Possible »).')+' Saisis une autre expérience pour le prochain.';sgRenderAvoidedExp();fb.style.color='var(--green)';}
+  }
+  function sgContextCandidate(contextText,extraAvoid=[]){
+    const meta={type:'projet',theme:'Expérience personnelle de Simon',structure:'Observation',form:'constat'};
+    const core=contextText.replace(/\s+/g,' ').replace(/[.!?]+$/,'');
+    const head=`Dans mon parcours, une expérience concrète est la suivante : ${core}.`;
+    // Court : phrases neutres ajoutées jusqu’à 80 mots. Long : on les retire. Le texte fourni n’est jamais modifié.
+    const tries=SG_CTX_CLOSERS.map((_,k)=>head+'\n\n'+SG_CTX_CLOSERS.slice(0,k+1).join(' '));tries.push(head);
+    const body=tries.find(t=>{const n=sgCountWords(t);return n>=80&&n<=150;});
+    if(!body)return {notice:`Contexte confirmé trop long (${sgCountWords(core)} mots) : raccourcis-le à 140 mots maximum pour qu’il alimente le post projet perso.`,loud:true};
+    const errors=sgValidate(body,meta);
+    if(errors.length)return {notice:`Contexte confirmé non utilisé : ${errors[0]}`,loud:true};
+    const keyOf=x=>sgPersBodyKey(typeof x==='string'?x:x?.text||'');
+    const used=new Set([...Q,...H,...RJ,...W].filter(x=>x.account==='simon').flatMap(x=>[x.text,x.originalText]).filter(Boolean).map(keyOf));
+    extraAvoid.forEach(x=>used.add(keyOf(x)));
+    if(used.has(keyOf(body)))return {notice:'Contexte confirmé déjà utilisé dans un post : saisis une autre expérience (ou modifie-le) pour en refaire un.',loud:false};
+    return {cand:{theme:meta.theme,family:'projet personnel',text:body,...meta,src:'personnel-contexte'}};
+  }
+  // Contrôle de conformité des posts projet perso : « Non » = cette expérience n'est pas la sienne.
+  // Le thème ET les compétences citées (HTML, Python, Arduino…) sont écartés des posts projet perso suivants :
+  // les autres compétences prennent le relais, la ligne éditoriale est mise à jour et la génération n'est jamais bloquée.
+  const SG_SKILLS=[['HTML',/\bhtml\b/i],['CSS',/\bcss\b/i],['JavaScript',/\bjavascript\b/i],['Python',/\bpython\b/i],['Arduino',/\barduino\b/i],['Root-Me',/root-?me/i],['CyberQuest',/cyberquest/i],['Accessibilité',/accessibilit/i]];
+  const sgSkillsOf=t=>SG_SKILLS.filter(s=>s[1].test(String(t||''))).map(s=>s[0]);
+  function sgConformRules(){generationRules=generationRules||defaultGenerationRules();['avoidedExperienceThemes','avoidedSkills','validatedExperiences'].forEach(k=>{if(!Array.isArray(generationRules[k]))generationRules[k]=[];});return generationRules;}
+  function sgRejectExperience(){
+    const p=lastPost;
+    if(!p||p.account!=='simon'||!sgIsPersonalPost(p))return '';
+    p.expRejected=true;
+    const th=p.topic||'';
+    const known=!!th&&SG_PERSONAL_BANK.some(c=>c.theme===th);
+    const r=sgConformRules();
+    if(known&&!r.avoidedExperienceThemes.includes(th))r.avoidedExperienceThemes.push(th);
+    sgSkillsOf(p.text).forEach(s=>{if(!r.avoidedSkills.includes(s))r.avoidedSkills.push(s);});
+    saveAll();sgRenderAvoidedExp();
+    return known?th:'';
+  }
+  function sgRestoreExperience(){
+    const p=lastPost;if(!p||p.account!=='simon')return;
+    delete p.expRejected;
+    const r=sgConformRules(),n=r.avoidedExperienceThemes.length+r.avoidedSkills.length,sk=sgSkillsOf(p.text);
+    r.avoidedExperienceThemes=r.avoidedExperienceThemes.filter(x=>x!==p.topic);
+    r.avoidedSkills=r.avoidedSkills.filter(s=>!sk.includes(s));
+    if(r.avoidedExperienceThemes.length+r.avoidedSkills.length!==n){saveAll();sgRenderAvoidedExp();}
+  }
+  function sgRecordValidated(label,theme,text,source){
+    const r=sgConformRules(),key=String(label||theme||'').replace(/\s+/g,' ').trim().slice(0,80);
+    if(!key||r.validatedExperiences.some(v=>v.label===key&&v.theme===theme))return false;
+    r.validatedExperiences.push({label:key,theme:theme||'',skills:sgSkillsOf(text),source,at:Date.now()});
+    return true;
+  }
+  function sgRenderAvoidedExp(){
+    const el=document.getElementById('sg-avoided-exp');if(!el)return;
+    const r=generationRules||{},esc=x=>String(x).replace(/[<>&]/g,'');
+    const av=[...new Set([...(r.avoidedExperienceThemes||[]),...(r.avoidedSkills||[])])],va=(r.validatedExperiences||[]).map(v=>v.label.length>40?v.label.slice(0,40)+'…':v.label);
+    if(!av.length&&!va.length){el.innerHTML='';return;}
+    el.innerHTML=(va.length?'Expériences validées (« Oui ») : <b>'+va.map(esc).join(' · ')+'</b> — <a href="#" id="sg-validated-reset" style="color:var(--cyan)">vider</a>':'')+(va.length&&av.length?'<br>':'')+(av.length?'Compétences écartées (« Non ») : <b>'+av.map(esc).join(' · ')+'</b> — <a href="#" id="sg-avoided-reset" style="color:var(--cyan)">tout réactiver</a>':'');
+    const a=document.getElementById('sg-avoided-reset'),v=document.getElementById('sg-validated-reset');
+    if(a)a.onclick=e=>{e.preventDefault();generationRules.avoidedExperienceThemes=[];generationRules.avoidedSkills=[];saveAll();sgRenderAvoidedExp();toast('Compétences réactivées pour les posts projet perso.','ok');};
+    if(v)v.onclick=e=>{e.preventDefault();generationRules.validatedExperiences=[];saveAll();sgRenderAvoidedExp();toast('Expériences validées retirées de la ligne éditoriale.','ok');};
+  }
   function sgBuildPersonalCandidate(extraAvoid=[]){
-    // Le contexte libre ne nourrit le planning automatique que s'il a été explicitement confirmé.
-    // Le texte fourni est repris sans inventer d'action, de résultat ou d'apprentissage absent du brief.
-    const confirmedContext=document.querySelector('input[name="sg-context-confirm"]:checked')?.value==='yes';
+    // Le contexte libre ne nourrit le planning automatique que s'il a été explicitement confirmé, et une seule fois.
+    const confirmedContext=['yes','maybe'].includes(document.querySelector('input[name="sg-context-confirm"]:checked')?.value);
     const contextText=(document.getElementById('ctx-inp')?.value||'').trim();
     if(confirmedContext && contextText.length>=12){
-      const contextBody=`Dans mon parcours, une expérience concrète est la suivante : ${contextText.replace(/[\s]+/g,' ').replace(/[.!?]+$/,'')}.
-
-Je préfère m’en tenir à ce que cette expérience permet réellement d’affirmer, sans lui ajouter des étapes, des résultats ou des compétences qui ne sont pas décrits.`;
-      const meta={type:'projet',theme:'Expérience personnelle de Simon',structure:'Observation',form:'constat'};
-      const errors=sgValidate(contextBody,meta);
-      if(!errors.length && !extraAvoid.some(x=>sgNorm(sgNoHashtags(typeof x==='string'?x:x?.text||''))===sgNorm(contextBody)))
-        return {theme:meta.theme,family:'projet personnel',text:contextBody,...meta,src:'personnel-contexte'};
+      const r=sgContextCandidate(contextText,extraAvoid);
+      if(r.cand)return r.cand;
+      if(r.notice)sgCtxNotice(r.notice,r.loud);
     }
     // Faits confirmés uniquement (voir SG_PERSONAL_BANK). Déduplication sur le corps complet : file, historique, rejets, archives et textes écartés.
     const usedBodies=new Set([
@@ -4858,8 +4977,18 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     ].map(x=>sgPersBodyKey(typeof x==='string'?x:x?.text||'')));
     // Variété : on évite de reprendre l’expérience (thème) des 2 derniers posts personnels tant qu’une autre est disponible.
     const recentThemes=new Set([...H.filter(x=>x.account==='simon').slice(0,6).reverse(),...Q.filter(x=>x.account==='simon').sort((a,b)=>a.scheduledAt-b.scheduledAt)].filter(sgIsPersonalPost).slice(-2).map(x=>x.topic));
-    const avail=SG_PERSONAL_BANK.filter(c=>!usedBodies.has(sgPersBodyKey(c.text)));
-    const pool=(avail.filter(c=>!recentThemes.has(c.theme)).length?avail.filter(c=>!recentThemes.has(c.theme)):avail).sort(()=>Math.random()-.5);
+    // CORRECTIF : la clé d'un texte de la banque se calcule APRÈS remplacement du jeton Root-Me par la valeur réelle.
+    // Avant, la clé gardait le littéral {PROGRESSION_ROOT_ME} alors que les textes déjà publiés / mis de côté / en file
+    // contiennent un pourcentage : les 2 textes Root-Me n'étaient jamais reconnus comme utilisés. Banque épuisée, le planning
+    // retombait sur un Root-Me refusé comme doublon au dernier verrou → génération bloquée (file incomplète) au lieu de
+    // passer aux posts techniques avec l'avertissement « Plus aucun texte d'expérience confirmée disponible ».
+    const avoidedTh=new Set((generationRules&&generationRules.avoidedExperienceThemes)||[]);
+    const avoidedSk=(generationRules&&generationRules.avoidedSkills)||[];
+    const avail=SG_PERSONAL_BANK.filter(c=>!avoidedTh.has(c.theme)&&!sgSkillsOf(c.text).some(s=>avoidedSk.includes(s))&&!usedBodies.has(sgPersBodyKey(c.text.replaceAll(SG_TOKEN,sgProgress()))));
+    const pool0=(avail.filter(c=>!recentThemes.has(c.theme)).length?avail.filter(c=>!recentThemes.has(c.theme)):avail).sort(()=>Math.random()-.5);
+    const vx=(generationRules&&generationRules.validatedExperiences)||[],vSk=new Set(vx.flatMap(v=>v.skills||[])),vTh=new Set(vx.map(v=>v.theme));
+    const isVal=c=>vTh.has(c.theme)||sgSkillsOf(c.text).some(s=>vSk.has(s));
+    const pool=vx.length&&Math.random()<.5?[...pool0.filter(isVal),...pool0.filter(c=>!isVal(c))]:pool0;
     for(const c of pool){
       const meta={type:'projet',theme:c.theme,structure:'Observation',form:'constat'};
       const text=c.text.replaceAll(SG_TOKEN,sgProgress()); // la valeur Root-Me réelle est posée par le code
@@ -4875,12 +5004,14 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     const mine=Q.filter(q=>q.account==='simon');
     // Un post d'expérience par fenêtre de 7 : dû si aucun des 6 derniers posts (historique récent + file, dans l'ordre) n'en est un.
     const seq=[...H.filter(x=>x.account==='simon').slice(0,6).reverse(),...mine.slice().sort((a,b)=>a.scheduledAt-b.scheduledAt)];
-    const personalDue=seq.length>=3&&!seq.slice(-6).some(sgIsPersonalPost);
+    const personalDue=seq.length>=3&&!seq.slice(-6).some(x=>sgIsPersonalPost(x)&&!x.expRejected);
     if(personalDue){
       const skip=[...extraAvoid];
       for(let k=0;k<6&&!(prepared&&prepared.ok);k++){
         result=sgBuildPersonalCandidate(skip);if(!result)break;
         prepared=prepare_post(result.text,{type:result.type,theme:result.theme,structure:result.structure,form:result.form});
+        // Un contexte confirmé ne doit pas être abandonné à cause d'un tirage de hashtags refusé : même texte, nouveaux hashtags.
+        for(let r=0;r<8&&result.src==='personnel-contexte'&&!(prepared&&prepared.ok);r++)prepared=prepare_post(result.text,{type:result.type,theme:result.theme,structure:result.structure,form:result.form});
         if(!(prepared&&prepared.ok))skip.push(result.text);
       }
       if(!(prepared&&prepared.ok)){
@@ -4895,7 +5026,7 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     if(!result||!prepared?.ok)return {post:null,wasDup:false};
     // Dernier verrou avant insertion : aucune génération personnelle identique à un corps déjà connu.
     const candidateBody=sgNorm(sgNoHashtags(prepared.full));
-    const duplicatePersonal=result.src==='personnel' && [
+    const duplicatePersonal=String(result.src||'').startsWith('personnel') && [
       ...Q.filter(x=>x.account==='simon').map(x=>x.text||''),
       ...H.filter(x=>x.account==='simon').map(x=>x.text||''),
       ...RJ.filter(x=>x.account==='simon').map(x=>x.text||''),
@@ -4904,9 +5035,14 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     ].some(t=>sgNorm(sgNoHashtags(t))===candidateBody);
     if(duplicatePersonal)return {post:null,wasDup:true};
     const base=mine.length?Math.max(...mine.map(q=>q.scheduledAt)):Date.now();
-    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:result.type==='projet'?'projet':'original',topic:result.theme,label:TL.original,scheduledAt:base+24*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form,sgSrc:result.src};
+    const post={id:Date.now()+Math.floor(Math.random()*1000),text:prepared.full,type:result.type==='projet'?'projet':'original',topic:result.theme,label:result.type==='projet'?SG_PERSO_LABEL:TL.original,scheduledAt:base+24*3600*1000,account:'simon',originalText:prepared.full,sgFamily:result.family,structure:result.structure,form:result.form,sgSrc:result.src};
     Q.push(post);
     if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;
+    if(result.src==='personnel-contexte'){
+      const cv=document.querySelector('input[name="sg-context-confirm"]:checked')?.value,ct=(document.getElementById('ctx-inp')?.value||'').trim();
+      if(cv==='yes')sgRecordValidated(ct,'Expérience personnelle de Simon',ct,'contexte');
+      sgCtxUsed();
+    }
     return {post,wasDup:false};
   }
   window.genOnePost=sgGenOnePost;
@@ -4980,8 +5116,8 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     const tagSet=(theme)=>sgTagsNoHist(theme).map(x=>x.toLowerCase());
 
     // 1 — Intégrité du catalogue : thèmes, structures, formulations, familles et tags.
-    test('Catalogue : 52 thèmes intégrés (49 + 3 thèmes projet)',()=>SG_THEME_ROWS.length===52);
-    test('Thèmes personnels exclus du générateur technique',()=>SG_PROJECT_TOPICS.size===5&&[...SG_PROJECT_TOPICS].every(t=>SG_THEME.has(t)));
+    test('Catalogue : 67 thèmes intégrés (59 génériques + 8 thèmes projet)',()=>SG_THEME_ROWS.length===67);
+    test('Thèmes personnels exclus du générateur technique',()=>SG_PROJECT_TOPICS.size===10&&[...SG_PROJECT_TOPICS].every(t=>SG_THEME.has(t)));
     test('Catalogue : au moins 10 types d’accroche',()=>SG_FORMS.length>=10);
     test('Brief : familles d’accroche et de conclusion',()=>sgBriefFam('Je découvre le DNS. Texte.').o==='decouverte'&&sgBriefFam('Texte. Ce que je retiens : un point.').c==='bilan'&&sgBriefFam('Le DNS associe des noms. Il sert aussi à autre chose.').o==='autre');
     test('Catalogue : 5 structures',()=>Object.keys(SG_STRUCT).length===5);
@@ -5162,6 +5298,49 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
       sgLastMeta=savedMeta;sgGate=savedGate;sgUiPostKey=savedUiKey;sgPaintGate();resetHistory(oldH||[],oldQ||[]);acc=savedAccLock;topic=savedTopicLock;
     }
 
+    // 12b — Relecture d'un post de la FILE : paramètres propres au post, jamais ceux du dernier aperçu (correctif 2026-11-23).
+    {
+      const po2=document.getElementById('po');
+      const sv={po:po2?.innerText||'',acc,topic,last:lastPost,meta:sgLastMeta,gate:{...sgGate},ui:sgUiPostKey,save:window.saveAll,toast:window.toast};
+      try{
+        window.saveAll=()=>{};window.toast=()=>{}; // aucune écriture ni message réel pendant ces tests
+        const mkQ=(text,meta,type,src)=>withHistory([],[],()=>{const p=prepare_post(text,meta);return p?.ok?{id:987001,text:p.full,type,topic:meta.theme,label:TL.original,scheduledAt:Date.now()+864e5,account:'simon',originalText:p.full,structure:meta.structure,form:meta.form,sgFamily:'projet',sgSrc:src}:null;});
+        const reviewQ=(post,stale)=>withHistory([],[{...post}],()=>{
+          topic='Pentest';sgLastMeta=stale;lastPost=Q.find(x=>x.id===post.id);
+          if(po2)po2.innerText=post.text;sgSetGate(false);sgResetPersonalConfirmation();
+          const m=sgMetaForCurrent({type:'technique',theme:topic});
+          sgHumanReview();
+          return {m,reviewed:Boolean(lastPost.reviewedHash)&&window.sgQueueReviewed(lastPost),release:sgRelease('Copie')};
+        });
+        const code=SG_PERSONAL_BANK.find(c=>c.text.startsWith('Savoir lire un peu de code'))||SG_PERSONAL_BANK.find(c=>c.theme==='Programmation');
+        const persoPost=mkQ(code.text,{type:'projet',theme:code.theme,structure:'Observation',form:'constat'},'projet','personnel');
+        const techPost=mkQ(valid,validMeta,'original','ts');
+        const stale={type:'technique',theme:'Pare-feu',structure:'Découverte',form:'En découvrant'};
+        test('Relecture file : post d’expérience (type projet) relu avec ses propres paramètres, malgré un aperçu antérieur',()=>{const r=reviewQ(persoPost,stale);return r.m.type==='projet'&&r.m.theme===code.theme&&r.reviewed&&r.release===true;});
+        test('Relecture file : post technique relu avec son propre thème (pas celui du dernier aperçu)',()=>{const r=reviewQ(techPost,stale);return r.m.type==='technique'&&r.m.theme==='DNS'&&r.reviewed&&r.release===true;});
+        const possPost=mkQ(SG_PERSONAL_BANK.find(c=>c.theme==='Réseau local').text,{type:'projet',theme:'Réseau local',structure:'Observation',form:'constat'},'projet','personnel');
+        const reviewPerso=(post,val)=>withHistory([],[{...post}],()=>{topic='Pentest';sgLastMeta=stale;lastPost=Q.find(x=>x.id===post.id);if(po2)po2.innerText=post.text;sgSetGate(false);sgResetPersonalConfirmation();const rd=val?document.getElementById('sg-personal-'+val):null;if(rd)rd.checked=true;sgHumanReview();return {reviewed:Boolean(lastPost.reviewedHash)&&window.sgQueueReviewed(lastPost),release:sgRelease('Copie'),perso:lastPost.reviewedPersonal||''};});
+        test('Relecture file : expérience « Possible » (post perso en « je ») — validée et publiable',()=>{if(!possPost)throw new Error('texte « Réseau local » refusé par prepare_post');const r=reviewPerso(possPost,'maybe');return r.reviewed&&r.release===true&&r.perso==='maybe';});
+        test('Relecture file : expérience « Non » ou sans statut — post perso bloqué',()=>{const g0=JSON.stringify(generationRules);try{const a=reviewPerso(possPost,'no'),b=reviewPerso(possPost,'');return !a.reviewed&&a.release===false&&!b.reviewed&&b.release===false;}finally{generationRules=JSON.parse(g0);sgRenderAvoidedExp();}});
+        test('Relecture file : même résultat sans aperçu antérieur (sgLastMeta vide)',()=>{const r=reviewQ(persoPost,null);return r.reviewed&&r.release===true;});
+        test('Relecture hors file : l’aperçu du générateur continue d’utiliser sgLastMeta',()=>withHistory([],[],()=>{lastPost={text:valid,id:555};sgLastMeta=stale;return sgMetaForCurrent({type:'technique',theme:'x'})===stale;}));
+        test('Relecture file : un post « avancé » de la file ne se compte pas lui-même, mais un autre sujet avancé récent reste bloquant',()=>{
+          let adv=null;
+          withHistory([],[],()=>{for(const th of SG_ADVANCED){topic=th;for(let k=0;k<30&&!adv;k++){const r=sgBuildCandidate();if(r&&SG_ADVANCED.has(r.theme)){const p=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form});if(p?.ok)adv={text:p.full,theme:r.theme,structure:r.structure,form:r.form};}}if(adv)break;}});
+          if(!adv)throw new Error('aucun texte « avancé » généré pour le test');
+          const meta={type:'technique',theme:adv.theme,structure:adv.structure,form:adv.form,allowSystemHashtags:true};
+          const seul=withHistory([],[{id:987002,account:'simon',text:adv.text,type:'original',topic:adv.theme,structure:adv.structure,form:adv.form,scheduledAt:Date.now()+864e5}],()=>sgValidate(adv.text,meta).every(e=>!/Sujet avancé/.test(e)));
+          const autre=withHistory([make(adv.theme,{ts:1})],[],()=>sgValidate(adv.text,meta).some(e=>/Sujet avancé/.test(e)));
+          return seul&&autre;
+        });
+      }finally{
+        window.saveAll=sv.save;window.toast=sv.toast;
+        if(po2){po2.innerText=sv.po;renderPost(sv.po)}
+        lastPost=sv.last;sgLastMeta=sv.meta;sgGate=sv.gate;sgUiPostKey=sv.ui;acc=sv.acc;topic=sv.topic;sgPaintGate();
+        try{renderQ()}catch(e){}
+      }
+    }
+
     // V6 — non-régression (§8, §24-25, §26-27, §29)
     test('V6 accents : système, problème, schéma, même ≠ première personne',()=>['Ces systèmes permettent de limiter les risques.','Un problème fréquent concerne les mots de passe.','Un schéma simple aide à comprendre le DNS.','Même un réseau domestique doit être protégé.','Ces ressources, ça évolue.'].every(s=>hookFamily(s)!=='premiere_personne'));
     test('V6 §8 : un « ? » classe l’accroche en F (question)',()=>hookFamily('Imaginons qu’un utilisateur reçoive un message : par où commencer ?')==='question'&&hookFamily('Comment un simple mot de passe peut-il devenir un point faible ?')==='question');
@@ -5189,7 +5368,14 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     e72('V7.2 §16 : « Dans notre réseau, nous avons configuré » refusé',vmid(' Dans notre réseau, nous avons configuré ce service.'),/nous \/ notre/);
     test('V7.2 §6 : « correspond à / consiste à » classés en famille B (accent après « à »)',()=>hookFamily('« DNS » correspond à une notion précise de l’informatique.')==='definition_directe'&&hookFamily('« DNS » consiste à associer un nom à une adresse.')==='definition_directe');
     test('V7.2 §6 : « À l’inverse » classé en contraste',()=>hookFamily('À l’inverse du mot de passe, le second facteur change.')==='contraste');
-    test('V7.2 §13 : au moins 25 conclusions de repli structurellement distinctes',()=>{const s=new Set();for(let i=0;i<600;i++){const S=sgSentences(sgFallbackText('DNS','constat'));s.add(S[S.length-1].replace(/« DNS »/g,'T'))}return s.size>=25});
+    test('V7.2 §13 : au moins 25 conclusions de repli structurellement distinctes',()=>{
+      // Isolé de la mémoire anti-répétition de la session (SG_FB_MEM) : après quelques générations réelles elle ne laisse
+      // volontairement disponible qu'une partie des variantes, ce qui faussait ce comptage (faux échec du RunTest).
+      const savedMem=JSON.parse(JSON.stringify(SG_FB_MEM)),savedPend=SG_FB_PEND;
+      Object.keys(SG_FB_MEM).forEach(k=>delete SG_FB_MEM[k]);
+      try{const s=new Set();for(let i=0;i<600;i++){const S=sgSentences(sgFallbackText('DNS','constat'));s.add(S[S.length-1].replace(/« DNS »/g,'T'))}return s.size>=25}
+      finally{Object.keys(SG_FB_MEM).forEach(k=>delete SG_FB_MEM[k]);Object.assign(SG_FB_MEM,savedMem);SG_FB_PEND=savedPend;}
+    });
     test('V7.2 §13/§14 : conclusions de repli toutes liées au thème',()=>withHistory([],[],()=>['DNS','Pare-feu','RGPD','Linux','SIEM'].every(th=>{for(let k=0;k<80;k++){const e=sgValidate(sgFallbackText(th,SG_FORMS[k%SG_FORMS.length]),{type:'technique',topic:th,structure:'Découverte',form:'x'});if(e.some(x=>/sans lien/.test(x)))return false}return true})));
     e72('V8 §6 : « avec le temps » (durée vague) refusé',vmid(' Les mises à jour deviennent rares avec le temps.'),/Précision/);
     e72('V8 §6 : « au fil des mois » (durée vague) refusé',vmid(' Les réglages évoluent au fil des mois.'),/Précision/);
@@ -5197,10 +5383,38 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     test('V7.2 §10-11 : SOC, Réseaux, Pentest sans corps TS (théorie / repli factuel)',()=>['SOC','Réseaux','Pentest'].every(k=>TS[k].c.length===0));
     test('V7.2 §3 : banque CyberQuest sans bug, score, quiz, prochaine étape ni mini-défi',()=>TS['CyberQuest'].c.length===0&&TS['CyberQuest'].a.every(x=>!/\b(?:bugs?|scores?|quiz|prochaine étape|mini-défi)\b/i.test(x)));
     // ── Posts d'expérience de Simon (correctif 2026-11-08) ──
-    test('Expérience : toute la banque personnelle passe prepare_post (faits confirmés, 80–150 mots)',()=>withHistory([],[],()=>{const bad=SG_PERSONAL_BANK.filter(c=>{const t=c.text.replaceAll(SG_TOKEN,sgProgress());const r=prepare_post(t,{type:'projet',theme:c.theme,structure:'Observation',form:'constat'});return !r?.ok;});if(bad.length)throw new Error(bad.length+' texte(s) refusé(s) : '+bad.slice(0,2).map(b=>b.text.slice(0,40)).join(' | '));return SG_PERSONAL_BANK.length>=12;}));
+    test('Expérience : toute la banque personnelle passe prepare_post (faits confirmés, 80–150 mots)',()=>withHistory([],[],()=>{let why='';const bad=SG_PERSONAL_BANK.filter(c=>{const t=c.text.replaceAll(SG_TOKEN,sgProgress());const r=prepare_post(t,{type:'projet',theme:c.theme,structure:'Observation',form:'constat'});if(!r?.ok)why+=' ## '+c.text.slice(0,40)+' → '+JSON.stringify(r||{}).slice(0,260);return !r?.ok;});if(bad.length)throw new Error(bad.length+' texte(s) refusé(s) : '+why);return SG_PERSONAL_BANK.length>=12;}));
     test('Expérience : le planning automatique de 7 posts contient un post d’expérience',()=>{const oa=acc,ot=stats.simon?.total;acc='simon';try{return withHistory([],[],()=>{for(let i=0;i<7;i++)genOnePost();return Q.filter(q=>q.account==='simon'&&sgIsPersonalPost(q)).length===1;});}finally{acc=oa;if(stats.simon)stats.simon.total=ot;}});
     test('Expérience : 30 publications consécutives — jamais épuisé, cadence 1 sur 7, aucun doublon',()=>{const oa=acc,ot=stats.simon?.total;acc='simon';try{return withHistory([],[],()=>{for(let i=0;i<7;i++)genOnePost();let pers=0;const seen=new Set();for(let i=0;i<30;i++){const q=Q.filter(x=>x.account==='simon').sort((a,b)=>a.scheduledAt-b.scheduledAt)[0];H.unshift({...q,publishedAt:Date.now(),source:'publie',confirmed:true});Q.splice(Q.indexOf(q),1);Q.filter(x=>x.account==='simon').forEach((x,j)=>x.scheduledAt=Date.now()+j*86400000);const r=genOnePost();if(r.post&&sgIsPersonalPost(r.post)){pers++;const k=sgPersBodyKey(r.post.text);if(seen.has(k))throw new Error('doublon d’expérience');seen.add(k);}}return pers>=3&&pers<=6;});}finally{acc=oa;if(stats.simon)stats.simon.total=ot;}});
 
+    // Correctif 2026-11-24 : textes Root-Me déjà utilisés reconnus comme tels ; banque épuisée = repli technique, jamais de blocage.
+    const usedAsHistory=(pred,progUsed)=>SG_PERSONAL_BANK.filter(pred).map((c,i)=>({id:7000+i,account:'simon',type:'projet',topic:c.theme,text:c.text.replaceAll(SG_TOKEN,progUsed),publishedAt:Date.now()-(i+10)*86400000,source:'publie',confirmed:true,sgSrc:'personnel'}));
+    test('Expérience : banque épuisée (Root-Me compris) — le planning de 7 posts se remplit avec des posts techniques, sans blocage',()=>{const oa=acc,ot=stats.simon?.total,st=window.toast;acc='simon';window.toast=()=>{};try{return withHistory(usedAsHistory(()=>true,sgProgress()),[],()=>{let n=0;for(let i=0;i<7;i++){const r=genOnePost();if(r.post)n++;}return n===7&&Q.filter(q=>q.account==='simon'&&sgIsPersonalPost(q)).length===0;});}finally{acc=oa;window.toast=st;if(stats.simon)stats.simon.total=ot;}});
+    test('Expérience : un texte Root-Me déjà utilisé n’est jamais reproposé, même avec une autre valeur de progression',()=>{const oa=acc;acc='simon';try{return withHistory(usedAsHistory(()=>true,'20 %'),[],()=>{for(let i=0;i<40;i++){if(sgBuildPersonalCandidate())return false;}return true;});}finally{acc=oa;}});
+    test('Expérience : un texte Root-Me jamais utilisé reste disponible',()=>{const oa=acc;acc='simon';try{return withHistory(usedAsHistory(c=>c.theme!=='Root-Me',sgProgress()),[],()=>{for(let i=0;i<40;i++){const r=sgBuildPersonalCandidate();if(r&&r.theme==='Root-Me')return true;}return false;});}finally{acc=oa;}});
+    // ── Post « projet perso » 1/7 : contexte confirmé (correctif 2026-11-24) ──
+    const withCtx=(txt,val,fn)=>{const inp=document.getElementById('ctx-inp'),rs=[...document.querySelectorAll('input[name="sg-context-confirm"]')],fb=document.getElementById('sg-context-feedback'),ov=inp?inp.value:'',oc=(rs.find(r=>r.checked)||{}).value,ft=fb?fb.textContent:'',fc=fb?fb.style.color:'',g0=JSON.stringify(generationRules);try{if(inp)inp.value=txt;rs.forEach(r=>{r.checked=(r.value===val);});return fn();}finally{if(inp)inp.value=ov;rs.forEach(r=>{r.checked=(r.value===oc);});if(fb){fb.textContent=ft;fb.style.color=fc;}generationRules=JSON.parse(g0);}};
+    const inSim=fn=>{const oa=acc,ot=stats.simon?.total,st=window.toast;acc='simon';window.toast=()=>{};try{return fn();}finally{acc=oa;window.toast=st;if(stats.simon)stats.simon.total=ot;}};
+    const CTX_C='J’ai monté une petite station météo avec un Arduino et un capteur de température, pour comprendre comment les données remontent.';
+    const CTX_L=CTX_C+' J’ai branché le capteur, écrit un court programme pour lire les valeurs et les afficher, puis comparé les mesures avec un thermomètre classique. Ce que j’en retiens : comprendre comment une donnée remonte du matériel jusqu’au code.';
+    test('Projet perso : contexte confirmé court — repris fidèlement, complété à 80–150 mots, post étiqueté « Projet perso »',()=>inSim(()=>withHistory([],[],()=>withCtx(CTX_C,'yes',()=>{for(let i=0;i<7;i++)genOnePost();const p=Q.filter(q=>q.account==='simon'&&sgIsPersonalPost(q));const n=p[0]?sgCountWords(sgNoHashtags(p[0].text)):0;return p.length===1&&p[0].sgSrc==='personnel-contexte'&&p[0].text.includes('petite station météo')&&n>=80&&n<=150&&p[0].label===SG_PERSO_LABEL;}))));
+    test('Projet perso : contexte confirmé utilisé une seule fois sur 30 publications, cadence 1 sur 7 conservée',()=>inSim(()=>withHistory([],[],()=>withCtx(CTX_L,'yes',()=>{for(let i=0;i<7;i++)genOnePost();let ctx=Q.filter(x=>x.sgSrc==='personnel-contexte').length,pers=Q.filter(x=>x.account==='simon'&&sgIsPersonalPost(x)).length;for(let i=0;i<30;i++){const q=Q.filter(x=>x.account==='simon').sort((a,b)=>a.scheduledAt-b.scheduledAt)[0];H.unshift({...q,publishedAt:Date.now(),source:'publie',confirmed:true});Q.splice(Q.indexOf(q),1);Q.filter(x=>x.account==='simon').forEach((x,j)=>x.scheduledAt=Date.now()+j*86400000);const r=genOnePost();if(r.post&&sgIsPersonalPost(r.post)){pers++;if(r.post.sgSrc==='personnel-contexte')ctx++;}}return ctx===1&&pers>=4&&pers<=5;}))));
+    test('Projet perso : contexte exclu (« Non ») ou absent — ignoré par le planning automatique',()=>inSim(()=>['no',''].every(v=>withHistory([],[],()=>withCtx(CTX_C,v,()=>{for(let i=0;i<7;i++)genOnePost();return Q.filter(q=>q.account==='simon'&&q.sgSrc==='personnel-contexte').length===0&&Q.filter(q=>q.account==='simon'&&sgIsPersonalPost(q)).length===1;})))));
+    test('Projet perso : contexte « possible » validé — alimente le planning automatique comme un contexte confirmé',()=>inSim(()=>withHistory([],[],()=>withCtx(CTX_C,'maybe',()=>{for(let i=0;i<7;i++)genOnePost();const q=Q.filter(x=>x.account==='simon'),p=q.filter(x=>sgIsPersonalPost(x));if(!(p.length===1&&p[0].sgSrc==='personnel-contexte'))throw new Error('posts='+q.length+' perso='+p.length+' src='+p.map(x=>x.sgSrc+'/'+x.topic).join(','));return true;}))));
+    test('Expérience : banque élargie — au moins 10 thèmes d’expériences possibles, tous reconnus comme posts perso',()=>new Set(SG_PERSONAL_BANK.map(c=>c.theme)).size>=10&&SG_PERSONAL_BANK.every(c=>SG_PROJECT_TOPICS.has(c.theme)&&SG_THEME.has(c.theme)));
+    test('Projet perso : contexte confirmé trop long — avertissement, repli sur la banque, planning complet sans blocage',()=>inSim(()=>withHistory([],[],()=>withCtx(Array(11).fill('J’ai monté une petite station météo avec un Arduino et un capteur de température.').join(' '),'yes',()=>{let n=0;for(let i=0;i<7;i++){if(genOnePost().post)n++;}return n===7&&Q.filter(q=>q.account==='simon'&&q.sgSrc==='personnel-contexte').length===0&&Q.filter(q=>q.account==='simon'&&q.sgSrc==='personnel').length===1;}))));
+    // ── Contrôle de conformité des posts projet perso (correctif 2026-11-24) ──
+    const inRules=fn=>{const g0=JSON.stringify(generationRules),sa=window.saveAll,lp=lastPost;window.saveAll=()=>{};try{return fn();}finally{window.saveAll=sa;lastPost=lp;generationRules=JSON.parse(g0);sgRenderAvoidedExp();}};
+    test('Conformité expérience : un « Non » écarte la compétence des posts projet perso suivants, sans bloquer la génération',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{for(let i=0;i<7;i++)genOnePost();const p=Q.find(q=>q.account==='simon'&&sgIsPersonalPost(q));if(!p)return false;const th=p.topic;lastPost=p;if(sgRejectExperience()!==th||!generationRules.avoidedExperienceThemes.includes(th))return false;const r=genOnePost();if(!(r.post&&sgIsPersonalPost(r.post)&&r.post.topic!==th))return false;for(let i=0;i<40;i++){const q=Q.filter(x=>x.account==='simon').sort((a,b)=>a.scheduledAt-b.scheduledAt)[0];H.unshift({...q,publishedAt:Date.now(),source:'publie',confirmed:true});Q.splice(Q.indexOf(q),1);Q.filter(x=>x.account==='simon').forEach((x,j)=>x.scheduledAt=Date.now()+j*86400000);const g=genOnePost();if(g.post&&sgIsPersonalPost(g.post)&&g.post.topic===th)return false;}return true;}))));
+    test('Conformité expérience : toutes les compétences écartées — posts techniques, planning complet sans blocage',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{generationRules.avoidedExperienceThemes=[...new Set(SG_PERSONAL_BANK.map(c=>c.theme))];let n=0;for(let i=0;i<7;i++){if(genOnePost().post)n++;}return n===7&&Q.filter(q=>q.account==='simon'&&sgIsPersonalPost(q)).length===0;}))));
+    test('Conformité expérience : « Oui, confirmée » après un « Non » réactive la compétence',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{for(let i=0;i<7;i++)genOnePost();const p=Q.find(q=>q.account==='simon'&&sgIsPersonalPost(q));if(!p)return false;lastPost=p;const th=sgRejectExperience();sgRestoreExperience();return !!th&&!generationRules.avoidedExperienceThemes.includes(th)&&!p.expRejected;}))));
+    test('Conformité expérience : un « Non » sur une expérience HTML écarte aussi les autres thèmes HTML (portfolio…), sans bloquer la génération',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{const prog=SG_PERSONAL_BANK.find(c=>c.theme==='Programmation');lastPost={id:1,account:'simon',topic:'Programmation',type:'projet',sgSrc:'personnel',text:prog.text.replaceAll(SG_TOKEN,sgProgress())};if(sgRejectExperience()!=='Programmation'||!generationRules.avoidedSkills.includes('HTML'))return false;for(let i=0;i<7;i++)genOnePost();for(let i=0;i<60;i++){const q=Q.filter(x=>x.account==='simon').sort((a,b)=>a.scheduledAt-b.scheduledAt)[0];H.unshift({...q,publishedAt:Date.now(),source:'publie',confirmed:true});Q.splice(Q.indexOf(q),1);Q.filter(x=>x.account==='simon').forEach((x,j)=>x.scheduledAt=Date.now()+j*86400000);genOnePost();}return ![...Q,...H].some(x=>x.account==='simon'&&sgIsPersonalPost(x)&&/\bhtml\b/i.test(String(x.text).replace(/#\w+/g,'')));}))));
+    test('Conformité expérience : « Oui » ou « Possible » après un « Non » réactive aussi les compétences',()=>inSim(()=>inRules(()=>{const prog=SG_PERSONAL_BANK.find(c=>c.theme==='Programmation');lastPost={id:2,account:'simon',topic:'Programmation',type:'projet',sgSrc:'personnel',text:prog.text.replaceAll(SG_TOKEN,sgProgress())};sgRejectExperience();sgRestoreExperience();return !generationRules.avoidedSkills.length&&!generationRules.avoidedExperienceThemes.includes('Programmation')&&!lastPost.expRejected;})));
+    // ── Thèmes génériques 59 + ligne éditoriale « Oui / Possible » (correctif 2026-11-24) ──
+    test('Thèmes génériques : 10 nouveaux thèmes (59 au total), chacun génère un texte factuel valide',()=>['NAT','SSH','Active Directory','Virtualisation','Supervision','Analyse de trames','Proxy','Antivirus et EDR','Gestion des incidents','Scripts Bash et PowerShell'].every(t=>{if(!SG_THEME.has(t)||!SG_FALLBACK_FACTS[t])return false;for(let k=0;k<12;k++){const x=sgFallbackText(t,'constat');if(!sgValidate(x,{type:'technique',topic:t,structure:'Observation',form:'constat'}).length)return true;}return false;}));
+    test('Ligne éditoriale : contexte « Oui » mémorisé (une seule fois), contexte « Possible » utilisé sans être mémorisé',()=>inSim(()=>inRules(()=>['yes','maybe'].every(v=>withHistory([],[],()=>withCtx(CTX_C,v,()=>{generationRules.validatedExperiences=[];for(let i=0;i<7;i++)genOnePost();const used=Q.some(q=>q.account==='simon'&&q.sgSrc==='personnel-contexte');const n=generationRules.validatedExperiences.length;return used&&(v==='yes'?n===1&&generationRules.validatedExperiences[0].source==='contexte':n===0);}))))));
+    test('Ligne éditoriale : « Oui » mémorise une seule fois, la mémorisation se vide et la génération continue',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{generationRules.validatedExperiences=[];const a=sgRecordValidated('Arduino','Arduino','J’ai fait un projet Arduino','post'),b=sgRecordValidated('Arduino','Arduino','J’ai fait un projet Arduino','post');if(!a||b||generationRules.validatedExperiences.length!==1)return false;let n=0;for(let i=0;i<7;i++){if(genOnePost().post)n++;}return n===7&&Q.filter(q=>q.account==='simon'&&sgIsPersonalPost(q)).length===1;}))));
+    test('Catalogue : chacun des 59 thèmes génériques produit au moins un texte valide (V7 §32 : aucun chiffre)',()=>{const g=SG_THEME_ROWS.filter(r=>r[2]!=='projet');return g.length===59&&g.every(r=>{for(let k=0;k<6;k++){const x=sgFallbackText(r[0],'constat');if(!sgValidate(x,{type:'technique',topic:r[0],theme:r[0],structure:'Découverte',form:'constat'}).length)return true;}return false;});});
     const passed=results.filter(r=>r.ok).length,total=results.length,failed=results.filter(r=>!r.ok);
     // Résultat lisible directement dans l'interface : aucune console développeur nécessaire.
     let panel=document.getElementById('sg-runtest-results');
@@ -5212,7 +5426,7 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     }
     const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const grouped={};results.forEach((r,i)=>{const m=r.name.match(/^([^:]+):/);const g=m?m[1]:'Contrôles';(grouped[g]??=[]).push({...r,i:i+1})});
-    panel.innerHTML=`<div style="font-weight:700;margin-bottom:6px">🧪 RunTest Simon V7.2 fix6 — <span style="color:${failed.length?'var(--orange)':'var(--green)'}">${passed}/${total}</span></div>`+
+    panel.innerHTML=`<div style="font-weight:700;margin-bottom:6px">🧪 RunTest Simon V7.2 fix12 — <span style="color:${failed.length?'var(--orange)':'var(--green)'}">${passed}/${total}</span></div>`+
       `<div style="margin-bottom:8px;color:${failed.length?'var(--orange)':'var(--green)'}">${failed.length?`⚠️ ${failed.length} contrôle(s) à corriger.`:'✓ Tous les contrôles sont conformes.'}</div>`+
       Object.entries(grouped).map(([g,rs])=>`<details ${rs.some(r=>!r.ok)?'open':''} style="margin:3px 0"><summary>${esc(g)} — ${rs.filter(r=>r.ok).length}/${rs.length}</summary>`+
         rs.map(r=>`<div style="padding:2px 0;color:${r.ok?'var(--green)':'var(--orange)'}">${r.ok?'✓':'✗'} ${r.i}. ${esc(r.name)}${r.detail?` — ${esc(r.detail)}`:''}</div>`).join('')+`</details>`).join('');
@@ -5225,10 +5439,11 @@ Je préfère m’en tenir à ce que cette expérience permet réellement d’aff
     return {ok:failed.length===0,passed,total,failed};
   }
   window.sgRunTests=sgRunTests;
-  function sgRefreshUI(){sgRenderReview();}
+  function sgRefreshUI(){sgRenderReview();sgRenderAvoidedExp();}
+  setTimeout(sgRenderAvoidedExp,300);
   ['sg-prog','sg-geo','sg-names'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{sgSaveSettings();if(lastPost){sgSetGate(false)}}));
-  document.querySelectorAll('input[name="sg-personal-confirm"]').forEach(el=>el.addEventListener('change',()=>{sgSetGate(false);const fb=document.getElementById('sg-personal-feedback');if(fb){fb.textContent=el.value==='yes'?'Statut choisi : expérience confirmée. La relecture reste obligatoire.':el.value==='maybe'?'Statut choisi : expérience possible, à confirmer. La publication restera bloquée tant que ce n’est pas vérifié.':'Statut choisi : expérience non confirmée. Le texte doit être corrigé.';fb.style.color=el.value==='yes'?'var(--green)':'var(--orange)';}}));
-  document.querySelectorAll('input[name="sg-context-confirm"]').forEach(el=>el.addEventListener('change',()=>{const fb=document.getElementById('sg-context-feedback');if(fb){fb.textContent=el.value==='yes'?'✓ Contexte confirmé : il pourra être proposé pour le post personnel du planning automatique (1 sur 7).':el.value==='maybe'?'⚠️ Contexte à confirmer : il reste disponible en génération manuelle, mais sera ignoré par le planning automatique.':'Contexte exclu du planning automatique ; il reste disponible pour la génération manuelle si tu le souhaites.';fb.style.color=el.value==='yes'?'var(--green)':'var(--orange)';}}));
+  document.querySelectorAll('input[name="sg-personal-confirm"]').forEach(el=>el.addEventListener('change',()=>{sgSetGate(false);const fb=document.getElementById('sg-personal-feedback');if(fb){fb.textContent=el.value==='yes'?'Statut choisi : expérience confirmée. La relecture reste obligatoire.':el.value==='maybe'?'Statut choisi : expérience possible (validée). La relecture reste obligatoire.':'Statut choisi : expérience non confirmée. Le texte doit être corrigé.';fb.style.color=el.value==='no'?'var(--orange)':'var(--green)';}}));
+  document.querySelectorAll('input[name="sg-context-confirm"]').forEach(el=>el.addEventListener('change',()=>{const fb=document.getElementById('sg-context-feedback');if(fb){fb.textContent=el.value==='yes'?'✓ Contexte confirmé : il alimentera le post « projet perso » du planning automatique (1 sur 7), une seule fois. Un texte court est complété par des phrases neutres, sans fait ajouté.':el.value==='maybe'?'✓ Contexte possible (validé) : il alimentera le post « projet perso » du planning automatique (1 sur 7), une seule fois.':'Contexte exclu du planning automatique ; il reste disponible pour la génération manuelle si tu le souhaites.';fb.style.color=el.value==='no'?'var(--orange)':'var(--green)';}}));
   document.getElementById('ctx-inp')?.addEventListener('input',()=>{const selected=document.querySelector('input[name="sg-context-confirm"]:checked');if(selected){selected.checked=false;const fb=document.getElementById('sg-context-feedback');if(fb){fb.textContent='Le contexte a changé : confirme-le à nouveau avant qu’il puisse alimenter le planning automatique.';fb.style.color='var(--orange)';}}});
   sgLoadSettings();sgRefreshUI();
 })();
