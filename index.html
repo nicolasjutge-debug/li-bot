@@ -4050,9 +4050,18 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const score=rawScore>=100?99:rawScore;
     return {score,charScore,editScore,commonNgrams,commonWords};
   };
-  const sgPublishedHookHistory=()=>{
+  let sgHookWarn='';
+  // ── Rotation des thèmes (correctif 2026-11-26) ──
+  // Mémoire des thèmes générés (ordre chronologique, 400 max, enregistrée à part) : la génération choisit le thème le moins récemment
+  // utilisé, pour parcourir les 59 thèmes génériques avant d'en répéter un. Figée (non modifiée, non enregistrée) pendant RunTest.
+  const SG_SEQ_KEY='li_sg_theme_seq_v1';
+  let sgThemeSeq=[];try{const x=JSON.parse(localStorage.getItem(SG_SEQ_KEY)||'[]');if(Array.isArray(x))sgThemeSeq=x.filter(t=>typeof t==='string').slice(-400);}catch(e){}
+  let sgSeqFrozen=false;
+  const sgSeqSave=()=>{if(sgSeqFrozen)return;try{localStorage.setItem(SG_SEQ_KEY,JSON.stringify(sgThemeSeq.slice(-400)));}catch(e){}};
+  const sgSeqNote=th=>{if(!th)return;sgThemeSeq.push(th);if(sgThemeSeq.length>400)sgThemeSeq.splice(0,sgThemeSeq.length-400);sgSeqSave();};
+  const sgPublishedHookHistory=(withQueue=false)=>{
     const seen=new Set(),out=[];
-    const h=(typeof H!=='undefined'?H:[]).filter(x=>x&&x.account==='simon'&&x.text);
+    const h=[...(typeof H!=='undefined'?H:[]),...(withQueue&&typeof Q!=='undefined'?Q.filter(x=>!(lastPost&&lastPost.id!=null&&(x.id===lastPost.id||x.draftId===lastPost.id))):[])].filter(x=>x&&x.account==='simon'&&x.text);
     for(const x of h){
       const first=sgFirstRaw(sgNoHashtags(x.text));
       const key=sgHookNorm(first);
@@ -4061,9 +4070,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     }
     return out.sort((a,b)=>a.ts-b.ts);
   };
-  const sgCheckHookV72=(candidate,theme='')=>{
+  const sgCheckHookV72=(candidate,theme='',withQueue=false)=>{
     const cand=String(candidate||'').trim();
-    const history=sgPublishedHookHistory();
+    const history=sgPublishedHookHistory(withQueue);
     let closest=null;
     for(const h of history){const r=sgV72Similarity(cand,h.text);if(!closest||r.score>closest.score)closest={...r,text:h.text};}
     if(!closest)return {decision:false,score:0,threshold:84,count:0,closest:null,common:[]};
@@ -4209,6 +4218,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   }
   window.sgV7Check=sgV7Check;
   function sgValidate(raw,opt={}){
+    sgHookWarn='';
     const errors=[];let body=String(raw||'').trim();if(opt.sourceLine)body=body.split(opt.sourceLine).join('').replace(/\n{3,}/g,'\n\n').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
     const sentences=sgSentences(sgNoHashtags(display));const themeSet=sgThemeWords(topic);
@@ -4295,8 +4305,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
         }
       }
       // V7.2 — ACCROCHE : uniquement les accroches réellement publiées (H), dédoublonnées.
-      const hookV72=sgCheckHookV72(sentences[0]||'',topic);
-      if(hookV72.decision)add(`Accroche trop proche d’un post publié : « ${(hookV72.closest||'').slice(0,70)} »`);
+      const hookV72=sgCheckHookV72(sentences[0]||'',topic,Boolean(opt.generation));
+      if(hookV72.decision){const hm=`« ${(hookV72.closest||'').slice(0,70)} »`;if(opt.humanReview)sgHookWarn=`Accroche proche d’un post publié : ${hm}`;else add(`Accroche trop proche d’un post publié : ${hm}`);}
       // V7.2 — CONCLUSION : même principe de proximité réelle, sans rejet sur une famille
       // grammaticale ou sur les seuls mots techniques du sujet.
       const currentConclusion=sentences.at(-1)||'';
@@ -4307,10 +4317,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
           if(!oldConclusion)continue;
           const r=sgV72Similarity(currentConclusion,oldConclusion);if(!best||r.score>best.score)best={...r,text:oldConclusion};
         }
-        if(best&&best.score>=84&&((best.commonNgrams>=2&&best.charScore>=.55)||(best.commonNgrams>=1&&best.charScore>=.75&&best.editScore>=.62)||(best.editScore>=.90&&best.commonWords>=4)))add(`Conclusion trop proche d’un post publié : « ${best.text.slice(0,70)} »`);
+        if(best&&best.score>=84&&((best.commonNgrams>=2&&best.charScore>=.55)||(best.commonNgrams>=1&&best.charScore>=.75&&best.editScore>=.62)||(best.editScore>=.90&&best.commonWords>=4))){const cm=`« ${best.text.slice(0,70)} »`;if(opt.humanReview)sgHookWarn=(sgHookWarn?sgHookWarn+' · ':'')+`Conclusion proche d’un post publié : ${cm}`;else add(`Conclusion trop proche d’un post publié : ${cm}`);}
       }
       // La diversité de famille sert à choisir/générer un prochain sujet, pas à rejeter un texte final distinct.
-      if(SG_ADVANCED.has(topic)&&sgAdvancedCount5Others(display)>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
+      if(!opt.humanReview&&!opt.manual&&SG_ADVANCED.has(topic)&&sgAdvancedCount5Others(display)>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
     }
     [/\b(?:mon|ma|mes) (?:professeurs?|profs?|enseignants?|stage|entreprise|tuteur)\b/i,/\bpendant (?:mon|ma|le) (?:stage|cours)\b/i,/\blors d[’']une mission\b/i,/\b(?:vu|appris|abordé|étudié) en cours\b/i].forEach(re=>{if(re.test(display))add('Contexte scolaire ou professionnel non confirmé (brief §1).')});
     if(type==='technique'){
@@ -4606,7 +4616,14 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     for(const e of E){add.push(e);out=[h,add.join(' '),rest].filter(Boolean).join("\n\n");if(sgCountWords(out)>=80)break;}
     const n=sgCountWords(out);return n>=80&&n<=150?out:text;
   }
-  function sgBuildCandidate(){
+  function sgRenderThemePills(){
+    const box=document.getElementById('tp-s');if(!box)return;
+    const have=new Set([...box.querySelectorAll('.tp')].map(b=>sgNorm(b.textContent)));
+    SG_THEME_ROWS.filter(r=>r[2]!=='projet'&&!SG_PROJECT_TOPICS.has(r[0])&&!have.has(sgNorm(r[0]))).forEach(r=>{
+      const b=document.createElement('button');b.className='tp';b.textContent=r[0];b.setAttribute('onclick','selTp(this)');box.appendChild(b);
+    });
+  }
+  function sgBuildCandidate(opt={}){
     // Génération robuste : les combinaisons du catalogue sont essayées puis,
     // si elles ne sont pas conformes, le moteur change de combinaison. Aucun
     // texte non validé ne peut être retourné.
@@ -4618,14 +4635,17 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       const tagFull=sgTagPool(r[0]).every(x=>sgRecent4().includes(x.toLowerCase())); // §29
       return !recent&&!familyFull&&!advancedFull&&!tagFull;
     });
-    const preferred=topic&&sgTopicRow(topic);
-    const rows=preferred&&allRows.some(r=>sgNorm(r[0])===sgNorm(preferred[0]))
-      ? [preferred,...allRows.filter(r=>sgNorm(r[0])!==sgNorm(preferred[0]))]
-      : allRows.sort(()=>Math.random()-.5);
+    // La pastille cochée ne s'applique qu'à la génération manuelle ; le planning automatique pioche dans tout le catalogue.
+    const sel=opt.ignoreTopic?'':topic;
+    const prefRow=sel&&sgTopicRow(sel);
+    const preferred=prefRow&&!SG_PROJECT_TOPICS.has(prefRow[0])?prefRow:null;
+    const rest=allRows.filter(r=>!preferred||sgNorm(r[0])!==sgNorm(preferred[0])).map(r=>[r,sgThemeSeq.lastIndexOf(r[0])+Math.random()*.9]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
+    const rows=preferred?[preferred,...rest]:rest;
     const candidates=rows.slice(0,Math.max(12,Math.min(24,rows.length)));
 
     for(const row of candidates){
       const th=row[0];
+      const manualPick=!!preferred&&row===preferred;
       const structure=sgPickStructure();
       const form=sgPickForm();
       const d=(typeof TS!=='undefined'&&(TS[th]||TS[SG_TS_ALIAS[th]]))?(TS[th]||TS[SG_TS_ALIAS[th]]):null;
@@ -4638,8 +4658,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       for(let i=0;i<maxComb;i++){
         let text=sgEnsureForm(shuffled[i],form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
         for(let attempt=0;attempt<2;attempt++){
-          const e=sgValidate(text,{type:'technique',topic:th,structure,form});
-          if(!e.length)return {text,src:'ts',theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};
+          const e=sgValidate(text,{type:'technique',topic:th,structure,form,generation:true,manual:manualPick});
+          if(!e.length){sgSeqNote(th);return {text,src:'ts',theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};}
           const alt=shuffled[(i+attempt+1)%shuffled.length];
           if(alt)text=sgEnsureForm(alt,form,th).replaceAll(SG_TOKEN,SG_TOKEN).trim();
         }
@@ -4648,8 +4668,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       // des anciens textes du catalogue. Elle passe exactement par sgValidate.
       for(let k=0;k<10;k++){
         const fallback=sgFallbackText(th,form);
-        const ferr=sgValidate(fallback,{type:'technique',topic:th,structure,form});
-        if(!ferr.length){sgFbCommit();return {text:fallback,src:'repli',theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};}
+        const ferr=sgValidate(fallback,{type:'technique',topic:th,structure,form,generation:true,manual:manualPick});
+        if(!ferr.length){sgFbCommit();sgSeqNote(th);return {text:fallback,src:'repli',theme:th,structure,form,family:row[2],prompt:sgPrompt({type:'technique',theme:th,structure,form})};}
       }
     }
     return null;
@@ -4753,7 +4773,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       toast('Relecture suspendue : l’expérience n’est pas confirmée comme vécue par Simon. Corrige le texte.','er');sgSetGate(false);return;
     }
     if(personalExperienceClaim && (personalChoice==='yes'||personalChoice==='maybe'))sgRestoreExperience();
-    if(personalExperienceClaim && personalChoice==='yes' && lastPost && sgIsPersonalPost(lastPost) && lastPost.sgSrc!=='personnel-contexte' && sgRecordValidated(lastPost.topic,lastPost.topic,lastPost.text,'post'))sgRenderAvoidedExp();
+    if(personalExperienceClaim && (personalChoice==='yes'||personalChoice==='maybe') && lastPost && sgIsPersonalPost(lastPost) && lastPost.sgSrc!=='personnel-contexte' && sgRecordValidated(lastPost.topic,lastPost.topic,lastPost.text,'post',personalChoice))sgRenderAvoidedExp();
     if(personalExperienceClaim && !personalChoice){
       if(personalFeedback){personalFeedback.textContent='Choisis un statut : confirmée, possible, ou non.';personalFeedback.style.color='var(--orange)';}
       toast('Indique le statut de l’expérience personnelle avant de valider la relecture.','er');sgSetGate(false);return;
@@ -4762,7 +4782,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       personalFeedback.textContent=!personalExperienceClaim?'Aucune expérience personnelle détectée : confirmation non nécessaire.':personalChoice==='yes'?'✓ Expérience confirmée. La relecture peut continuer.':'✓ Expérience possible validée : la relecture est enregistrée et le post reste publiable.';
       personalFeedback.style.color='var(--green)';
     }
-    const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true});
+    const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true,humanReview:true});
     const similarityOnlyPersonal = sgHasConfirmedPersonalContext(finalText) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
     if(errors.length && !similarityOnlyPersonal){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
     sgSetGate(true);
@@ -4774,6 +4794,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       saveAll();renderQ();
     }
     if(similarityOnlyPersonal) toast('✓ Relecture enregistrée. Similarité détectée : copie autorisée pour correction, publication/programmation à refaire après correction.','in');
+    else if(sgHookWarn)toast('✓ Relecture enregistrée. ⚠️ '+sgHookWarn+' — à reformuler si possible.','in');
     else toast('✓ Relecture humaine enregistrée.','ok');
   }
   window.sgHumanReview=sgHumanReview;
@@ -4793,7 +4814,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       toast('Sortie bloquée : indique d’abord le statut de l’expérience personnelle de Simon (confirmée ou possible).','er');
       return false;
     }
-    const errors=sgValidate(display,{...meta,allowSystemHashtags:true});
+    const errors=sgValidate(display,{...meta,allowSystemHashtags:true,humanReview:true});
     const similarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(display) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
     if(errors.length && !similarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · '),'er');return false;}
     if(similarityOnlyPersonal) toast('⚠️ Copie autorisée uniquement pour corriger ce post personnel similaire. Ne pas publier ni programmer avant correction.','in');
@@ -4814,7 +4835,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const bodyHash=sgHash(display.trim());
     if(!sgGate.reviewed|| sgGate.postKey!==sgPostKey() || (reviewedHash!==finalHash && reviewedHash!==bodyHash)){sgSetGate(false);toast('🔒 '+action+' bloquée : le texte final doit être relu et validé.','er');return false;}
     // Revalidation finale : progression et historique sont relus juste avant la sortie.
-    const finalErrors=sgValidate(text,{...meta,allowSystemHashtags:true});
+    const finalErrors=sgValidate(text,{...meta,allowSystemHashtags:true,humanReview:true});
     const finalSimilarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(text) && finalErrors.length>0 && finalErrors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
     if(finalErrors.length && !finalSimilarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée après revalidation : '+finalErrors.slice(0,2).join(' · '),'er');return false;}
     if(lastPost)lastPost.text=text;
@@ -4838,14 +4859,16 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     let result=null;
     for(let attempt=0;attempt<2&&!result;attempt++) result=sgBuildCandidate();
     if(!result){toast('⚠️ Aucune combinaison conforme trouvée. Choisis un autre thème.','er');return;}
-    const prepared=prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form});
+    const prepared=prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form,generation:true});
     if(!prepared?.ok){toast('⚠️ Génération refusée : '+prepared.errors.slice(0,2).join(' · '),'er');return;}
     sgLastMeta={type:'technique',theme:result.theme,structure:result.structure,form:result.form,family:result.family,prompt:result.prompt};
     lastPost={id:Date.now(),text:prepared.full,type:'original',topic:result.theme,label:TL.original,ts:Date.now(),account:'simon',originalText:prepared.full,previousVersions:[],sgFamily:result.family,form:result.form,structure:result.structure};
     renderPost(prepared.full);sgResetPersonalConfirmation();sgSetGate(false);
     if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;saveAll();updateStats();
     const bd=document.getElementById('gen-bdg');if(bd)bd.textContent='Simon · Cyber';
-    toast('Post généré ✓ · '+result.theme+' · '+result.structure,'ok');
+    const want=topic&&sgTopicRow(topic);
+    if(want&&sgNorm(want[0])!==sgNorm(result.theme))toast('⚠️ « '+want[0]+' » n’a pas donné de texte conforme pour l’instant : « '+result.theme+' » proposé.','in');
+    else toast('Post généré ✓ · '+result.theme+' · '+result.structure,'ok');
   }
   window.genPost=sgGenerate;
 
@@ -4901,7 +4924,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   }
   function sgCtxUsed(){
     const fb=document.getElementById('sg-context-feedback');
-    if(fb){fb.textContent='✓ Contexte utilisé dans le post « projet perso » du planning (1 sur 7), une seule fois. '+(document.querySelector('input[name="sg-context-confirm"]:checked')?.value==='yes'?'Mémorisé dans la ligne éditoriale (statut « Oui »).':'Non mémorisé dans la ligne éditoriale (statut « Possible »).')+' Saisis une autre expérience pour le prochain.';sgRenderAvoidedExp();fb.style.color='var(--green)';}
+    if(fb){fb.textContent='✓ Contexte utilisé dans le post « projet perso » du planning (1 sur 7), une seule fois. '+'Mémorisé dans la ligne éditoriale (statut « '+(document.querySelector('input[name="sg-context-confirm"]:checked')?.value==='yes'?'Oui':'Possible')+' »).'+' Saisis une autre expérience pour le prochain.';sgRenderAvoidedExp();fb.style.color='var(--green)';}
   }
   function sgContextCandidate(contextText,extraAvoid=[]){
     const meta={type:'projet',theme:'Expérience personnelle de Simon',structure:'Observation',form:'constat'};
@@ -4945,18 +4968,22 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     r.avoidedSkills=r.avoidedSkills.filter(s=>!sk.includes(s));
     if(r.avoidedExperienceThemes.length+r.avoidedSkills.length!==n){saveAll();sgRenderAvoidedExp();}
   }
-  function sgRecordValidated(label,theme,text,source){
-    const r=sgConformRules(),key=String(label||theme||'').replace(/\s+/g,' ').trim().slice(0,80);
-    if(!key||r.validatedExperiences.some(v=>v.label===key&&v.theme===theme))return false;
-    r.validatedExperiences.push({label:key,theme:theme||'',skills:sgSkillsOf(text),source,at:Date.now()});
+  function sgRecordValidated(label,theme,text,source,status){
+    // status : 'yes' (« Oui ») ou 'maybe' (« Possible ») — les deux alimentent la ligne éditoriale de la même façon ;
+    // une expérience « Possible » confirmée ensuite « Oui » passe en « Oui » (sans doublon), jamais l'inverse.
+    const r=sgConformRules(),key=String(label||theme||'').replace(/\s+/g,' ').trim().slice(0,80),st=status==='maybe'?'maybe':'yes';
+    if(!key)return false;
+    const ex=r.validatedExperiences.find(v=>v.label===key&&v.theme===theme);
+    if(ex){if(ex.status==='maybe'&&st==='yes'){ex.status='yes';ex.at=Date.now();return true;}return false;}
+    r.validatedExperiences.push({label:key,theme:theme||'',skills:sgSkillsOf(text),source,status:st,at:Date.now()});
     return true;
   }
   function sgRenderAvoidedExp(){
     const el=document.getElementById('sg-avoided-exp');if(!el)return;
     const r=generationRules||{},esc=x=>String(x).replace(/[<>&]/g,'');
-    const av=[...new Set([...(r.avoidedExperienceThemes||[]),...(r.avoidedSkills||[])])],va=(r.validatedExperiences||[]).map(v=>v.label.length>40?v.label.slice(0,40)+'…':v.label);
+    const av=[...new Set([...(r.avoidedExperienceThemes||[]),...(r.avoidedSkills||[])])],va=(r.validatedExperiences||[]).map(v=>'<b>'+esc(v.label.length>40?v.label.slice(0,40)+'…':v.label)+'</b>'+(v.status==='maybe'?' <span style="color:var(--orange)">(Possible)</span>':v.status==='yes'?' <span style="color:var(--green)">(Oui)</span>':''));
     if(!av.length&&!va.length){el.innerHTML='';return;}
-    el.innerHTML=(va.length?'Expériences validées (« Oui ») : <b>'+va.map(esc).join(' · ')+'</b> — <a href="#" id="sg-validated-reset" style="color:var(--cyan)">vider</a>':'')+(va.length&&av.length?'<br>':'')+(av.length?'Compétences écartées (« Non ») : <b>'+av.map(esc).join(' · ')+'</b> — <a href="#" id="sg-avoided-reset" style="color:var(--cyan)">tout réactiver</a>':'');
+    el.innerHTML=(va.length?'Expériences validées : '+va.join(' · ')+' — <a href="#" id="sg-validated-reset" style="color:var(--cyan)">vider</a>':'')+(va.length&&av.length?'<br>':'')+(av.length?'Compétences écartées (« Non ») : <b>'+av.map(esc).join(' · ')+'</b> — <a href="#" id="sg-avoided-reset" style="color:var(--cyan)">tout réactiver</a>':'');
     const a=document.getElementById('sg-avoided-reset'),v=document.getElementById('sg-validated-reset');
     if(a)a.onclick=e=>{e.preventDefault();generationRules.avoidedExperienceThemes=[];generationRules.avoidedSkills=[];saveAll();sgRenderAvoidedExp();toast('Compétences réactivées pour les posts projet perso.','ok');};
     if(v)v.onclick=e=>{e.preventDefault();generationRules.validatedExperiences=[];saveAll();sgRenderAvoidedExp();toast('Expériences validées retirées de la ligne éditoriale.','ok');};
@@ -5020,8 +5047,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       }
     }
     for(let attempt=0;attempt<3&&!(prepared&&prepared.ok);attempt++){
-      result=sgBuildCandidate();
-      prepared=result?prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form}):null;
+      result=sgBuildCandidate({ignoreTopic:true});
+      prepared=result?prepare_post(result.text,{type:'technique',theme:result.theme,structure:result.structure,form:result.form,generation:true}):null;
     }
     if(!result||!prepared?.ok)return {post:null,wasDup:false};
     // Dernier verrou avant insertion : aucune génération personnelle identique à un corps déjà connu.
@@ -5040,7 +5067,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(!stats.simon)stats.simon={total:0,sent:0};stats.simon.total++;
     if(result.src==='personnel-contexte'){
       const cv=document.querySelector('input[name="sg-context-confirm"]:checked')?.value,ct=(document.getElementById('ctx-inp')?.value||'').trim();
-      if(cv==='yes')sgRecordValidated(ct,'Expérience personnelle de Simon',ct,'contexte');
+      if(cv==='yes'||cv==='maybe')sgRecordValidated(ct,'Expérience personnelle de Simon',ct,'contexte',cv);
       sgCtxUsed();
     }
     return {post,wasDup:false};
@@ -5094,7 +5121,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   window.schedPost=sgSchedule;
   function sgAlready(){if(acc!=='simon')return sgOld.markAlreadyPublished();if(!sgRelease('Validation de publication'))return;const sgP=lastPost;archive(sgP,'publie');sgDequeue(sgP);toast('Marqué comme publié — ne sera plus reproposé ✓','ok');clearGenerator();sgSetGate(false)}
   window.markAlreadyPublished=sgAlready;
-  function sgRunTests(){
+  function sgRunTests(){const bak=sgThemeSeq.slice();sgSeqFrozen=true;try{return sgRunTestsCore.apply(this,arguments);}finally{sgSeqFrozen=false;sgThemeSeq.length=0;sgThemeSeq.push(...bak);}}
+  function sgRunTestsCore(){
     /*
       RUNTEST COMPLET — cahier des charges Simon
       Les tests sont volontairement indépendants du texte actuellement affiché.
@@ -5110,7 +5138,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const vmid=x=>valid.replace(' Cette première approche permet aussi',' '+x.trim()+' Cette première approche permet aussi');
     const oldH=Array.isArray(H)?H.slice():null, oldQ=Array.isArray(Q)?Q.slice():null;
     const oldAcc=acc, oldTopic=topic;
-    const resetHistory=(h=[],q=[])=>{if(Array.isArray(H)){H.length=0;H.push(...h)}if(Array.isArray(Q)){Q.length=0;Q.push(...q)}};
+    const resetHistory=(h=[],q=[])=>{if(Array.isArray(H)){H.length=0;H.push(...h)}if(Array.isArray(Q)){Q.length=0;Q.push(...q)}sgThemeSeq.length=0;};
     const make=(theme,extra={})=>({id:Math.random(),account:'simon',text:extra.text||valid,topic:theme,theme,structure:extra.structure||'Découverte',form:extra.form||'En découvrant',sgFamily:extra.family||sgFamily(theme),publishedAt:extra.ts||Date.now()});
     const withHistory=(h,q,fn)=>{try{resetHistory(h,q);acc='simon';topic='';return fn()}finally{resetHistory(oldH||[],oldQ||[]);acc=oldAcc;topic=oldTopic}};
     const tagSet=(theme)=>sgTagsNoHist(theme).map(x=>x.toLowerCase());
@@ -5321,6 +5349,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
         const possPost=mkQ(SG_PERSONAL_BANK.find(c=>c.theme==='Réseau local').text,{type:'projet',theme:'Réseau local',structure:'Observation',form:'constat'},'projet','personnel');
         const reviewPerso=(post,val)=>withHistory([],[{...post}],()=>{topic='Pentest';sgLastMeta=stale;lastPost=Q.find(x=>x.id===post.id);if(po2)po2.innerText=post.text;sgSetGate(false);sgResetPersonalConfirmation();const rd=val?document.getElementById('sg-personal-'+val):null;if(rd)rd.checked=true;sgHumanReview();return {reviewed:Boolean(lastPost.reviewedHash)&&window.sgQueueReviewed(lastPost),release:sgRelease('Copie'),perso:lastPost.reviewedPersonal||''};});
         test('Relecture file : expérience « Possible » (post perso en « je ») — validée et publiable',()=>{if(!possPost)throw new Error('texte « Réseau local » refusé par prepare_post');const r=reviewPerso(possPost,'maybe');return r.reviewed&&r.release===true&&r.perso==='maybe';});
+        test('Relecture file : « Possible » est mémorisé dans la ligne éditoriale (comme « Oui »)',()=>{const g0=JSON.stringify(generationRules);try{generationRules.validatedExperiences=[];const r=reviewPerso(possPost,'maybe');return r.reviewed&&r.release===true&&generationRules.validatedExperiences.length===1&&generationRules.validatedExperiences[0].theme==='Réseau local';}finally{generationRules=JSON.parse(g0);sgRenderAvoidedExp();}});
+        test('Relecture file : « Possible » est mémorisé avec le statut « Possible » ; une relecture « Oui » du même post le passe en « Oui »',()=>{const g0=JSON.stringify(generationRules);try{generationRules.validatedExperiences=[];reviewPerso(possPost,'maybe');const a=generationRules.validatedExperiences.map(x=>x.status).join();reviewPerso(possPost,'yes');const b=generationRules.validatedExperiences.map(x=>x.status).join();return a==='maybe'&&b==='yes';}finally{generationRules=JSON.parse(g0);sgRenderAvoidedExp();}});
         test('Relecture file : expérience « Non » ou sans statut — post perso bloqué',()=>{const g0=JSON.stringify(generationRules);try{const a=reviewPerso(possPost,'no'),b=reviewPerso(possPost,'');return !a.reviewed&&a.release===false&&!b.reviewed&&b.release===false;}finally{generationRules=JSON.parse(g0);sgRenderAvoidedExp();}});
         test('Relecture file : même résultat sans aperçu antérieur (sgLastMeta vide)',()=>{const r=reviewQ(persoPost,null);return r.reviewed&&r.release===true;});
         test('Relecture hors file : l’aperçu du générateur continue d’utiliser sgLastMeta',()=>withHistory([],[],()=>{lastPost={text:valid,id:555};sgLastMeta=stale;return sgMetaForCurrent({type:'technique',theme:'x'})===stale;}));
@@ -5412,9 +5442,23 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     test('Conformité expérience : « Oui » ou « Possible » après un « Non » réactive aussi les compétences',()=>inSim(()=>inRules(()=>{const prog=SG_PERSONAL_BANK.find(c=>c.theme==='Programmation');lastPost={id:2,account:'simon',topic:'Programmation',type:'projet',sgSrc:'personnel',text:prog.text.replaceAll(SG_TOKEN,sgProgress())};sgRejectExperience();sgRestoreExperience();return !generationRules.avoidedSkills.length&&!generationRules.avoidedExperienceThemes.includes('Programmation')&&!lastPost.expRejected;})));
     // ── Thèmes génériques 59 + ligne éditoriale « Oui / Possible » (correctif 2026-11-24) ──
     test('Thèmes génériques : 10 nouveaux thèmes (59 au total), chacun génère un texte factuel valide',()=>['NAT','SSH','Active Directory','Virtualisation','Supervision','Analyse de trames','Proxy','Antivirus et EDR','Gestion des incidents','Scripts Bash et PowerShell'].every(t=>{if(!SG_THEME.has(t)||!SG_FALLBACK_FACTS[t])return false;for(let k=0;k<12;k++){const x=sgFallbackText(t,'constat');if(!sgValidate(x,{type:'technique',topic:t,structure:'Observation',form:'constat'}).length)return true;}return false;}));
-    test('Ligne éditoriale : contexte « Oui » mémorisé (une seule fois), contexte « Possible » utilisé sans être mémorisé',()=>inSim(()=>inRules(()=>['yes','maybe'].every(v=>withHistory([],[],()=>withCtx(CTX_C,v,()=>{generationRules.validatedExperiences=[];for(let i=0;i<7;i++)genOnePost();const used=Q.some(q=>q.account==='simon'&&q.sgSrc==='personnel-contexte');const n=generationRules.validatedExperiences.length;return used&&(v==='yes'?n===1&&generationRules.validatedExperiences[0].source==='contexte':n===0);}))))));
+    test('Ligne éditoriale : contexte « Oui » ou « Possible » mémorisé dans la ligne éditoriale (une seule fois)',()=>inSim(()=>inRules(()=>['yes','maybe'].every(v=>withHistory([],[],()=>withCtx(CTX_C,v,()=>{generationRules.validatedExperiences=[];for(let i=0;i<7;i++)genOnePost();const used=Q.some(q=>q.account==='simon'&&q.sgSrc==='personnel-contexte');const n=generationRules.validatedExperiences.length;return used&&n===1&&generationRules.validatedExperiences[0].source==='contexte';}))))));
+    test('Ligne éditoriale : chaque expérience validée garde son statut « Oui » ou « Possible », affiché dans la liste',()=>inRules(()=>{generationRules.validatedExperiences=[];const a=sgRecordValidated('Arduino','Arduino','J’ai fait un projet Arduino','post','yes'),b=sgRecordValidated('Réseau local','Réseau local','Je regarde mon réseau local','post','maybe');sgRenderAvoidedExp();const t=(document.getElementById('sg-avoided-exp')||{}).textContent||'',v=generationRules.validatedExperiences;return a&&b&&v.length===2&&v[0].status==='yes'&&v[1].status==='maybe'&&/Arduino\s*\(Oui\)/.test(t)&&/Réseau local\s*\(Possible\)/.test(t);}));
+    test('Ligne éditoriale : une expérience « Possible » confirmée ensuite « Oui » passe en « Oui » sans doublon, sans jamais repasser en « Possible »',()=>inRules(()=>{generationRules.validatedExperiences=[];sgRecordValidated('Python','Python','Un petit script Python','post','maybe');const up=sgRecordValidated('Python','Python','Un petit script Python','post','yes'),back=sgRecordValidated('Python','Python','Un petit script Python','post','maybe'),v=generationRules.validatedExperiences;return up&&!back&&v.length===1&&v[0].status==='yes';}));
+    test('Ligne éditoriale : le contexte est mémorisé avec son statut (« Oui » → Oui, « Possible » → Possible)',()=>inSim(()=>inRules(()=>['yes','maybe'].every(v=>withHistory([],[],()=>withCtx(CTX_C,v,()=>{generationRules.validatedExperiences=[];for(let i=0;i<7;i++)genOnePost();const e=generationRules.validatedExperiences;return e.length===1&&e[0].source==='contexte'&&e[0].status===v;}))))));
     test('Ligne éditoriale : « Oui » mémorise une seule fois, la mémorisation se vide et la génération continue',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{generationRules.validatedExperiences=[];const a=sgRecordValidated('Arduino','Arduino','J’ai fait un projet Arduino','post'),b=sgRecordValidated('Arduino','Arduino','J’ai fait un projet Arduino','post');if(!a||b||generationRules.validatedExperiences.length!==1)return false;let n=0;for(let i=0;i<7;i++){if(genOnePost().post)n++;}return n===7&&Q.filter(q=>q.account==='simon'&&sgIsPersonalPost(q)).length===1;}))));
     test('Catalogue : chacun des 59 thèmes génériques produit au moins un texte valide (V7 §32 : aucun chiffre)',()=>{const g=SG_THEME_ROWS.filter(r=>r[2]!=='projet');return g.length===59&&g.every(r=>{for(let k=0;k<6;k++){const x=sgFallbackText(r[0],'constat');if(!sgValidate(x,{type:'technique',topic:r[0],theme:r[0],structure:'Découverte',form:'constat'}).length)return true;}return false;});});
+    // ── Thèmes coché / planning / accroches (correctif 2026-11-26) ──
+    test('Planning automatique : le thème coché (pastille) n’oriente pas le choix — les 59 thèmes sont tirés',()=>inSim(()=>{const saveT=topic;try{topic='Zero Day';let n=0;for(let k=0;k<12;k++)withHistory([],[],()=>{topic='Zero Day';for(let i=0;i<7;i++){const r=genOnePost();if(r.post&&r.post.topic==='Zero Day')n++;}});return n<=6;}finally{topic=saveT;}}));
+    test('Génération manuelle : le thème coché est respecté, même parmi les thèmes récents',()=>inSim(()=>{const saveT=topic;try{return ['DNS','Pentest','SOC','Pare-feu','Phishing','NAT','Active Directory','Proxy'].every(th=>{return withHistory([{id:7,account:'simon',topic:th,text:'Texte publié sans rapport avec ce test.',publishedAt:Date.now()-3600000}],[],()=>{topic=th;const r=sgBuildCandidate();return !!r&&r.theme===th;});});}finally{topic=saveT;}}));
+    const hookPub='Apprendre « Ping », c’est un peu comme apprendre le vocabulaire d’une langue : on commence par les mots de base.\n\nSuite du post.';
+    const hookCand=()=>{const hook='Apprendre « Linux », c’est un peu comme apprendre le vocabulaire d’une langue : on commence par les mots de base.';for(let k=0;k<30;k++){const base=sgFallbackText('Linux','constat');const ps=base.split('\n\n');const sents=ps[0].split(/(?<=[.!?])\s+/);sents[0]=hook;ps[0]=sents.join(' ');const t=ps.join('\n\n');if(!sgValidate(t,{...hookMeta,humanReview:true}).some(e=>/^Longueur/.test(e)))return t;}return '';};
+    const hookMeta={type:'technique',topic:'Linux',theme:'Linux',structure:'Découverte',form:'rythme court puis long'};
+    test('Relecture : une accroche proche d’un post publié devient un avertissement (plus de blocage) ; la génération reste stricte',()=>inSim(()=>withHistory([{id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000}],[],()=>{const t=hookCand();if(!t)return false;const rev=sgValidate(t,{...hookMeta,humanReview:true}),warn=sgHookWarn,gen=sgValidate(t,{...hookMeta,generation:true});return !rev.some(e=>/^Accroche/.test(e))&&/Accroche proche/.test(warn)&&gen.some(e=>/^Accroche trop proche/.test(e));})));
+    test('Génération : une accroche déjà présente dans la file n’est pas reproposée (évite les blocages en relecture)',()=>inSim(()=>withHistory([],[{id:11,account:'simon',topic:'Ping',text:hookPub,scheduledAt:Date.now()+86400000}],()=>{const t=hookCand();if(!t)return false;return sgValidate(t,{...hookMeta,generation:true}).some(e=>/^Accroche trop proche/.test(e))&&!sgValidate(t,{...hookMeta,humanReview:true}).some(e=>/^Accroche/.test(e))&&!sgValidate(t,hookMeta).some(e=>/^Accroche/.test(e));})));
+    test('Générateur : les 59 thèmes génériques sont proposés comme pastilles',()=>{sgRenderThemePills();const names=new Set([...document.querySelectorAll('#tp-s .tp')].map(b=>sgNorm(b.textContent)));return SG_THEME_ROWS.filter(r=>r[2]!=='projet'&&!SG_PROJECT_TOPICS.has(r[0])).every(r=>names.has(sgNorm(r[0])));});
+    test('Planning automatique : rotation — sur 59 posts génériques consécutifs, au moins 48 thèmes différents',()=>inSim(()=>withHistory([],[],()=>{const seq=[];for(let i=0;i<75&&seq.length<59;i++){const r=genOnePost();if(r&&r.post&&!SG_PROJECT_TOPICS.has(r.post.topic))seq.push(r.post.topic);}const d=new Set(seq).size;if(!(seq.length>=59&&d>=48))throw new Error('posts='+seq.length+' thèmes différents='+d);return true;})));
+    test('Relecture : après publication de 25 posts, aucun post restant de la file n’est bloqué par l’historique (accroche, conclusion, fenêtre « avancé »)',()=>inSim(()=>withHistory([],[],()=>{for(let i=0;i<80;i++)genOnePost();const posts=Q.filter(q=>q.account==='simon');const pub=posts.slice(0,25).map((p,i)=>({...p,publishedAt:Date.now()-(25-i)*86400000}));const rest=posts.slice(25);resetHistory(pub,rest);const bad=[];rest.forEach(p=>{const e=sgValidate(p.text,{type:SG_PROJECT_TOPICS.has(p.topic)?'projet':'technique',topic:p.topic,theme:p.topic,structure:p.structure,form:p.form,humanReview:true,allowSystemHashtags:true}).filter(x=>!/^Similarité du corps/.test(x));if(e.length)bad.push(p.topic+' : '+String(e[0]).slice(0,60));});if(bad.length)throw new Error(bad.length+' bloqué(s) : '+bad.slice(0,3).join(' | '));return true;})));
     const passed=results.filter(r=>r.ok).length,total=results.length,failed=results.filter(r=>!r.ok);
     // Résultat lisible directement dans l'interface : aucune console développeur nécessaire.
     let panel=document.getElementById('sg-runtest-results');
@@ -5426,7 +5470,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     }
     const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const grouped={};results.forEach((r,i)=>{const m=r.name.match(/^([^:]+):/);const g=m?m[1]:'Contrôles';(grouped[g]??=[]).push({...r,i:i+1})});
-    panel.innerHTML=`<div style="font-weight:700;margin-bottom:6px">🧪 RunTest Simon V7.2 fix12 — <span style="color:${failed.length?'var(--orange)':'var(--green)'}">${passed}/${total}</span></div>`+
+    panel.innerHTML=`<div style="font-weight:700;margin-bottom:6px">🧪 RunTest Simon V7.2 fix15 — <span style="color:${failed.length?'var(--orange)':'var(--green)'}">${passed}/${total}</span></div>`+
       `<div style="margin-bottom:8px;color:${failed.length?'var(--orange)':'var(--green)'}">${failed.length?`⚠️ ${failed.length} contrôle(s) à corriger.`:'✓ Tous les contrôles sont conformes.'}</div>`+
       Object.entries(grouped).map(([g,rs])=>`<details ${rs.some(r=>!r.ok)?'open':''} style="margin:3px 0"><summary>${esc(g)} — ${rs.filter(r=>r.ok).length}/${rs.length}</summary>`+
         rs.map(r=>`<div style="padding:2px 0;color:${r.ok?'var(--green)':'var(--orange)'}">${r.ok?'✓':'✗'} ${r.i}. ${esc(r.name)}${r.detail?` — ${esc(r.detail)}`:''}</div>`).join('')+`</details>`).join('');
@@ -5441,6 +5485,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   window.sgRunTests=sgRunTests;
   function sgRefreshUI(){sgRenderReview();sgRenderAvoidedExp();}
   setTimeout(sgRenderAvoidedExp,300);
+  sgRenderThemePills();
   ['sg-prog','sg-geo','sg-names'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{sgSaveSettings();if(lastPost){sgSetGate(false)}}));
   document.querySelectorAll('input[name="sg-personal-confirm"]').forEach(el=>el.addEventListener('change',()=>{sgSetGate(false);const fb=document.getElementById('sg-personal-feedback');if(fb){fb.textContent=el.value==='yes'?'Statut choisi : expérience confirmée. La relecture reste obligatoire.':el.value==='maybe'?'Statut choisi : expérience possible (validée). La relecture reste obligatoire.':'Statut choisi : expérience non confirmée. Le texte doit être corrigé.';fb.style.color=el.value==='no'?'var(--orange)':'var(--green)';}}));
   document.querySelectorAll('input[name="sg-context-confirm"]').forEach(el=>el.addEventListener('change',()=>{const fb=document.getElementById('sg-context-feedback');if(fb){fb.textContent=el.value==='yes'?'✓ Contexte confirmé : il alimentera le post « projet perso » du planning automatique (1 sur 7), une seule fois. Un texte court est complété par des phrases neutres, sans fait ajouté.':el.value==='maybe'?'✓ Contexte possible (validé) : il alimentera le post « projet perso » du planning automatique (1 sur 7), une seule fois.':'Contexte exclu du planning automatique ; il reste disponible pour la génération manuelle si tu le souhaites.';fb.style.color=el.value==='no'?'var(--orange)':'var(--green)';}}));
