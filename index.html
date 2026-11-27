@@ -473,6 +473,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
           <div id="sg-avoided-exp" style="font-size:10px;color:var(--muted);margin-top:5px"></div>
         </div>
         <div id="sg-review-detail" style="font-size:10px;color:var(--muted);margin-top:5px">Le verrou est lié au hash du texte final. Toute modification invalide la relecture.</div>
+        <div id="sg-warn-box" aria-live="polite" style="display:none;margin-top:8px;padding:8px;border:1px solid rgba(255,109,0,.35);border-radius:6px;background:rgba(255,109,0,.06)"></div>
       </div>
       <div class="btn-row">
         <button class="btn btn-c" id="save-draft-btn" onclick="saveDraft()" disabled>💾 Sauvegarder</button>
@@ -2457,6 +2458,7 @@ const QUEUE_TARGET = 7;
    extraAvoid exclut temporairement certains textes (ex: ceux qu'une RAZ vient de vider)
    sans les ajouter définitivement à l'historique ou aux rejets. */
 function autoRefill(silent=false, extraAvoid=[]){
+  try{if(window.sgPurgeCloseQueue&&acc==='simon')window.sgPurgeCloseQueue();}catch(e){}
   let added = 0, dupCount = 0;
   // BUGFIX indépendance : la cible de 7 s'appliquait à Q.length TOUS COMPTES CONFONDUS —
   // si Simon avait déjà 7 posts, Nicolas ne recevait plus jamais de regénération automatique
@@ -2524,6 +2526,7 @@ function renderQ(){
       <div class="qb">
         <div class="qt">${q.label} · ${ab}${window.sgQueueBadge?window.sgQueueBadge(q):''}${q.originalText!==undefined&&q.originalText!==q.text?' <span title="Modifié depuis la génération" style="font-size:11px">✏️</span>':''}${q.scheduledAt<=Date.now()?' <span title="L\'heure prévue est passée — reste en file tant que tu ne l\'as pas traité toi-même" style="font-size:11px;color:var(--orange)">⏰ En retard</span>':''}</div>
         <div class="qp">${q.text.substring(0,120)}…</div>
+        ${window.sgQueueWarn?window.sgQueueWarn(q):''}
         ${tags.length?`<div class="qts">${tags.map(h=>`<span>${h}</span>`).join('')}</div>`:''}
         <div class="qtm">${ts}</div>
       </div>
@@ -3410,13 +3413,42 @@ function actuKey(a){return String(a.src)+'|'+String(a.titre);}
 function actuTheme(a){const t=a.titre+' '+a.detail;for(const [re,k] of ACTU_SIM_THEMES)if(re.test(t)&&TS[k])return k;return 'Actualité';}
 function actuTagsNiko(a){const t=a.titre+' '+a.detail,x=['#Assurance','#Actualité'];for(const [re,k] of ACTU_NIKO_TAGS)if(re.test(t)&&x.length<4)x.push(k);if(x.length<4)x.push('#Veille');return x;}
 function actuSourceLine(a){return 'Source : '+a.src+(a.url?' — '+a.url:'.');}
-function actuDraft(a){
+/* Variantes du texte d'actualité de Simon (accroche + clôture différentes) : « Régénérer un post conforme » les essaie une à une en mode strict */
+const ACTU_SIM_VARIANTS=[null,
+['🔔 Actualité à suivre en cybersécurité : ','Ce genre d’information rappelle que les menaces évoluent sans cesse et que les protections de base restent utiles : mises à jour, mots de passe uniques, double authentification et vérification des liens.\n\nSuivre les alertes publiées par les organismes officiels permet de repérer rapidement ce qui concerne ses propres appareils.\n\nMieux vaut vérifier l’information à la source que réagir à un message reçu par hasard.'],
+['📌 Actualité du moment en cybersécurité : ','Une actualité de ce type montre à quel point la sécurité repose sur des gestes simples et répétés : mettre à jour ses appareils, choisir un mot de passe différent pour chaque compte et activer la double authentification.\n\nLes avis publiés par les sources officielles aident à comprendre ce qui est réellement concerné et à éviter les rumeurs.\n\nPrendre l’habitude de consulter ces sources réduit le risque de réagir à une fausse alerte.'],
+['🛡️ Veille cybersécurité : ','Derrière chaque alerte, on retrouve souvent les mêmes bases : des logiciels à jour, des mots de passe uniques, une double authentification et des liens vérifiés avant de cliquer.\n\nLire les publications des organismes spécialisés aide à distinguer une vraie menace d’un simple bruit médiatique.\n\nCette veille régulière permet de savoir où chercher une information fiable le jour où une menace apparaît.'],
+['🔍 Zoom sur une actualité cybersécurité : ','Ce type d’annonce rappelle que la cybersécurité ne repose pas uniquement sur la technique : la vigilance de chacun compte aussi.\n\nUn appareil à jour, un mot de passe propre à chaque service et une double authentification limitent déjà de nombreux risques.\n\nLes organismes officiels publient des consignes claires, utiles pour savoir quelles mesures appliquer en priorité face aux risques.'],
+['📰 Actualité cybersécurité du jour : ','Chaque nouvelle alerte rappelle l’intérêt de garder de bons réflexes : installer les mises à jour, protéger ses comptes par un mot de passe unique et une double authentification, puis vérifier les liens avant de cliquer.\n\nLes bulletins des organismes officiels donnent le contexte nécessaire pour comprendre ce qui est concerné et ce qui ne l’est pas.\n\nConsulter ces bulletins régulièrement aide à relier une alerte à ses propres usages.']];
+let actuDraftState={ok:false,warn:0};
+function actuDraft(a,variant,strict){ /* brouillon AUTO-GÉNÉRÉ : conforme si possible (texte d'origine, sinon première variante qui passe toutes les règles) */
+  if(acc!=='simon'||variant!==undefined||strict)return actuDraftOne(a,variant,strict);
+  const first=actuDraftOne(a,0,false);
+  if(actuDraftState.ok&&!actuDraftState.warn)return first;
+  const c=actuConforming(a,0);if(c)return c;
+  return first;
+}
+function actuConforming(a,from){ /* première variante (détail complet, puis détail neutre) qui passe TOUTES les règles (mode strict), ou null */
+  const n=ACTU_SIM_VARIANTS.length;
+  for(let i=0;i<n;i++){const v=((from|0)+i)%n;for(const short of [false,true]){const t=actuDraftOne(a,v,true,short);if(t){actuConforming.last=v;return t;}}}
+  return null;
+}
+function actuDraftOne(a,variant,strict,short){
   const cl=t=>{let x=String(t).replace(/\bV8\b/g,'du moteur JavaScript').replace(/\b0-day\b/gi,'zero-day').replace(/\bTop\s+\d+\s*/i,'').replace(/\s*[+-]?\d+(?:[.,]\d+)?\s*%/g,'').replace(/\s*\b(?:19|20)\d{2}\b/g,'').replace(/\b\d+(?:[.,]\d+)?\s?[MkK]\b\s*/g,'').replace(/\s{2,}/g,' ').trim();return x.charAt(0).toUpperCase()+x.slice(1);}; /* V7 §32 : pas de chiffres ni d'années */
   const src=actuSourceLine(a);
+  const ns=t=>{ /* plus aucun chiffre (V7 §32) : dates retirées, « plus de N » → « nombreux », phrase restante avec chiffre supprimée */
+    const x=String(t).replace(/(?:\b(?:le|du|au|depuis|dès)\s+)?\b\d{1,2}(?:er)?\s+(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre|janv\.?|févr\.?|sept\.?|oct\.?|nov\.?|déc\.?)(?=[\s,;.)]|$)/gi,'')
+      .replace(/\b(?:plus de|près de|environ|au moins)\s+\d[\d\s.,]*(?=\s*[A-Za-zÀ-ÿ])/gi,'nombreux ').replace(/\s+([,;.])/g,'$1').replace(/,(?:\s*,)+/g,',').replace(/\s{2,}/g,' ').trim();
+    return x.split(/(?<=[.!?])\s+/).filter(s=>!/\d|millions?|milliards?/i.test(s)).join(' ').trim();};
   if(acc==='simon'){
-    const body='🚨 Actualité cybersécurité : '+cl(a.titre)+'\n\n'+cl(a.detail)+'\n\nPourquoi suivre ce type d’actualité : elle montre comment les menaces évoluent et quelles protections restent efficaces. Elle aide aussi à repérer les sujets à approfondir. Les bonnes pratiques de base, comme les mises à jour, les mots de passe uniques, la double authentification et la vérification des liens, limitent déjà une grande partie des risques. S’appuyer sur les alertes d’organismes officiels permet aussi de savoir où trouver une information fiable quand une nouvelle menace apparaît.';
+    const relay='L’information est relayée par '+a.src+'.',det=short?relay:(ns(cl(a.detail))||relay); /* short : détail neutre si le détail répète le titre */
+    let body='🚨 Actualité cybersécurité : '+cl(a.titre)+'\n\n'+det+'\n\nPourquoi suivre ce type d’actualité : elle montre comment les menaces évoluent et quelles protections restent efficaces. Elle aide aussi à repérer les sujets à approfondir. Les bonnes pratiques de base, comme les mises à jour, les mots de passe uniques, la double authentification et la vérification des liens, limitent déjà une grande partie des risques. S’appuyer sur les alertes d’organismes officiels permet aussi de savoir où trouver une information fiable quand une nouvelle menace apparaît.';
+    const vr=ACTU_SIM_VARIANTS[variant|0]; /* variante n° 0 = texte d'origine */
+    if(vr)body=vr[0]+cl(a.titre)+'\n\n'+det+'\n\n'+vr[1];
     /* hashtags posés par le code (3 fixes + 1 thématique) et ligne « Source » avec lien : le brouillon affiché = le post final */
-    for(const theme of [actuTheme(a),'Actualité']){const pp=prepare_post(body,{type:'technique',theme,structure:'',form:'',sourceLine:src});if(pp&&pp.ok)return pp.full;}
+    for(const theme of [actuTheme(a),'Actualité']){const pp=prepare_post(body,{type:'technique',theme,structure:'',form:'',sourceLine:src,strict:!!strict});if(pp&&pp.ok){actuDraftState={ok:true,warn:window.sgWarnList?window.sgWarnList().length:0};return pp.full;}}
+    actuDraftState={ok:false,warn:0};
+    if(strict)return null; /* mode strict (régénération) : jamais de texte qui ne passe pas toutes les règles */
     return body+'\n\n'+src+'\n\n#STI2D #Découverte #Cybersécurité';
   }
   return '📰 Actualité assurance : '+a.titre+'\n\n'+a.detail+'\n\nCette actualité rappelle l’importance de rester informé dans nos métiers.\n\n'+src+'\n\n'+actuTagsNiko(a).join(' ');
@@ -3451,6 +3483,7 @@ function openActuPub(i,raw){
   +'<div class="lb"><button type="button" id="actu-b-like" onclick="actuLike()">👍 J’aime</button><button type="button" id="actu-b-com" onclick="actuComment()">💬 Commenter</button><button type="button" id="actu-b-rep" onclick="actuRepost()">🔁 Republier</button><button type="button" id="actu-b-snd" onclick="actuSend()">✉️ Envoyer</button></div>'
   +'<div id="actu-cm" style="display:none;padding:8px 14px 12px;border-top:1px solid rgba(0,0,0,.1)"><div id="actu-cm-list"></div><textarea id="actu-cm-t" rows="2" placeholder="Ajouter un commentaire…" style="width:100%;border:1px solid rgba(0,0,0,.25);border-radius:8px;padding:8px;font-size:13px;font-family:inherit;color:#111;background:#fff"></textarea><div class="btn-row"><button class="btn btn-c" onclick="actuCmSource()">🔗 Insérer la source</button><button class="btn btn-s" onclick="actuCmSend()">Commenter</button></div></div></div>'
   +'<div style="font-size:11px;color:#9aa4b2;margin:0 2px 6px">🔗 Le lien de la source est cliquable, hashtags inclus. « Modifier » pour changer le texte, puis « Relu et validé ». « Publier » enregistre le post dans Posts publiés (à confirmer). J’aime et Commenter sont simulés dans l’aperçu ; Republier et Envoyer ouvrent LinkedIn ou le partage.</div>'
+  +'<div id="actu-warn" aria-live="polite" style="display:none;font-size:12px;margin:0 2px 8px;padding:8px;border:1px solid rgba(255,109,0,.35);border-radius:8px;background:rgba(255,109,0,.08);color:var(--orange)"></div>'
   +'<div id="actu-msg" style="font-size:12px;margin:0 2px 8px;color:var(--orange)"></div>'
   +'<div id="actu-s2" class="st" style="display:none"><div id="actu-s2t" style="margin-bottom:8px"></div>'
   +'<div class="btn-row" style="margin-bottom:8px"><a id="actu-lnk" class="btn btn-c" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;text-align:center">🔗 Ouvrir LinkedIn</a><button class="btn btn-c" onclick="actuCopyBtn()">📋 Copier le texte</button><button id="actu-shr" class="btn btn-c" style="display:none" onclick="actuShare()">📤 Partager…</button></div>'
@@ -3464,6 +3497,30 @@ function openActuPub(i,raw){
   actuRender(raw||actuDraft(a));actuValid(false);actuRx();
   if(dup)document.getElementById('actu-msg').textContent='ℹ️ Cette actualité figure déjà dans les posts publiés — vérifie qu’il ne s’agit pas d’un doublon.';
 }
+function actuCheck(){ /* catégorie « avertissement » : passage proche d'un post publié — non bloquant, avec régénération d'un post conforme */
+  const z=document.getElementById('actu-warn');if(!z)return [];
+  if(!actuPub||actuPub.locked||acc!=='simon'||!window.sgWarnList){z.style.display='none';z.innerHTML='';return [];}
+  const text=actuText();if(!text){z.style.display='none';z.innerHTML='';return [];}
+  const srcM=text.match(/^[ \t]*Source\s*:[^\n]*$/m),sourceLine=srcM?srcM[0].trim():'';
+  const body=(srcM?text.replace(srcM[0],''):text).replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+  let w=[],e=[];
+  try{
+    let pp=prepare_post(body,{type:'technique',theme:actuPub.theme||'Actualité',structure:'',form:'',sourceLine});
+    if((!pp||!pp.ok)&&actuPub.theme&&actuPub.theme!=='Actualité')pp=prepare_post(body,{type:'technique',theme:'Actualité',structure:'',form:'',sourceLine});
+    w=window.sgWarnList();e=(pp&&!pp.ok)?(pp.errors||[]):[];
+  }catch(x){w=[];e=[];}
+  if(!w.length&&!e.length){z.style.display='none';z.innerHTML='';return w;}
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  z.innerHTML='<b>'+(e.length?'⛔ Passage à corriger':'⚠️ Avertissement — passage à corriger')+'</b>'+e.slice(0,3).map(x=>'<div style="color:var(--red)">• '+esc(x)+'</div>').join('')+w.slice(0,3).map(x=>'<div>• '+esc(x)+'</div>').join('')+'<div style="color:#9aa4b2;margin-top:4px">'+(e.length?'Ce texte ne passe pas toutes les règles : « Régénérer » propose un texte conforme.':'Ce passage ressemble à un post déjà publié : la publication reste possible, mais mieux vaut régénérer ou reformuler.')+'</div>'+(actuPub.a?'<button class="btn btn-c" style="margin-top:6px;font-size:12px" onclick="actuRegen()">🔄 Régénérer un post conforme</button>':'');
+  z.style.display='block';return w;
+}
+function actuRegen(){ /* essaie les variantes une à une, en mode strict : aucune erreur, aucun avertissement */
+  if(!actuPub||actuPub.locked)return;
+  if(acc!=='simon'||!actuPub.a){toast('Régénération disponible pour les actualités de la liste (compte Simon).','in');return;}
+  const t=actuConforming(actuPub.a,(actuPub.variant||0)+1);
+  if(t){actuPub.variant=actuConforming.last;actuRender(t);actuValid(false);toast('Post régénéré : aucune règle enfreinte ✓','ok');return;}
+  toast('Aucune variante conforme trouvée — modifie le texte puis revalide.','er');
+}
 function actuClose(){
   if(actuPub&&actuPub.hid){const h=H.find(x=>x.id===actuPub.hid);if(h&&!h.confirmed)toast('Post enregistré dans Posts publiés — à confirmer quand il est publié','in');}
   const o=document.getElementById('actu-ov');if(o)o.remove();document.body.classList.remove('ov-open');actuPub=null;
@@ -3471,7 +3528,7 @@ function actuClose(){
 function actuText(){const el=document.getElementById('actu-txt');return el?(el.innerText||el.textContent||'').trim():'';}
 function actuRender(text){ /* aperçu non modifiable : URL cliquables, hashtags en bleu */
   const el=document.getElementById('actu-txt');if(!el||!actuPub)return;
-  el.contentEditable='false';el.innerHTML=liLinkify(text);actuPub.edit=false;
+  el.contentEditable='false';el.innerHTML=liLinkify(text);actuPub.edit=false;try{actuCheck();}catch(e){}
   const b=document.getElementById('actu-edit');if(b)b.textContent='✏️ Modifier le texte';
 }
 function actuEdit(){
@@ -3483,7 +3540,7 @@ function actuEdit(){
 }
 function actuValid(v){ /* « relu et validé » : tout changement du texte remet le verrou à zéro */
   if(!actuPub)return;
-  actuPub.validated=(v===undefined)?!actuPub.validated:!!v;
+  actuPub.validated=(v===undefined)?!actuPub.validated:!!v;if(v===false)actuPub.warnAck=false;
   if(actuPub.validated&&actuPub.edit)actuRender(actuText());
   const b=document.getElementById('actu-val'),go=document.getElementById('actu-go');
   if(b){b.textContent=actuPub.validated?'✓ Relu et validé':'☐ Marquer comme relu et validé';b.style.background=actuPub.validated?'rgba(0,230,118,.15)':'';b.style.color=actuPub.validated?'var(--green)':'';}
@@ -3507,6 +3564,8 @@ function actuGo(force){
     let pp=prepare_post(body,{type:'technique',theme:(actuPub&&actuPub.theme)||'Actualité',structure:'',form:'',sourceLine});
     if((!pp||!pp.ok)&&actuPub&&actuPub.theme!=='Actualité'){const p2=prepare_post(body,{type:'technique',theme:'Actualité',structure:'',form:'',sourceLine});if(p2&&p2.ok){pp=p2;actuPub.theme='Actualité';}} /* règle de diversité des thèmes : repli sur le thème générique */
     if(!pp||!pp.ok){actuWarn('⚠️ Relecture V7 Simon : '+((pp&&pp.errors)||['échec']).join(' · ')+' — touche « Modifier », corrige le texte puis revalide.','var(--red)');return;}
+    const aw=window.sgWarnList?window.sgWarnList():[]; /* avertissement : non bloquant, confirmation explicite */
+    if(aw.length&&!actuPub.warnAck){actuCheck();askConfirm('⚠️ Avertissement — passage à corriger :\n\n• '+aw.slice(0,3).join('\n• ')+'\n\nPublier quand même ? (Annuler : « Régénérer un post conforme » ou modifie le texte.)').then(ok=>{if(ok&&actuPub){actuPub.warnAck=true;actuValid(true);actuGo(true);}});return;}
     text=pp.full;
   }
   const review=validateForReview(text,{autoCleanHashtags:true});
@@ -3997,10 +4056,39 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgRvHash=s=>sgHash(sgRvNorm(s));
   window.sgQueueReviewed=q=>!q||q.account!=='simon'||Boolean(q.reviewedHash&&q.reviewedHash===sgRvHash(q.text));
   window.sgQueueBadge=q=>!q||q.account!=='simon'?'':(window.sgQueueReviewed(q)?' <span title="Relu et validé — texte inchangé depuis" style="font-size:10px;color:var(--green)">✓ relu</span>':' <span title="Pas encore relu : copie et publication bloquées (👁 puis « Relu et validé »)" style="font-size:10px;color:var(--orange)">🔒 à relire</span>');
+  // CORRECTIF 2026-11-27 — « accroche trop proche mais le post passe quand même » : la relecture mémorisée sur un post de la file
+  // ne valait que pour l'historique du moment. Si un autre post était publié ensuite, 📋/🚀 depuis la file ne revérifiaient rien.
+  // On revérifie donc, juste avant la sortie, accroche / conclusion / similarité du corps contre l'historique ACTUEL.
+  // Règle inchangée : post technique = blocage ; post perso (type « projet ») ou actualité = jamais bloqué pour l’accroche.
+  const SG_HISTORY_ERR=/^(?:Accroche|Conclusion) trop proche|^Similarité du corps trop élevée/;
+  const sgQueueRecheck=q=>{
+    if(!q||q.account!=='simon')return [];
+    const svLast=lastPost,svWarn=sgHookWarn;let errs=[];
+    try{
+      lastPost=q; // un post de la file ne doit pas être comparé à sa propre entrée dans la file
+      const meta={type:sgIsPersonalPost(q)?'projet':'technique',theme:q.topic||q.theme||'',structure:q.structure||'',form:q.form||'',family:q.sgFamily||''};
+      errs=sgValidate(q.text,{...meta,allowSystemHashtags:true,humanReview:true}).filter(e=>SG_HISTORY_ERR.test(e));
+    }catch(e){errs=[];}
+    finally{lastPost=svLast;sgHookWarn=svWarn;}
+    return errs;
+  };
+  window.sgQueueRecheck=sgQueueRecheck;
   window.sgQueueGuard=(q,action)=>{
-    if(window.sgQueueReviewed(q))return true;
+    if(!window.sgQueueReviewed(q)){
+      try{prvQ(q.id)}catch(e){}
+      toast('🔒 '+action+' bloquée : ce post n’a pas été relu. Relis-le puis clique « Relu et validé ».','er');
+      return false;
+    }
+    const errs=sgQueueRecheck(q);
+    if(!errs.length)return true;
+    // Règle existante : copie d’un post perso confirmé et similaire tolérée pour pouvoir le corriger, jamais la publication.
+    if(action==='Copie'&&sgHasConfirmedPersonalContext(q.text)&&errs.every(e=>/^Similarité du corps trop élevée/.test(e))){
+      toast('⚠️ Copie autorisée uniquement pour corriger ce post personnel similaire. Ne pas publier ni programmer avant correction.','in');return true;
+    }
+    delete q.reviewedHash;delete q.reviewedAt;delete q.reviewedPersonal; // relecture caduque : à refaire après correction
+    try{saveAll();renderQ();}catch(e){}
     try{prvQ(q.id)}catch(e){}
-    toast('🔒 '+action+' bloquée : ce post n’a pas été relu. Relis-le puis clique « Relu et validé ».','er');
+    toast('⚠️ '+action+' bloquée : '+errs.slice(0,2).join(' · ')+' — reformule ce passage ou régénère le post.','er');
     return false;
   };
   const sgWords=s=>sgNorm(s).replace(/[^\p{L}\p{N}\s'-]/gu,' ').split(/\s+/).filter(Boolean);
@@ -4050,7 +4138,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const score=rawScore>=100?99:rawScore;
     return {score,charScore,editScore,commonNgrams,commonWords};
   };
-  let sgHookWarn='';
+  let sgHookWarn='';let sgWarnings=[];
   // ── Rotation des thèmes (correctif 2026-11-26) ──
   // Mémoire des thèmes générés (ordre chronologique, 400 max, enregistrée à part) : la génération choisit le thème le moins récemment
   // utilisé, pour parcourir les 59 thèmes génériques avant d'en répéter un. Figée (non modifiée, non enregistrée) pendant RunTest.
@@ -4091,7 +4179,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   const sgFamily=topic=>sgTopicRow(topic)?.[2]||'autre';
   const sgSpecificTag=topic=>sgTopicRow(topic)?.[1]||'#Informatique';
   const SG_ALT={'réseau':['#Réseau','#Informatique'],'linux':['#Linux','#Informatique'],'sécurité':['#SécuritéInformatique','#Informatique'],'menaces':['#SécuritéInformatique','#Informatique'],'données':['#RGPD','#DonnéesPersonnelles','#SécuritéInformatique'],'avancé':['#SécuritéInformatique','#Informatique'],'projet':['#ProjetPersonnel','#Apprentissage','#Informatique']};
-  const sgTagPool=topic=>{const bad=x=>SG_FIXED.some(f=>f.toLowerCase()===x.toLowerCase())||SG_BANNED.some(b=>b.toLowerCase()===x.toLowerCase());const p=[...new Set(topic==='Expérience personnelle de Simon'?['#ProjetPersonnel','#Apprentissage','#Informatique']:[sgSpecificTag(topic),...(SG_ALT[sgFamily(topic)]||[])])].filter(x=>!bad(x));return p.length?p:['#Informatique'];};
+  const sgTagPool=topic=>{const bad=x=>SG_FIXED.some(f=>f.toLowerCase()===x.toLowerCase())||SG_BANNED.some(b=>b.toLowerCase()===x.toLowerCase());const p=[...new Set(topic==='Actualité'?['#Actualité','#Veille','#SécuritéInformatique','#Informatique']:topic==='Expérience personnelle de Simon'?['#ProjetPersonnel','#Apprentissage','#Informatique']:[sgSpecificTag(topic),...(SG_ALT[sgFamily(topic)]||[])])].filter(x=>!bad(x));return p.length?p:['#Informatique'];};
   const sgFourth=t=>{const m=String(t||'').match(/#[\p{L}\p{N}_-]+/gu)||[];return m.length>=4?m[3].toLowerCase():'';};
   const sgRecent4=ex=>{const e=ex?sgNorm(sgNoHashtags(ex)):null;return sgHistory().filter(h=>!e||sgNorm(sgNoHashtags(h.text||''))!==e).slice(-3).map(h=>sgFourth(h.text)).filter(Boolean);};
   const sgTags=(topic,ex)=>{const pool=sgTagPool(topic),rec=new Set(sgRecent4(ex));return [...SG_FIXED,pool.find(x=>!rec.has(x.toLowerCase()))||pool[0]];};
@@ -4217,12 +4305,22 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     return errs;
   }
   window.sgV7Check=sgV7Check;
+  window.sgWarnList=()=>sgWarnings.slice();
+  // Formats à structure imposée (post perso « je » issu de la banque confirmée, actualité sourcée) : leur accroche ou leur conclusion
+  // peut légitimement ressembler à celle d'un post publié → simple avertissement en relecture. Tous les autres posts restent
+  // BLOQUÉS en relecture et à la sortie, exactement comme en génération.
+  const sgFixedFormat=o=>!!o&&(o.type==='projet'||o.theme==='Actualité'||o.topic==='Actualité'||o.theme==='Expérience personnelle de Simon'||Boolean(o.sourceLine));
   function sgValidate(raw,opt={}){
-    sgHookWarn='';
+    sgHookWarn='';sgWarnings=[];
     const errors=[];let body=String(raw||'').trim();if(opt.sourceLine)body=body.split(opt.sourceLine).join('').replace(/\n{3,}/g,'\n\n').trim();const tokenPresent=body.includes(SG_TOKEN);const display=body.replaceAll(SG_TOKEN,sgProgress());const n=sgNorm(display);const topic=opt.topic||opt.theme||sgLastMeta?.theme||'';const type=opt.type||sgLastMeta?.type||'technique';
     const history=sgHistory();
     const sentences=sgSentences(sgNoHashtags(display));const themeSet=sgThemeWords(topic);
     const add=(e)=>{if(!errors.includes(e))errors.push(e)};
+    // CATÉGORIE « AVERTISSEMENT » : pour un post perso / une actualité, un passage proche d'un post publié (accroche, conclusion, corps)
+    // n'est pas bloquant : il est listé dans sgWarnings avec le passage à corriger. En mode strict (régénération) ou en génération
+    // automatique d'un post technique, il reste une erreur : le texte produit doit passer toutes les règles.
+    const fixed=sgFixedFormat(opt),soften=fixed&&!opt.strict&&!opt.generation;
+    const flag=(e)=>{if(soften){if(!sgWarnings.includes(e))sgWarnings.push(e);}else add(e);};
     const words=sgCountWords(display);
     if(words<80||words>150)add(`Longueur : ${words} mots (80 à 150).`);
     if(tokenPresent)add('Variable de progression Root-Me non remplacée.');
@@ -4274,11 +4372,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     }
     if(/[\w.+-]+@[\w-]+\.[\w.-]+/.test(n)||/(?:\+33|0033|\b0)\s?[1-9](?:[\s.-]?\d{2}){4}\b/.test(n))add('Coordonnée personnelle interdite.');
     for(const name of sgNames())if(name&&n.includes(name))add(`Information protégée : « ${name} »`);
-    if(type==='technique'){
-      
-      const structure=opt.structure||sgLastMeta?.structure;if(structure&&!SG_STRUCT[structure])add('Structure inconnue.');
+    if(type==='technique'||fixed){const tech=type==='technique';
+      const structure=opt.structure||sgLastMeta?.structure;if(tech&&structure&&!SG_STRUCT[structure])add('Structure inconnue.');
       // Redondance interne : common words / significant words de la phrase la plus courte.
-      for(let i=0;i<sentences.length;i++)for(let j=i+1;j<sentences.length;j++){
+      if(tech)for(let i=0;i<sentences.length;i++)for(let j=i+1;j<sentences.length;j++){
         const r=sgOverlap(sentences[i],sentences[j],themeSet);if(r>=60)add(`Redondance ${Math.round(r)} % : « ${sentences[i].slice(0,60)} » ≈ « ${sentences[j].slice(0,60)} »`);
       }
       // Contrôle du CORPS V7.2 : aucune décision sur un simple score global.
@@ -4300,13 +4397,13 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
             const historicalBody=sgNoHashtags(h.text).replace(/\s+/g,' ').trim();
             const excerpt=historicalBody.slice(0,260);
             const sourceLabel=h.src==='q'?'file de programmation':'historique publié';
-            add(`Similarité du corps trop élevée (${r.score} %) — référence : ${sourceLabel}, ID ${h.id??'inconnu'} — texte comparé : « ${excerpt}${historicalBody.length>260?'…':''} »`);
+            flag(`Similarité du corps trop élevée (${r.score} %) — référence : ${sourceLabel}, ID ${h.id??'inconnu'} — texte comparé : « ${excerpt}${historicalBody.length>260?'…':''} »`);
           }
         }
       }
       // V7.2 — ACCROCHE : uniquement les accroches réellement publiées (H), dédoublonnées.
       const hookV72=sgCheckHookV72(sentences[0]||'',topic,Boolean(opt.generation));
-      if(hookV72.decision){const hm=`« ${(hookV72.closest||'').slice(0,70)} »`;if(opt.humanReview)sgHookWarn=`Accroche proche d’un post publié : ${hm}`;else add(`Accroche trop proche d’un post publié : ${hm}`);}
+      if(hookV72.decision){const hm=`« ${(hookV72.closest||'').slice(0,70)} »`;if(soften){sgHookWarn=`Accroche proche d’un post publié : ${hm}`;flag(`Accroche proche d’un post publié : ${hm}`);}else add(`Accroche trop proche d’un post publié : ${hm}`);}
       // V7.2 — CONCLUSION : même principe de proximité réelle, sans rejet sur une famille
       // grammaticale ou sur les seuls mots techniques du sujet.
       const currentConclusion=sentences.at(-1)||'';
@@ -4317,10 +4414,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
           if(!oldConclusion)continue;
           const r=sgV72Similarity(currentConclusion,oldConclusion);if(!best||r.score>best.score)best={...r,text:oldConclusion};
         }
-        if(best&&best.score>=84&&((best.commonNgrams>=2&&best.charScore>=.55)||(best.commonNgrams>=1&&best.charScore>=.75&&best.editScore>=.62)||(best.editScore>=.90&&best.commonWords>=4))){const cm=`« ${best.text.slice(0,70)} »`;if(opt.humanReview)sgHookWarn=(sgHookWarn?sgHookWarn+' · ':'')+`Conclusion proche d’un post publié : ${cm}`;else add(`Conclusion trop proche d’un post publié : ${cm}`);}
+        if(best&&best.score>=84&&((best.commonNgrams>=2&&best.charScore>=.55)||(best.commonNgrams>=1&&best.charScore>=.75&&best.editScore>=.62)||(best.editScore>=.90&&best.commonWords>=4))){const cm=`« ${best.text.slice(0,70)} »`;if(soften)flag(`Conclusion proche d’un post publié : ${cm}`);if(soften)sgHookWarn=(sgHookWarn?sgHookWarn+' · ':'')+`Conclusion proche d’un post publié : ${cm}`;else add(`Conclusion trop proche d’un post publié : ${cm}`);}
       }
       // La diversité de famille sert à choisir/générer un prochain sujet, pas à rejeter un texte final distinct.
-      if(!opt.humanReview&&!opt.manual&&SG_ADVANCED.has(topic)&&sgAdvancedCount5Others(display)>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
+      if(tech&&!opt.humanReview&&!opt.manual&&SG_ADVANCED.has(topic)&&sgAdvancedCount5Others(display)>=1)add('Sujet avancé déjà présent dans la fenêtre des 5 derniers posts.');
     }
     [/\b(?:mon|ma|mes) (?:professeurs?|profs?|enseignants?|stage|entreprise|tuteur)\b/i,/\bpendant (?:mon|ma|le) (?:stage|cours)\b/i,/\blors d[’']une mission\b/i,/\b(?:vu|appris|abordé|étudié) en cours\b/i].forEach(re=>{if(re.test(display))add('Contexte scolaire ou professionnel non confirmé (brief §1).')});
     if(type==='technique'){
@@ -4704,7 +4801,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   }
   function sgSyncGate(){
     const key=sgPostKey();
-    if(key!==sgUiPostKey){sgResetPersonalConfirmation();sgSetGate(false);sgRestoreQueueReview();return;}
+    if(key!==sgUiPostKey){sgClearWarn();sgResetPersonalConfirmation();sgSetGate(false);sgRestoreQueueReview();return;}
     const hasText=Boolean((document.getElementById('po')?.innerText||'').trim());
     if(sgGate.reviewed&&(!hasText||sgGate.postKey!==key)){sgSetGate(false);return;}
     sgPaintGate();
@@ -4739,7 +4836,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(lastPost&&lastPost.account==='simon'&&Q.includes(lastPost)&&(lastPost.type==='original'||lastPost.type==='projet')){
       return {type:sgIsPersonalPost(lastPost)?'projet':'technique',theme:lastPost.topic||lastPost.theme||topic,structure:lastPost.structure||'',form:lastPost.form||'',family:lastPost.sgFamily||''};
     }
-    return sgLastMeta||fallback;
+    if(sgLastMeta)return sgLastMeta;
+    // Aperçu sans méta de génération (page rechargée) : on se fie au post lui-même, jamais à la pastille de thème globale —
+    // un thème « Actualité » / « Expérience personnelle » resté sélectionné ne doit pas exempter un post technique.
+    if(lastPost&&lastPost.account==='simon'&&lastPost.topic&&(lastPost.type==='original'||lastPost.type==='projet'))return {type:sgIsPersonalPost(lastPost)?'projet':'technique',theme:lastPost.topic,structure:lastPost.structure||'',form:lastPost.form||'',family:lastPost.sgFamily||''};
+    const ft=fallback&&fallback.theme;
+    return (ft==='Actualité'||ft==='Expérience personnelle de Simon')?{...fallback,theme:''}:fallback;
   }
   function sgHumanReview(){
     try{sgSyncGate();sgHumanReviewCore();}
@@ -4783,8 +4885,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       personalFeedback.style.color='var(--green)';
     }
     const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true,humanReview:true});
+    sgShowWarn(sgWarnings.slice(),errors);
     const similarityOnlyPersonal = sgHasConfirmedPersonalContext(finalText) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
-    if(errors.length && !similarityOnlyPersonal){toast('Relecture impossible : '+errors.slice(0,2).join(' · '),'er');sgSetGate(false);return;}
+    if(errors.length && !similarityOnlyPersonal){toast('Relecture impossible : '+errors.slice(0,2).join(' · ')+(errors.some(e=>/trop proche/.test(e))?' — reformule ce passage ou régénère le post.':''),'er');sgSetGate(false);return;}
     sgSetGate(true);
     if(lastPost&&Q.includes(lastPost)){
       if(sgRvNorm(finalText)!==sgRvNorm(lastPost.text))lastPost.text=finalText;
@@ -4794,7 +4897,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       saveAll();renderQ();
     }
     if(similarityOnlyPersonal) toast('✓ Relecture enregistrée. Similarité détectée : copie autorisée pour correction, publication/programmation à refaire après correction.','in');
-    else if(sgHookWarn)toast('✓ Relecture enregistrée. ⚠️ '+sgHookWarn+' — à reformuler si possible.','in');
+    else if(sgWarnings.length)toast('✓ Relecture enregistrée. ⚠️ '+sgWarnings[0]+' — à corriger ou à régénérer (zone Avertissement).','in');
     else toast('✓ Relecture humaine enregistrée.','ok');
   }
   window.sgHumanReview=sgHumanReview;
@@ -4815,8 +4918,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
       return false;
     }
     const errors=sgValidate(display,{...meta,allowSystemHashtags:true,humanReview:true});
+    sgShowWarn(sgWarnings.slice(),errors);
     const similarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(display) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
-    if(errors.length && !similarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · '),'er');return false;}
+    if(errors.length && !similarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · ')+(errors.some(e=>/trop proche/.test(e))?' — reformule ce passage ou régénère le post.':''),'er');return false;}
     if(similarityOnlyPersonal) toast('⚠️ Copie autorisée uniquement pour corriger ce post personnel similaire. Ne pas publier ni programmer avant correction.','in');
     const expected=sgTags(meta.theme,display);const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
     if(tags.length===0){
@@ -4842,6 +4946,80 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(po&&po.innerText!==text)po.innerText=text;
     return true;
   }
+  // ════ CATÉGORIE « AVERTISSEMENT » — posts perso, actualités et file auto-générée ════
+  const sgWarnable=p=>!!p&&p.account==='simon'&&(sgIsPersonalPost(p)||sgFixedFormat(p));
+  const sgWarnMeta=p=>({type:sgIsPersonalPost(p)?'projet':'technique',theme:p.topic||p.theme||'',structure:p.structure||'',form:p.form||'',family:p.sgFamily||''});
+  const sgEsc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const sgIssueCache=new Map();
+  function sgIssuesOf(p){ // {errors, warnings} d'un post Simon contre l'historique ACTUEL (mis en cache)
+    if(!p||p.account!=='simon')return {errors:[],warnings:[]};
+    const key=p.id+'|'+sgRvHash(p.text)+'|'+H.length+'|'+Q.length;
+    if(sgIssueCache.has(key))return sgIssueCache.get(key);
+    const svLast=lastPost,svHook=sgHookWarn,svW=sgWarnings;let res={errors:[],warnings:[]};
+    try{lastPost=p;const errors=sgValidate(p.text,{...sgWarnMeta(p),allowSystemHashtags:true,humanReview:true});res={errors,warnings:sgWarnings.slice()};}
+    catch(e){}
+    finally{lastPost=svLast;sgHookWarn=svHook;sgWarnings=svW;}
+    if(sgIssueCache.size>60)sgIssueCache.clear();
+    sgIssueCache.set(key,res);return res;
+  }
+  window.sgIssuesOf=sgIssuesOf;
+  function sgRegenCandidate(p){ // nouveau texte qui passe TOUTES les règles (mode strict : aucune erreur, aucun avertissement)
+    const avoid=[p.text];
+    if(sgIsPersonalPost(p)){
+      for(let k=0;k<6;k++){
+        const r=sgBuildPersonalCandidate(avoid);if(!r)break;
+        const pp=prepare_post(r.text,{type:r.type,theme:r.theme,structure:r.structure,form:r.form,strict:true});
+        if(pp&&pp.ok)return {text:pp.full,topic:r.theme,personal:true,structure:r.structure,form:r.form,family:r.family,src:r.src};
+        avoid.push(r.text);
+      }
+    }
+    for(let k=0;k<8;k++){ // post technique (ou repli si la banque perso est épuisée)
+      const r=sgBuildCandidate({ignoreTopic:true});if(!r)continue;
+      const pp=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form,generation:true,strict:true});
+      if(pp&&pp.ok)return {text:pp.full,topic:r.theme,personal:false,structure:r.structure,form:r.form,family:r.family,src:r.src};
+    }
+    return null;
+  }
+  window.sgRegenQ=function(id){ // régénère un post de la file (auto-généré ou non) : même place, texte conforme
+    const q=Q.find(x=>x.id===id);if(!q||q.account!=='simon'||acc!=='simon')return;
+    const svLast=lastPost;let r=null;
+    try{lastPost=q;r=sgRegenCandidate(q);}catch(e){}finally{lastPost=svLast;}
+    if(!r){toast('Aucun post conforme trouvé pour le moment — réessaie dans un instant.','er');return;}
+    const wasPers=sgIsPersonalPost(q);
+    Object.assign(q,{text:r.text,originalText:r.text,topic:r.topic,type:r.personal?'projet':'original',label:r.personal?SG_PERSO_LABEL:TL.original,structure:r.structure,form:r.form,sgFamily:r.family,sgSrc:r.src});
+    delete q.reviewedHash;delete q.reviewedAt;delete q.reviewedPersonal;delete q.expRejected;
+    sgIssueCache.clear();saveAll();renderQ();
+    toast(wasPers&&!r.personal?'Post régénéré (banque perso épuisée : post technique conforme) ✓':'Post régénéré : aucune règle enfreinte ✓','ok');
+  };
+  window.sgQueueWarn=q=>{ // bloc affiché sous un post perso / actualité de la file qui a un avertissement
+    if(acc!=='simon'||!sgWarnable(q))return '';
+    const {errors,warnings}=sgIssuesOf(q);if(!errors.length&&!warnings.length)return '';
+    const li=(a,c)=>a.slice(0,3).map(x=>`<div style="color:${c}">• ${sgEsc(x)}</div>`).join('');
+    return `<div class="qwarn" onclick="event.stopPropagation()" style="margin-top:6px;padding:6px 8px;border:1px solid rgba(255,109,0,.35);border-radius:6px;background:rgba(255,109,0,.06);font-size:11px;line-height:1.45"><b style="color:var(--orange)">${errors.length?'⛔ Passage à corriger':'⚠️ Avertissement'}</b> — non bloquant pour un post perso/actualité, mais à corriger si possible :${li(errors,'var(--red)')}${li(warnings,'var(--orange)')}<button onclick="event.stopPropagation();sgRegenQ(${q.id})" style="margin-top:5px;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif">🔄 Régénérer un post conforme</button></div>`;
+  };
+  function sgShowWarn(warnings,errors){ // zone « Avertissement » de la relecture (éditeur)
+    const box=document.getElementById('sg-warn-box');if(!box)return;
+    const w=warnings||[],e=errors||[];
+    if(!w.length&&!(e.length&&sgFixedFormat(sgMetaForCurrent({type:'technique',theme:topic})))){box.style.display='none';box.innerHTML='';return;}
+    const li=(a,c)=>a.slice(0,4).map(x=>`<div style="font-size:11px;color:${c};margin-bottom:2px">• ${sgEsc(x)}</div>`).join('');
+    box.innerHTML=`<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:var(--orange)">${e.length?'⛔ Passage à corriger':'⚠️ Avertissement — passage à corriger'}</div>${li(e,'var(--red)')}${li(w,'var(--orange)')}<div style="font-size:10px;color:var(--muted);margin:4px 0 6px">Ce passage ressemble à un post déjà publié. Un post perso ou une actualité reste publiable ; « Régénérer » propose un texte qui passe toutes les règles.</div><button class="btn btn-c" style="font-size:11px;padding:6px 10px" onclick="sgRegenEditor()">🔄 Régénérer un post conforme</button>`;
+    box.style.display='block';
+  }
+  function sgClearWarn(){const box=document.getElementById('sg-warn-box');if(box){box.style.display='none';box.innerHTML='';}}
+  window.sgRegenEditor=function(){
+    if(acc!=='simon')return;
+    const po=document.getElementById('po');const text=(po?.innerText||'').trim();
+    const cur={...(lastPost||{id:'draft',topic,type:'original'}),text,account:'simon'};
+    let r=null;
+    try{r=sgRegenCandidate(cur);}catch(e){}
+    if(!r){toast('Aucun post conforme trouvé pour le moment — réessaie dans un instant.','er');return;}
+    if(lastPost){Object.assign(lastPost,{text:r.text,originalText:r.text,topic:r.topic,type:r.personal?'projet':'original',structure:r.structure,form:r.form,sgFamily:r.family,sgSrc:r.src});if(r.personal)lastPost.label=SG_PERSO_LABEL;delete lastPost.reviewedHash;delete lastPost.reviewedAt;delete lastPost.reviewedPersonal;}
+    try{topic=r.topic;}catch(_){}
+    if(po){po.innerText=r.text;renderPost(r.text);}
+    sgResetPersonalConfirmation();sgSetGate(false);sgClearWarn();sgIssueCache.clear();
+    try{saveAll();renderQ();}catch(_){}
+    toast('Post régénéré : aucune règle enfreinte — relis-le puis valide ✓','ok');
+  };
   window.release_post=sgRelease;
   function sgRenderReview(){
     const box=document.getElementById('sg-review');if(box)box.style.display=acc==='simon'?'block':'none';
@@ -5016,10 +5194,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const vx=(generationRules&&generationRules.validatedExperiences)||[],vSk=new Set(vx.flatMap(v=>v.skills||[])),vTh=new Set(vx.map(v=>v.theme));
     const isVal=c=>vTh.has(c.theme)||sgSkillsOf(c.text).some(s=>vSk.has(s));
     const pool=vx.length&&Math.random()<.5?[...pool0.filter(isVal),...pool0.filter(c=>!isVal(c))]:pool0;
-    for(const c of pool){
+    for(const strict of [true,false])for(const c of pool){ // 1er tour : texte sans aucun avertissement ; 2e tour : avertissement toléré
       const meta={type:'projet',theme:c.theme,structure:'Observation',form:'constat'};
       const text=c.text.replaceAll(SG_TOKEN,sgProgress()); // la valeur Root-Me réelle est posée par le code
-      const errors=sgValidate(text,meta);
+      const errors=sgValidate(text,{...meta,strict});
       if(!errors.length)return {...c,text,...meta,src:'personnel'};
     }
     return null;
@@ -5085,8 +5263,36 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     if(removed){saveAll();renderQ();updateStats();toast(`🧹 ${removed} post(s) personnel(s) identique(s) retiré(s) de la file — la première occurrence est conservée.`,'in');}
     return removed;
   }
+  // Après chaque publication l'historique change : un post technique encore en file peut devenir trop proche d'un post publié.
+  // Plutôt que de le laisser passer avec un avertissement, on le retire (il est régénéré par autoRefill). Sont conservés : les posts
+  // perso, et les posts retouchés par l'utilisateur (le contrôle strict les signalera à la relecture). silent=true : sans sauvegarde ni affichage.
+  let sgPurging=false;
+  function sgPurgeCloseQueue(silent){
+    if(sgPurging||acc!=='simon')return 0;
+    sgPurging=true;const sv=sgHookWarn;let removed=0;
+    try{
+      const keep=Q.filter(q=>{
+        if(q.account!=='simon'||sgIsPersonalPost(q))return true;
+        if(q.originalText!==undefined&&q.originalText!==q.text){
+          // Retouché : conservé, mais si l’historique l’a rendu trop proche, sa relecture n’est plus valable (badge « à relire »).
+          if(q.reviewedHash&&sgQueueRecheck(q).length){delete q.reviewedHash;delete q.reviewedAt;delete q.reviewedPersonal;}
+          return true;
+        }
+        const errs=sgValidate(q.text,{type:'technique',topic:q.topic,theme:q.topic,structure:q.structure||'',form:q.form||'',allowSystemHashtags:true});
+        if(errs.some(e=>/^(Accroche|Conclusion) trop proche/.test(e))){removed++;return false;}
+        return true;
+      });
+      if(removed){
+        Q=keep;
+        if(!silent){rescheduleAccountQueue('simon');saveAll();renderQ();updateStats();toast(`🧹 ${removed} post(s) de la file retiré(s) : accroche ou conclusion trop proche d’un post publié — remplacé(s) automatiquement.`,'in');}
+      }
+    }finally{sgHookWarn=sv;sgPurging=false;}
+    return removed;
+  }
+  window.sgPurgeCloseQueue=sgPurgeCloseQueue;
   function sgEdited(){
     const po=document.getElementById('po');const text=(po?.innerText||'').trim();
+    sgClearWarn();
     if(acc==='simon')sgResetPersonalConfirmation();
     if(lastPost){if(lastPost.originalText===undefined)lastPost.originalText=lastPost.text;lastPost.text=text;}
     if(!sgRestoreQueueReview())sgSetGate(false);
@@ -5454,11 +5660,16 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const hookPub='Apprendre « Ping », c’est un peu comme apprendre le vocabulaire d’une langue : on commence par les mots de base.\n\nSuite du post.';
     const hookCand=()=>{const hook='Apprendre « Linux », c’est un peu comme apprendre le vocabulaire d’une langue : on commence par les mots de base.';for(let k=0;k<30;k++){const base=sgFallbackText('Linux','constat');const ps=base.split('\n\n');const sents=ps[0].split(/(?<=[.!?])\s+/);sents[0]=hook;ps[0]=sents.join(' ');const t=ps.join('\n\n');if(!sgValidate(t,{...hookMeta,humanReview:true}).some(e=>/^Longueur/.test(e)))return t;}return '';};
     const hookMeta={type:'technique',topic:'Linux',theme:'Linux',structure:'Découverte',form:'rythme court puis long'};
-    test('Relecture : une accroche proche d’un post publié devient un avertissement (plus de blocage) ; la génération reste stricte',()=>inSim(()=>withHistory([{id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000}],[],()=>{const t=hookCand();if(!t)return false;const rev=sgValidate(t,{...hookMeta,humanReview:true}),warn=sgHookWarn,gen=sgValidate(t,{...hookMeta,generation:true});return !rev.some(e=>/^Accroche/.test(e))&&/Accroche proche/.test(warn)&&gen.some(e=>/^Accroche trop proche/.test(e));})));
+    test('Relecture : accroche trop proche d’un post publié → bloquante pour un post technique (comme en génération), simple avertissement pour un post perso ou une actualité',()=>inSim(()=>withHistory([{id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000}],[],()=>{const t=hookCand();if(!t)return false;const tech=sgValidate(t,{...hookMeta,humanReview:true});const perso=sgValidate(t,{...hookMeta,type:'projet',humanReview:true});const news=sgValidate(t,{...hookMeta,theme:'Actualité',humanReview:true});const gen=sgValidate(t,{...hookMeta,generation:true});return tech.some(e=>/^Accroche trop proche/.test(e))&&!perso.some(e=>/^Accroche/.test(e))&&!news.some(e=>/^Accroche/.test(e))&&gen.some(e=>/^Accroche trop proche/.test(e));})));
+    test('Avertissement : accroche proche d’un post publié = catégorie « avertissement » (non bloquante) pour un post perso/actualité, même hors relecture ; erreur en mode strict (régénération) et pour un post technique',()=>inSim(()=>withHistory([{id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000}],[],()=>{const t=hookCand();if(!t)return false;const perso=sgValidate(t,{...hookMeta,type:'projet'}),pw=sgWarnings.slice();const news=sgValidate(t,{...hookMeta,theme:'Actualité',sourceLine:'Source : CERT-FR.'}),nw=sgWarnings.slice();const strict=sgValidate(t,{...hookMeta,type:'projet',strict:true});const tech=sgValidate(t,{...hookMeta});return !perso.some(e=>/^Accroche/.test(e))&&pw.some(w=>/^Accroche proche/.test(w))&&!news.some(e=>/^Accroche/.test(e))&&nw.some(w=>/^Accroche proche/.test(w))&&strict.some(e=>/^Accroche trop proche/.test(e))&&tech.some(e=>/^Accroche trop proche/.test(e));})));
+    test('Avertissement : un post perso de la file (auto-généré) proche d’un post publié affiche l’avertissement ; « Régénérer un post conforme » le remplace par un texte sans erreur ni avertissement, même catégorie',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{for(let i=0;i<7;i++)genOnePost();const p=Q.find(q=>q.account==='simon'&&sgIsPersonalPost(q));if(!p)return false;H.unshift({id:9001,account:'simon',topic:p.topic,type:'projet',text:p.text,publishedAt:Date.now()-86400000});sgIssueCache.clear();const before=sgIssuesOf(p).warnings.length>0&&sgIssuesOf(p).errors.length===0&&/sgRegenQ/.test(sgQueueWarn(p));const id=p.id,old=p.text;sgRegenQ(id);const q=Q.find(x=>x.id===id),i2=sgIssuesOf(q);return before&&q.text!==old&&i2.errors.length===0&&i2.warnings.length===0&&sgIsPersonalPost(q)&&sgQueueWarn(q)==='';}))));
+    test('Actualités : brouillon auto-généré conforme pour toute la liste, publications successives comprises (aucun chiffre, hashtag tournant, aucune erreur ni avertissement)',()=>inSim(()=>withHistory([],[],()=>{for(const a of AS){const t=actuConforming(a,0);if(!t||/\d/.test(t.split('\n').filter(l=>!/^Source/.test(l)).join(' ').replace(/#STI2D/,'')))return false;H.unshift({id:Date.now()+Math.random(),account:'simon',topic:'Actualité',type:'original',text:t,publishedAt:Date.now()});}return true;})));
     test('Génération : une accroche déjà présente dans la file n’est pas reproposée (évite les blocages en relecture)',()=>inSim(()=>withHistory([],[{id:11,account:'simon',topic:'Ping',text:hookPub,scheduledAt:Date.now()+86400000}],()=>{const t=hookCand();if(!t)return false;return sgValidate(t,{...hookMeta,generation:true}).some(e=>/^Accroche trop proche/.test(e))&&!sgValidate(t,{...hookMeta,humanReview:true}).some(e=>/^Accroche/.test(e))&&!sgValidate(t,hookMeta).some(e=>/^Accroche/.test(e));})));
+    test('File : copie/publication depuis la file revérifient l’accroche contre l’historique actuel — post technique relu puis devenu trop proche = bloqué et relecture caduque ; post perso = non bloqué pour l’accroche',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{const t=hookCand();if(!t)return false;const pt='Un réseau local relie des appareils entre eux : adresse IP, masque, passerelle. Je débute sur ce sujet et je reste prudent sur mon niveau.';const mk=(id,x)=>({id,account:'simon',type:'original',topic:'Linux',text:t,originalText:t,structure:'Découverte',form:'rythme court puis long',scheduledAt:Date.now()+id*1e6,...x});const a=mk(31,{}),p=mk(32,{type:'projet',sgSrc:'personnel',topic:'Réseau local',text:pt,originalText:pt});a.reviewedHash=sgRvHash(a.text);p.reviewedHash=sgRvHash(p.text);Q.length=0;Q.push(a,p);const g0=window.sgQueueGuard(a,'Copie');H.unshift({id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000});const g1=window.sgQueueGuard(a,'Copie');const caduque=!a.reviewedHash;const g2=window.sgQueueGuard(p,'Copie');return g0===true&&g1===false&&caduque&&g2===true;}))));
+    test('File : un post technique devenu trop proche d’un post publié est retiré automatiquement ; un post perso ou retouché est conservé',()=>inSim(()=>inRules(()=>withHistory([{id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000}],[],()=>{const t=hookCand();if(!t)return false;const mk=(id,x)=>({id,account:'simon',type:'original',topic:'Linux',text:t,originalText:t,structure:'Découverte',form:'rythme court puis long',scheduledAt:Date.now()+id*1e6,...x});Q.length=0;Q.push(mk(21,{}),mk(22,{text:t+' Petite retouche.'}),mk(23,{type:'projet',sgSrc:'personnel',topic:'Réseau local'}));const n=sgPurgeCloseQueue(true);return n===1&&Q.length===2&&!Q.some(q=>q.id===21)&&Q.some(q=>q.id===22)&&Q.some(q=>q.id===23);}))));
     test('Générateur : les 59 thèmes génériques sont proposés comme pastilles',()=>{sgRenderThemePills();const names=new Set([...document.querySelectorAll('#tp-s .tp')].map(b=>sgNorm(b.textContent)));return SG_THEME_ROWS.filter(r=>r[2]!=='projet'&&!SG_PROJECT_TOPICS.has(r[0])).every(r=>names.has(sgNorm(r[0])));});
     test('Planning automatique : rotation — sur 59 posts génériques consécutifs, au moins 48 thèmes différents',()=>inSim(()=>withHistory([],[],()=>{const seq=[];for(let i=0;i<75&&seq.length<59;i++){const r=genOnePost();if(r&&r.post&&!SG_PROJECT_TOPICS.has(r.post.topic))seq.push(r.post.topic);}const d=new Set(seq).size;if(!(seq.length>=59&&d>=48))throw new Error('posts='+seq.length+' thèmes différents='+d);return true;})));
-    test('Relecture : après publication de 25 posts, aucun post restant de la file n’est bloqué par l’historique (accroche, conclusion, fenêtre « avancé »)',()=>inSim(()=>withHistory([],[],()=>{for(let i=0;i<80;i++)genOnePost();const posts=Q.filter(q=>q.account==='simon');const pub=posts.slice(0,25).map((p,i)=>({...p,publishedAt:Date.now()-(25-i)*86400000}));const rest=posts.slice(25);resetHistory(pub,rest);const bad=[];rest.forEach(p=>{const e=sgValidate(p.text,{type:SG_PROJECT_TOPICS.has(p.topic)?'projet':'technique',topic:p.topic,theme:p.topic,structure:p.structure,form:p.form,humanReview:true,allowSystemHashtags:true}).filter(x=>!/^Similarité du corps/.test(x));if(e.length)bad.push(p.topic+' : '+String(e[0]).slice(0,60));});if(bad.length)throw new Error(bad.length+' bloqué(s) : '+bad.slice(0,3).join(' | '));return true;})));
+    test('Relecture : après publication de 25 posts (nettoyage automatique de la file), aucun post restant n’est bloqué par l’historique (accroche, conclusion, fenêtre « avancé »)',()=>inSim(()=>withHistory([],[],()=>{for(let i=0;i<80;i++)genOnePost();const posts=Q.filter(q=>q.account==='simon');const pub=posts.slice(0,25).map((p,i)=>({...p,publishedAt:Date.now()-(25-i)*86400000}));const rest=posts.slice(25);resetHistory(pub,rest);sgPurgeCloseQueue(true);const bad=[];Q.filter(q=>q.account==='simon').forEach(p=>{const e=sgValidate(p.text,{type:SG_PROJECT_TOPICS.has(p.topic)?'projet':'technique',topic:p.topic,theme:p.topic,structure:p.structure,form:p.form,humanReview:true,allowSystemHashtags:true}).filter(x=>!/^Similarité du corps/.test(x));if(e.length)bad.push(p.topic+' : '+String(e[0]).slice(0,60));});if(bad.length)throw new Error(bad.length+' bloqué(s) : '+bad.slice(0,3).join(' | '));return true;})));
     const passed=results.filter(r=>r.ok).length,total=results.length,failed=results.filter(r=>!r.ok);
     // Résultat lisible directement dans l'interface : aucune console développeur nécessaire.
     let panel=document.getElementById('sg-runtest-results');
