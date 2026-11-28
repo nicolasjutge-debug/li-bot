@@ -3497,10 +3497,11 @@ function openActuPub(i,raw){
   actuRender(raw||actuDraft(a));actuValid(false);actuRx();
   if(dup)document.getElementById('actu-msg').textContent='ℹ️ Cette actualité figure déjà dans les posts publiés — vérifie qu’il ne s’agit pas d’un doublon.';
 }
-function actuCheck(){ /* catégorie « avertissement » : passage proche d'un post publié — non bloquant, avec régénération d'un post conforme */
+function actuCheck(){ /* avertissement (non bloquant) ou erreur bloquante, avec PROPOSITION AUTOMATIQUE d'un texte conforme */
   const z=document.getElementById('actu-warn');if(!z)return [];
-  if(!actuPub||actuPub.locked||acc!=='simon'||!window.sgWarnList){z.style.display='none';z.innerHTML='';return [];}
-  const text=actuText();if(!text){z.style.display='none';z.innerHTML='';return [];}
+  const hide=()=>{z.style.display='none';z.innerHTML='';};
+  if(!actuPub||actuPub.locked||acc!=='simon'||!window.sgWarnList){hide();if(actuPub)actuPub.proposal=null;return [];}
+  const text=actuText();if(!text){hide();return [];}
   const srcM=text.match(/^[ \t]*Source\s*:[^\n]*$/m),sourceLine=srcM?srcM[0].trim():'';
   const body=(srcM?text.replace(srcM[0],''):text).replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
   let w=[],e=[];
@@ -3509,10 +3510,20 @@ function actuCheck(){ /* catégorie « avertissement » : passage proche d'un po
     if((!pp||!pp.ok)&&actuPub.theme&&actuPub.theme!=='Actualité')pp=prepare_post(body,{type:'technique',theme:'Actualité',structure:'',form:'',sourceLine});
     w=window.sgWarnList();e=(pp&&!pp.ok)?(pp.errors||[]):[];
   }catch(x){w=[];e=[];}
-  if(!w.length&&!e.length){z.style.display='none';z.innerHTML='';return w;}
+  actuPub.proposal=null;
+  if(!w.length&&!e.length){hide();return w;}
+  if(e.length&&actuPub.a){const t=actuConforming(actuPub.a,(actuPub.variant||0)+1);if(t)actuPub.proposal={text:t,variant:actuConforming.last};}
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  z.innerHTML='<b>'+(e.length?'⛔ Passage à corriger':'⚠️ Avertissement — passage à corriger')+'</b>'+e.slice(0,3).map(x=>'<div style="color:var(--red)">• '+esc(x)+'</div>').join('')+w.slice(0,3).map(x=>'<div>• '+esc(x)+'</div>').join('')+'<div style="color:#9aa4b2;margin-top:4px">'+(e.length?'Ce texte ne passe pas toutes les règles : « Régénérer » propose un texte conforme.':'Ce passage ressemble à un post déjà publié : la publication reste possible, mais mieux vaut régénérer ou reformuler.')+'</div>'+(actuPub.a?'<button class="btn btn-c" style="margin-top:6px;font-size:12px" onclick="actuRegen()">🔄 Régénérer un post conforme</button>':'');
+  const prop=actuPub.proposal;
+  z.innerHTML='<b>'+(e.length?'⛔ Passage à corriger':'⚠️ Avertissement — passage à corriger')+'</b>'+e.slice(0,3).map(x=>'<div style="color:var(--red)">• '+esc(x)+'</div>').join('')+w.slice(0,3).map(x=>'<div>• '+esc(x)+'</div>').join('')
+    +(prop?'<div style="margin-top:8px;font-weight:600;color:var(--green)">💡 Proposition automatique — passe toutes les règles</div><div style="white-space:pre-wrap;max-height:160px;overflow:auto;margin:4px 0 6px;padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:6px;color:#dfe7f3;font-weight:400">'+esc(prop.text)+'</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" style="font-size:12px" onclick="actuUseProposal()">✅ Utiliser cette proposition</button><button class="btn btn-c" style="font-size:12px" onclick="actuRegen()">🔄 Autre proposition</button></div>'
+      :'<div style="color:#9aa4b2;margin-top:4px">'+(e.length?'Ce texte ne passe pas toutes les règles : « Régénérer » propose un texte conforme.':'Ce passage ressemble à un post déjà publié : la publication reste possible, mais mieux vaut régénérer ou reformuler.')+'</div>'+(actuPub.a?'<button class="btn btn-c" style="margin-top:6px;font-size:12px" onclick="actuRegen()">🔄 Régénérer un post conforme</button>':''));
   z.style.display='block';return w;
+}
+function actuUseProposal(){ /* applique la proposition automatique affichée */
+  if(!actuPub||actuPub.locked||!actuPub.proposal)return;
+  const p=actuPub.proposal;actuPub.variant=p.variant;actuRender(p.text);actuValid(false);
+  toast('Proposition appliquée : aucune règle enfreinte ✓','ok');
 }
 function actuRegen(){ /* essaie les variantes une à une, en mode strict : aucune erreur, aucun avertissement */
   if(!actuPub||actuPub.locked)return;
@@ -3563,7 +3574,7 @@ function actuGo(force){
     body=body.replace(/#[\p{L}\p{N}_-]+/gu,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
     let pp=prepare_post(body,{type:'technique',theme:(actuPub&&actuPub.theme)||'Actualité',structure:'',form:'',sourceLine});
     if((!pp||!pp.ok)&&actuPub&&actuPub.theme!=='Actualité'){const p2=prepare_post(body,{type:'technique',theme:'Actualité',structure:'',form:'',sourceLine});if(p2&&p2.ok){pp=p2;actuPub.theme='Actualité';}} /* règle de diversité des thèmes : repli sur le thème générique */
-    if(!pp||!pp.ok){actuWarn('⚠️ Relecture V7 Simon : '+((pp&&pp.errors)||['échec']).join(' · ')+' — touche « Modifier », corrige le texte puis revalide.','var(--red)');return;}
+    if(!pp||!pp.ok){actuCheck();actuWarn('⚠️ Relecture V7 Simon : '+((pp&&pp.errors)||['échec']).join(' · ')+(actuPub.proposal?' — proposition conforme affichée : touche « Utiliser cette proposition ».':' — touche « Modifier », corrige le texte puis revalide.'),'var(--red)');return;}
     const aw=window.sgWarnList?window.sgWarnList():[]; /* avertissement : non bloquant, confirmation explicite */
     if(aw.length&&!actuPub.warnAck){actuCheck();askConfirm('⚠️ Avertissement — passage à corriger :\n\n• '+aw.slice(0,3).join('\n• ')+'\n\nPublier quand même ? (Annuler : « Régénérer un post conforme » ou modifie le texte.)').then(ok=>{if(ok&&actuPub){actuPub.warnAck=true;actuValid(true);actuGo(true);}});return;}
     text=pp.full;
@@ -4817,8 +4828,11 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
   }
   function sgHasPersonalExperienceClaim(text){
     const t=String(text||'');
-    return /\b(?:j['’]ai|je|mon|ma|mes|nous avons|j['’]ai pu|j['’]ai appris|j['’]ai créé|j['’]ai conçu|j['’]ai réalisé|j['’]ai fabriqué|j['’]ai développé|j['’]ai participé|lors de mon|pendant mon|dans mon)\b/i.test(t)
-      && /\b(?:projet|créé|conçu|réalisé|fabriqué|développé|programmé|arduino|stage|fauteuil|pmr|accessibilité|impression 3d|porte[- ]clé|poubelle|cyberquest|expérience|prototype|atelier|robot|personnel|personnelle|appris|découvert|testé|construit|fabriqué)\b/i.test(t);
+    // Bornes de mots compatibles avec les lettres accentuées : \b voyait « mes » dans « thèmes » et « ma » dans « schéma »
+    // (le post « Permissions Linux » demandait à tort le statut d'une expérience personnelle).
+    const B='(?<![\\p{L}\\p{N}_])',E='(?![\\p{L}\\p{N}_])';
+    return new RegExp(B+'(?:j[\'’]ai|je|mon|ma|mes|nous avons|j[\'’]ai pu|j[\'’]ai appris|j[\'’]ai créé|j[\'’]ai conçu|j[\'’]ai réalisé|j[\'’]ai fabriqué|j[\'’]ai développé|j[\'’]ai participé|lors de mon|pendant mon|dans mon)'+E,'iu').test(t)
+      && new RegExp(B+'(?:projet|créé|conçu|réalisé|fabriqué|développé|programmé|arduino|stage|fauteuil|pmr|accessibilité|impression 3d|porte[- ]clé|poubelle|cyberquest|expérience|prototype|atelier|robot|personnel|personnelle|appris|découvert|testé|construit|fabriqué)'+E,'iu').test(t);
   }
   // fix10 : un post perso à thème « expérience possible » en « je » demande TOUJOURS le statut Oui / Possible / Non, même si la détection par mots-clés ne le repère pas.
   function sgPersonalClaim(text){return sgHasPersonalExperienceClaim(text)||(!!lastPost&&SG_POSSIBLE_TOPICS.has(lastPost.topic)&&/(?:^|[^\p{L}])(?:je|j['’]ai)(?![\p{L}])/iu.test(String(text||'')));}
@@ -4871,8 +4885,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const personalFeedback=document.getElementById('sg-personal-feedback');
     if(personalExperienceClaim && personalChoice==='no'){
       const rej=sgRejectExperience();
-      if(personalFeedback){personalFeedback.textContent='Confirmation négative : reformule le texte sans attribuer cette expérience à Simon, puis relis-le à nouveau.'+(rej?' « '+rej+' » ne sera plus repris dans les posts projet perso suivants (autres compétences) ; la génération continue.':'');personalFeedback.style.color='var(--orange)';}
-      toast('Relecture suspendue : l’expérience n’est pas confirmée comme vécue par Simon. Corrige le texte.','er');sgSetGate(false);return;
+      if(personalFeedback){personalFeedback.textContent='Confirmation négative : une proposition de texte sans cette expérience est affichée ci-dessous (« Utiliser cette proposition »), ou reformule toi-même puis relis à nouveau.'+(rej?' « '+rej+' » ne sera plus repris dans les posts projet perso suivants (autres compétences) ; la génération continue.':'');personalFeedback.style.color='var(--orange)';}
+      toast('Relecture suspendue : l’expérience n’est pas confirmée comme vécue par Simon — proposition automatique affichée.','er');sgSetGate(false);sgPropose(['Expérience non confirmée comme vécue par Simon : le texte ne doit pas la lui attribuer.']);return;
     }
     if(personalExperienceClaim && (personalChoice==='yes'||personalChoice==='maybe'))sgRestoreExperience();
     if(personalExperienceClaim && (personalChoice==='yes'||personalChoice==='maybe') && lastPost && sgIsPersonalPost(lastPost) && lastPost.sgSrc!=='personnel-contexte' && sgRecordValidated(lastPost.topic,lastPost.topic,lastPost.text,'post',personalChoice))sgRenderAvoidedExp();
@@ -4887,7 +4901,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const errors=sgValidate(finalText,{...meta,allowSystemHashtags:true,humanReview:true});
     sgShowWarn(sgWarnings.slice(),errors);
     const similarityOnlyPersonal = sgHasConfirmedPersonalContext(finalText) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
-    if(errors.length && !similarityOnlyPersonal){toast('Relecture impossible : '+errors.slice(0,2).join(' · ')+(errors.some(e=>/trop proche/.test(e))?' — reformule ce passage ou régénère le post.':''),'er');sgSetGate(false);return;}
+    if(errors.length && !similarityOnlyPersonal){toast('Relecture impossible : '+errors.slice(0,2).join(' · ')+' — voir la proposition automatique.','er');sgSetGate(false);sgPropose(errors);return;}
     sgSetGate(true);
     if(lastPost&&Q.includes(lastPost)){
       if(sgRvNorm(finalText)!==sgRvNorm(lastPost.text))lastPost.text=finalText;
@@ -4920,7 +4934,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     const errors=sgValidate(display,{...meta,allowSystemHashtags:true,humanReview:true});
     sgShowWarn(sgWarnings.slice(),errors);
     const similarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(display) && errors.length>0 && errors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
-    if(errors.length && !similarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · ')+(errors.some(e=>/trop proche/.test(e))?' — reformule ce passage ou régénère le post.':''),'er');return false;}
+    if(errors.length && !similarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée : '+errors.slice(0,2).join(' · ')+' — voir la proposition automatique.','er');sgPropose(errors);return false;}
     if(similarityOnlyPersonal) toast('⚠️ Copie autorisée uniquement pour corriger ce post personnel similaire. Ne pas publier ni programmer avant correction.','in');
     const expected=sgTags(meta.theme,display);const tags=[...display.matchAll(/#[\p{L}\p{N}_-]+/gu)].map(m=>m[0]);
     if(tags.length===0){
@@ -4941,7 +4955,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     // Revalidation finale : progression et historique sont relus juste avant la sortie.
     const finalErrors=sgValidate(text,{...meta,allowSystemHashtags:true,humanReview:true});
     const finalSimilarityOnlyPersonal = action==='Copie' && sgHasConfirmedPersonalContext(text) && finalErrors.length>0 && finalErrors.every(e=>/^Similarité du corps trop élevée \(/.test(e));
-    if(finalErrors.length && !finalSimilarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée après revalidation : '+finalErrors.slice(0,2).join(' · '),'er');return false;}
+    if(finalErrors.length && !finalSimilarityOnlyPersonal){sgSetGate(false);toast('⚠️ '+action+' bloquée après revalidation : '+finalErrors.slice(0,2).join(' · ')+' — voir la proposition automatique.','er');sgPropose(finalErrors);return false;}
     if(lastPost)lastPost.text=text;
     if(po&&po.innerText!==text)po.innerText=text;
     return true;
@@ -4963,27 +4977,33 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     sgIssueCache.set(key,res);return res;
   }
   window.sgIssuesOf=sgIssuesOf;
-  function sgRegenCandidate(p){ // nouveau texte qui passe TOUTES les règles (mode strict : aucune erreur, aucun avertissement)
-    const avoid=[p.text];
+  function sgRegenCandidate(p,opt={}){ // nouveau texte qui passe TOUTES les règles (mode strict) ; opt.sameTheme : même thème d'abord ; opt.avoid : textes à ne pas reproposer
+    const avoid=[p.text,...(opt.avoid||[])];
+    const same=t=>avoid.some(a=>sgNorm(sgNoHashtags(String(a)))===sgNorm(sgNoHashtags(String(t))));
     if(sgIsPersonalPost(p)){
       for(let k=0;k<6;k++){
         const r=sgBuildPersonalCandidate(avoid);if(!r)break;
         const pp=prepare_post(r.text,{type:r.type,theme:r.theme,structure:r.structure,form:r.form,strict:true});
-        if(pp&&pp.ok)return {text:pp.full,topic:r.theme,personal:true,structure:r.structure,form:r.form,family:r.family,src:r.src};
+        if(pp&&pp.ok&&!same(pp.full))return {text:pp.full,topic:r.theme,personal:true,structure:r.structure,form:r.form,family:r.family,src:r.src};
         avoid.push(r.text);
       }
     }
-    for(let k=0;k<8;k++){ // post technique (ou repli si la banque perso est épuisée)
-      const r=sgBuildCandidate({ignoreTopic:true});if(!r)continue;
+    const row0=opt.sameTheme&&!sgIsPersonalPost(p)&&p.topic?sgTopicRow(p.topic):null;
+    const th0=row0&&!SG_PROJECT_TOPICS.has(row0[0])?p.topic:''; // la proposition garde le sujet du post refusé tant que c'est possible
+    for(let k=0;k<10;k++){ // post technique (ou repli si la banque perso est épuisée)
+      const useSame=!!th0&&k<5,svTopic=topic;
+      let r=null;
+      try{if(useSame)topic=th0;r=sgBuildCandidate({ignoreTopic:!useSame});}finally{topic=svTopic;}
+      if(!r)continue;
       const pp=prepare_post(r.text,{type:'technique',theme:r.theme,structure:r.structure,form:r.form,generation:true,strict:true});
-      if(pp&&pp.ok)return {text:pp.full,topic:r.theme,personal:false,structure:r.structure,form:r.form,family:r.family,src:r.src};
+      if(pp&&pp.ok&&!same(pp.full)){avoid.push(pp.full);return {text:pp.full,topic:r.theme,personal:false,structure:r.structure,form:r.form,family:r.family,src:r.src};}
     }
     return null;
   }
   window.sgRegenQ=function(id){ // régénère un post de la file (auto-généré ou non) : même place, texte conforme
     const q=Q.find(x=>x.id===id);if(!q||q.account!=='simon'||acc!=='simon')return;
     const svLast=lastPost;let r=null;
-    try{lastPost=q;r=sgRegenCandidate(q);}catch(e){}finally{lastPost=svLast;}
+    try{lastPost=q;r=sgRegenCandidate(q,{sameTheme:true});}catch(e){}finally{lastPost=svLast;}
     if(!r){toast('Aucun post conforme trouvé pour le moment — réessaie dans un instant.','er');return;}
     const wasPers=sgIsPersonalPost(q);
     Object.assign(q,{text:r.text,originalText:r.text,topic:r.topic,type:r.personal?'projet':'original',label:r.personal?SG_PERSO_LABEL:TL.original,structure:r.structure,form:r.form,sgFamily:r.family,sgSrc:r.src});
@@ -4992,10 +5012,12 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     toast(wasPers&&!r.personal?'Post régénéré (banque perso épuisée : post technique conforme) ✓':'Post régénéré : aucune règle enfreinte ✓','ok');
   };
   window.sgQueueWarn=q=>{ // bloc affiché sous un post perso / actualité de la file qui a un avertissement
-    if(acc!=='simon'||!sgWarnable(q))return '';
-    const {errors,warnings}=sgIssuesOf(q);if(!errors.length&&!warnings.length)return '';
+    if(acc!=='simon'||!q||q.account!=='simon')return '';
+    const warnable=sgWarnable(q);let {errors,warnings}=sgIssuesOf(q);
+    if(!warnable){errors=errors.filter(e=>SG_HISTORY_ERR.test(e));warnings=[];} // post technique : seulement les blocages d'historique (accroche / conclusion / corps trop proches)
+    if(!errors.length&&!warnings.length)return '';
     const li=(a,c)=>a.slice(0,3).map(x=>`<div style="color:${c}">• ${sgEsc(x)}</div>`).join('');
-    return `<div class="qwarn" onclick="event.stopPropagation()" style="margin-top:6px;padding:6px 8px;border:1px solid rgba(255,109,0,.35);border-radius:6px;background:rgba(255,109,0,.06);font-size:11px;line-height:1.45"><b style="color:var(--orange)">${errors.length?'⛔ Passage à corriger':'⚠️ Avertissement'}</b> — non bloquant pour un post perso/actualité, mais à corriger si possible :${li(errors,'var(--red)')}${li(warnings,'var(--orange)')}<button onclick="event.stopPropagation();sgRegenQ(${q.id})" style="margin-top:5px;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif">🔄 Régénérer un post conforme</button></div>`;
+    return `<div class="qwarn" onclick="event.stopPropagation()" style="margin-top:6px;padding:6px 8px;border:1px solid rgba(255,109,0,.35);border-radius:6px;background:rgba(255,109,0,.06);font-size:11px;line-height:1.45"><b style="color:var(--orange)">${errors.length?'⛔ Passage à corriger':'⚠️ Avertissement'}</b>${warnable?' — non bloquant pour un post perso/actualité, mais à corriger si possible :':' — bloque la copie et la publication :'}${li(errors,'var(--red)')}${li(warnings,'var(--orange)')}<button onclick="event.stopPropagation();sgRegenQ(${q.id})" style="margin-top:5px;background:rgba(0,200,255,.1);color:var(--cyan);border:1px solid rgba(0,200,255,.25);border-radius:6px;padding:4px 11px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif">🔄 Régénérer un post conforme</button></div>`;
   };
   function sgShowWarn(warnings,errors){ // zone « Avertissement » de la relecture (éditeur)
     const box=document.getElementById('sg-warn-box');if(!box)return;
@@ -5006,18 +5028,39 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     box.style.display='block';
   }
   function sgClearWarn(){const box=document.getElementById('sg-warn-box');if(box){box.style.display='none';box.innerHTML='';}}
-  window.sgRegenEditor=function(){
-    if(acc!=='simon')return;
-    const po=document.getElementById('po');const text=(po?.innerText||'').trim();
-    const cur={...(lastPost||{id:'draft',topic,type:'original'}),text,account:'simon'};
-    let r=null;
-    try{r=sgRegenCandidate(cur);}catch(e){}
-    if(!r){toast('Aucun post conforme trouvé pour le moment — réessaie dans un instant.','er');return;}
+  let sgProposal=null;
+  function sgEditorPost(){const po=document.getElementById('po');return {...(lastPost||{id:'draft',topic,type:'original'}),text:(po?.innerText||'').trim(),account:'simon'};}
+  function sgApplyCandidate(r){ // remplace le texte affiché (et le post en cours) par un candidat conforme
+    const po=document.getElementById('po');
     if(lastPost){Object.assign(lastPost,{text:r.text,originalText:r.text,topic:r.topic,type:r.personal?'projet':'original',structure:r.structure,form:r.form,sgFamily:r.family,sgSrc:r.src});if(r.personal)lastPost.label=SG_PERSO_LABEL;delete lastPost.reviewedHash;delete lastPost.reviewedAt;delete lastPost.reviewedPersonal;}
     try{topic=r.topic;}catch(_){}
     if(po){po.innerText=r.text;renderPost(r.text);}
-    sgResetPersonalConfirmation();sgSetGate(false);sgClearWarn();sgIssueCache.clear();
+    sgResetPersonalConfirmation();sgSetGate(false);sgClearWarn();sgIssueCache.clear();sgProposal=null;
     try{saveAll();renderQ();}catch(_){}
+  }
+  function sgRenderProposal(){
+    const box=document.getElementById('sg-warn-box');if(!box||!sgProposal)return;
+    const p=sgProposal.r,rs=(sgProposal.reasons||[]).slice(0,4).map(x=>`<div style="font-size:11px;color:var(--red);margin-bottom:2px">• ${sgEsc(x)}</div>`).join('');
+    box.innerHTML=`<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:var(--orange)">⛔ Passage à corriger</div>${rs}`+(p
+      ?`<div style="font-size:11px;font-weight:600;margin:8px 0 4px;color:var(--green)">💡 Proposition automatique — passe toutes les règles</div><div style="font-size:12px;line-height:1.5;white-space:pre-wrap;max-height:180px;overflow:auto;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(0,0,0,.18)">${sgEsc(p.text)}</div><div class="btn-row" style="margin-top:6px"><button class="btn btn-s" style="font-size:11px;padding:6px 10px" onclick="sgUseProposal()">✅ Utiliser cette proposition</button><button class="btn btn-c" style="font-size:11px;padding:6px 10px" onclick="sgAnotherProposal()">🔄 Autre proposition</button></div>`
+      :`<div style="font-size:11px;color:var(--muted);margin:6px 0">Aucune proposition conforme trouvée pour le moment.</div><button class="btn btn-c" style="font-size:11px;padding:6px 10px" onclick="sgAnotherProposal()">🔄 Réessayer</button>`);
+    box.style.display='block';
+  }
+  function sgPropose(reasons,avoid){ // proposition AUTOMATIQUE d'un texte conforme quand la relecture refuse un post (plus de « corrige le texte » sans solution)
+    if(acc!=='simon')return null;
+    let r=null;
+    try{r=sgRegenCandidate(sgEditorPost(),{sameTheme:true,avoid});}catch(e){}
+    sgProposal={r,reasons:reasons||[]};
+    try{sgRenderProposal();}catch(e){}
+    return r;
+  }
+  window.sgUseProposal=function(){if(!sgProposal||!sgProposal.r)return;sgApplyCandidate(sgProposal.r);toast('Proposition appliquée : aucune règle enfreinte — relis-la puis valide ✓','ok');};
+  window.sgAnotherProposal=function(){const prev=sgProposal&&sgProposal.r?[sgProposal.r.text]:[];sgPropose(sgProposal?sgProposal.reasons:[],prev);};
+  window.sgRegenEditor=function(){
+    if(acc!=='simon')return;
+    let r=null;try{r=sgRegenCandidate(sgEditorPost(),{sameTheme:true});}catch(e){}
+    if(!r){toast('Aucun post conforme trouvé pour le moment — réessaie dans un instant.','er');return;}
+    sgApplyCandidate(r);
     toast('Post régénéré : aucune règle enfreinte — relis-le puis valide ✓','ok');
   };
   window.release_post=sgRelease;
@@ -5664,6 +5707,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw-bot.js').ca
     test('Avertissement : accroche proche d’un post publié = catégorie « avertissement » (non bloquante) pour un post perso/actualité, même hors relecture ; erreur en mode strict (régénération) et pour un post technique',()=>inSim(()=>withHistory([{id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000}],[],()=>{const t=hookCand();if(!t)return false;const perso=sgValidate(t,{...hookMeta,type:'projet'}),pw=sgWarnings.slice();const news=sgValidate(t,{...hookMeta,theme:'Actualité',sourceLine:'Source : CERT-FR.'}),nw=sgWarnings.slice();const strict=sgValidate(t,{...hookMeta,type:'projet',strict:true});const tech=sgValidate(t,{...hookMeta});return !perso.some(e=>/^Accroche/.test(e))&&pw.some(w=>/^Accroche proche/.test(w))&&!news.some(e=>/^Accroche/.test(e))&&nw.some(w=>/^Accroche proche/.test(w))&&strict.some(e=>/^Accroche trop proche/.test(e))&&tech.some(e=>/^Accroche trop proche/.test(e));})));
     test('Avertissement : un post perso de la file (auto-généré) proche d’un post publié affiche l’avertissement ; « Régénérer un post conforme » le remplace par un texte sans erreur ni avertissement, même catégorie',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{for(let i=0;i<7;i++)genOnePost();const p=Q.find(q=>q.account==='simon'&&sgIsPersonalPost(q));if(!p)return false;H.unshift({id:9001,account:'simon',topic:p.topic,type:'projet',text:p.text,publishedAt:Date.now()-86400000});sgIssueCache.clear();const before=sgIssuesOf(p).warnings.length>0&&sgIssuesOf(p).errors.length===0&&/sgRegenQ/.test(sgQueueWarn(p));const id=p.id,old=p.text;sgRegenQ(id);const q=Q.find(x=>x.id===id),i2=sgIssuesOf(q);return before&&q.text!==old&&i2.errors.length===0&&i2.warnings.length===0&&sgIsPersonalPost(q)&&sgQueueWarn(q)==='';}))));
     test('Actualités : brouillon auto-généré conforme pour toute la liste, publications successives comprises (aucun chiffre, hashtag tournant, aucune erreur ni avertissement)',()=>inSim(()=>withHistory([],[],()=>{for(const a of AS){const t=actuConforming(a,0);if(!t||/\d/.test(t.split('\n').filter(l=>!/^Source/.test(l)).join(' ').replace(/#STI2D/,'')))return false;H.unshift({id:Date.now()+Math.random(),account:'simon',topic:'Actualité',type:'original',text:t,publishedAt:Date.now()});}return true;})));
+    test('Faux positif « expérience personnelle » : « thèmes », « schéma », « systèmes » ne comptent plus comme « mes » / « ma » (post Permissions Linux sans « je » : aucun statut demandé) ; une vraie expérience en « je » le demande toujours',()=>{const imp='Que recouvre « Permissions Linux » exactement en cybersécurité ? Plus loin, « Permissions Linux » croise d’autres thèmes comme l’identité numérique, les données ou les réseaux. Le niveau de détail utile dépend du contexte : usage personnel, entreprise ou administration d’un système.';return !sgHasPersonalExperienceClaim(imp)&&!sgHasPersonalExperienceClaim('Un schéma réseau montre les systèmes et les problèmes de configuration, pour un projet personnel.')&&sgHasPersonalExperienceClaim('J’ai créé un petit projet Arduino pour lire une température.')&&sgHasPersonalExperienceClaim('Mon projet personnel : un site portfolio.');});
+    test('Relecture : un post technique sans « je » (ex. Permissions Linux) ne demande jamais le statut d’expérience personnelle',()=>inSim(()=>withHistory([],[],()=>{const el=document.getElementById('po');if(!el)return false;const lp=lastPost,old=el.innerText,st=window.toast;let msg='';window.toast=m=>{msg+=String(m)+'|'};try{const body='Que recouvre « Permissions Linux » exactement en cybersécurité ? Plus loin, « Permissions Linux » croise d’autres thèmes comme l’identité numérique, les données ou les réseaux.';lastPost={id:8802,account:'simon',topic:'Permissions Linux',type:'original',text:body};el.innerText=body;sgSyncGate();sgHumanReview();return !/statut de l’expérience personnelle/.test(msg);}finally{window.toast=st;lastPost=lp;el.innerText=old;sgSetGate(false);}})));
+    test('Relecture refusée : une proposition automatique conforme est affichée, « Utiliser cette proposition » remplace le texte (plus de « corrige le texte » sans solution)',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{const el=document.getElementById('po');if(!el)return false;const lp=lastPost,old=el.innerText;try{const p={id:8801,account:'simon',topic:'Linux',type:'original',text:'Texte avec un lien https://exemple.com interdit.'};lastPost=p;el.innerText=p.text;sgSyncGate();sgHumanReview();const box=document.getElementById('sg-warn-box');const shown=!!box&&box.style.display==='block'&&/Proposition automatique/.test(box.innerText);sgUseProposal();const t=el.innerText.trim(),errs=sgValidate(t,{type:'technique',theme:p.topic,topic:p.topic,allowSystemHashtags:true,humanReview:true});return shown&&errs.length===0&&box.style.display==='none';}finally{lastPost=lp;el.innerText=old;sgSetGate(false);}}))));
+    test('Actualités : un texte refusé affiche une proposition automatique conforme ; « Utiliser cette proposition » la remplace (aucun chiffre, aucune règle enfreinte)',()=>inSim(()=>withHistory([],[],()=>{try{openActuPub(0);actuRender(actuText().replace(/^(.*?:)/,'$1 12'));const z=document.getElementById('actu-warn');const shown=!!z&&z.style.display==='block'&&/Proposition automatique/.test(z.innerText);actuUseProposal();const z2=document.getElementById('actu-warn');return shown&&z2.style.display==='none'&&!/\d/.test(actuText().split('\n').filter(l=>!/^Source/.test(l)).join(' ').replace(/#STI2D/,''));}finally{actuClose();}})));
     test('Génération : une accroche déjà présente dans la file n’est pas reproposée (évite les blocages en relecture)',()=>inSim(()=>withHistory([],[{id:11,account:'simon',topic:'Ping',text:hookPub,scheduledAt:Date.now()+86400000}],()=>{const t=hookCand();if(!t)return false;return sgValidate(t,{...hookMeta,generation:true}).some(e=>/^Accroche trop proche/.test(e))&&!sgValidate(t,{...hookMeta,humanReview:true}).some(e=>/^Accroche/.test(e))&&!sgValidate(t,hookMeta).some(e=>/^Accroche/.test(e));})));
     test('File : copie/publication depuis la file revérifient l’accroche contre l’historique actuel — post technique relu puis devenu trop proche = bloqué et relecture caduque ; post perso = non bloqué pour l’accroche',()=>inSim(()=>inRules(()=>withHistory([],[],()=>{const t=hookCand();if(!t)return false;const pt='Un réseau local relie des appareils entre eux : adresse IP, masque, passerelle. Je débute sur ce sujet et je reste prudent sur mon niveau.';const mk=(id,x)=>({id,account:'simon',type:'original',topic:'Linux',text:t,originalText:t,structure:'Découverte',form:'rythme court puis long',scheduledAt:Date.now()+id*1e6,...x});const a=mk(31,{}),p=mk(32,{type:'projet',sgSrc:'personnel',topic:'Réseau local',text:pt,originalText:pt});a.reviewedHash=sgRvHash(a.text);p.reviewedHash=sgRvHash(p.text);Q.length=0;Q.push(a,p);const g0=window.sgQueueGuard(a,'Copie');H.unshift({id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000});const g1=window.sgQueueGuard(a,'Copie');const caduque=!a.reviewedHash;const g2=window.sgQueueGuard(p,'Copie');return g0===true&&g1===false&&caduque&&g2===true;}))));
     test('File : un post technique devenu trop proche d’un post publié est retiré automatiquement ; un post perso ou retouché est conservé',()=>inSim(()=>inRules(()=>withHistory([{id:9,account:'simon',topic:'Ping',text:hookPub,publishedAt:Date.now()-86400000}],[],()=>{const t=hookCand();if(!t)return false;const mk=(id,x)=>({id,account:'simon',type:'original',topic:'Linux',text:t,originalText:t,structure:'Découverte',form:'rythme court puis long',scheduledAt:Date.now()+id*1e6,...x});Q.length=0;Q.push(mk(21,{}),mk(22,{text:t+' Petite retouche.'}),mk(23,{type:'projet',sgSrc:'personnel',topic:'Réseau local'}));const n=sgPurgeCloseQueue(true);return n===1&&Q.length===2&&!Q.some(q=>q.id===21)&&Q.some(q=>q.id===22)&&Q.some(q=>q.id===23);}))));
